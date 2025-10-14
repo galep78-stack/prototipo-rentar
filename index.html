@@ -63,19 +63,17 @@
     </footer>
 
     <script>
-        // ==================================================================
+      // ==================================================================
         // == PASO 1: PEGA AQUÍ TUS CREDENCIALES DE SUPABASE ==
         // ==================================================================
-        const SUPABASE_URL = 'https://avpjadrcqlftamepzsnm.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2cGphZHJjcWxmdGFtZXB6c25tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNDY1MjQsImV4cCI6MjA3NTkyMjUyNH0.8vDGQhogbLabRzdcioyIrjVagCI0915m7SLkzd-qyNQ';
+        const SUPABASE_URL = 'REEMPLAZA_CON_TU_PROJECT_URL';
+        const SUPABASE_ANON_KEY = 'REEMPLAZA_CON_TU_LLAVE_ANON_PUBLIC';
         // ==================================================================
 
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null;
-        let selectedRole = null;
-        const contentView = document.getElementById('content-view');
 
         // --- LÓGICA DE AUTENTICACIÓN Y ESTADO ---
         _supabase.auth.onAuthStateChange(async (event, session) => {
@@ -97,12 +95,10 @@
             } else {
                 currentUser = null;
             }
-            renderHeader();
+            renderHeader(); // Actualiza el header para mostrar el estado de sesión
             const currentHash = window.location.hash.substring(1);
-            if (!currentUser && (currentHash.startsWith('dashboard'))) {
-                setView('login'); 
-            } else if (currentUser && ['login', 'register'].includes(currentHash)) {
-                setView('home');
+            if (currentUser && ['login', 'register'].includes(currentHash)) {
+                setView('home'); // Si está logueado y en login/register, lo manda a home
             }
         });
 
@@ -112,48 +108,33 @@
             const password = event.target.password.value;
 
             try {
-    // 1. REGISTRO EN AUTH (auth.users)
-    const { data: authData, error: authError } = await _supabase.auth.signUp({ email: event.target.email.value, password: event.target.password.value });
-    if (authError) throw authError;
-    if (!authData.user) throw new Error("No se pudo crear el usuario en Supabase Auth.");
+                const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
+                if (authError) throw authError;
+                if (!authData.user) throw new Error("No se pudo crear el usuario en Supabase Auth.");
 
-    // 2. CREACIÓN DEL PERFIL EN 'public.usuarios'
-    // El 'role' se recibe directamente del 'onsubmit' del formulario.
-    let userData = {
-        id: authData.user.id,
-        email: event.target.email.value,
-        rol: role,
-    };
-    
-    // 3. CAPTURAR DATOS ESPECÍFICOS DEL FORMULARIO ENVIADO
-    if (role === 'Productor') {
-        // Campos específicos del formulario del Productor
-        userData.nombre_completo = event.target.nombre.value;
-        userData.dni = event.target.dni.value;
-        // Rellenar campos del Proveedor como null/vacío para evitar errores de base de datos
-        userData.nombre_empresa = '';
-        userData.cuit = null;
-    } else { // Rol === 'Proveedor'
-        // Campos específicos del formulario del Proveedor
-        userData.nombre_empresa = event.target.empresa.value;
-        userData.cuit = event.target.cuit.value;
-        // Rellenar campos del Productor como null/vacío
-        userData.nombre_completo = '';
-        userData.dni = null;
-        // Nota: La subida de archivo CUIT es solo una simulación visual en este prototipo.
-    }
+                let userData = {
+                    id: authData.user.id,
+                    email: email,
+                    rol: role
+                };
+                
+                if (role === 'Productor') {
+                    userData.nombre_completo = event.target.nombre.value;
+                    userData.dni = event.target.dni.value;
+                } else {
+                    userData.nombre_empresa = event.target.empresa.value;
+                    userData.cuit = event.target.cuit.value;
+                }
 
-    // 4. INSERTAR EN LA TABLA 'usuarios'
-    const { error: dbError } = await _supabase.from('usuarios').insert([userData]);
-    if (dbError) throw dbError;
+                const { error: dbError } = await _supabase.from('usuarios').insert(userData);
+                if (dbError) throw dbError;
 
-    // 5. REDIRECCIÓN
-    setView('verification', { role: role, email: event.target.email.value });
-
-} catch (error) {
-    console.error("Error en el registro:", error);
-    alert("Error en el registro: " + (error.message || 'Verifica la configuración de Supabase o la conexión.'));
-}
+                alert('¡Registro exitoso! Revisa tu email para confirmar tu cuenta.');
+                setView('login');
+            } catch (error) {
+                console.error("Error en el registro:", error);
+                alert("Error en el registro: " + error.message);
+            }
         }
 
         async function handleLogin(event) {
@@ -191,7 +172,6 @@
             await _supabase.auth.signOut();
             setView('home');
         }
-
         function showProviderOnMap(address) {
             const iframe = document.getElementById('map-iframe');
             if (iframe) {
@@ -261,6 +241,7 @@
 </body>
 
 </html>
+
 
 
 
