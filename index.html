@@ -112,33 +112,48 @@
             const password = event.target.password.value;
 
             try {
-                const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
-                if (authError) throw authError;
-                if (!authData.user) throw new Error("No se pudo crear el usuario en Supabase Auth.");
+    // 1. REGISTRO EN AUTH (auth.users)
+    const { data: authData, error: authError } = await _supabase.auth.signUp({ email: event.target.email.value, password: event.target.password.value });
+    if (authError) throw authError;
+    if (!authData.user) throw new Error("No se pudo crear el usuario en Supabase Auth.");
 
-                let userData = {
-                    id: authData.user.id,
-                    email: email,
-                    rol: role
-                };
-                
-                if (role === 'Productor') {
-                    userData.nombre_completo = event.target.nombre.value;
-                    userData.dni = event.target.dni.value;
-                } else {
-                    userData.nombre_empresa = event.target.empresa.value;
-                    userData.cuit = event.target.cuit.value;
-                }
+    // 2. CREACIÓN DEL PERFIL EN 'public.usuarios'
+    // El 'role' se recibe directamente del 'onsubmit' del formulario.
+    let userData = {
+        id: authData.user.id,
+        email: event.target.email.value,
+        rol: role,
+    };
+    
+    // 3. CAPTURAR DATOS ESPECÍFICOS DEL FORMULARIO ENVIADO
+    if (role === 'Productor') {
+        // Campos específicos del formulario del Productor
+        userData.nombre_completo = event.target.nombre.value;
+        userData.dni = event.target.dni.value;
+        // Rellenar campos del Proveedor como null/vacío para evitar errores de base de datos
+        userData.nombre_empresa = '';
+        userData.cuit = null;
+    } else { // Rol === 'Proveedor'
+        // Campos específicos del formulario del Proveedor
+        userData.nombre_empresa = event.target.empresa.value;
+        userData.cuit = event.target.cuit.value;
+        // Rellenar campos del Productor como null/vacío
+        userData.nombre_completo = '';
+        userData.dni = null;
+        // Nota: La subida de archivo CUIT es solo una simulación visual en este prototipo.
+    }
 
-                const { error: dbError } = await _supabase.from('usuarios').insert(userData);
-                if (dbError) throw dbError;
+    // 4. INSERTAR EN LA TABLA 'usuarios'
+    const { error: dbError } = await _supabase.from('usuarios').insert([userData]);
+    if (dbError) throw dbError;
 
-                alert('¡Registro exitoso! Revisa tu email para confirmar tu cuenta.');
-                setView('login');
-            } catch (error) {
-                console.error("Error en el registro:", error);
-                alert("Error en el registro: " + error.message);
-            }
+    // 5. REDIRECCIÓN
+    setView('verification', { role: role, email: event.target.email.value });
+
+} catch (error) {
+    console.error("Error en el registro:", error);
+    alert("Error en el registro: " + (error.message || 'Verifica la configuración de Supabase o la conexión.'));
+}
         }
 
         async function handleLogin(event) {
@@ -246,6 +261,7 @@
 </body>
 
 </html>
+
 
 
 
