@@ -38,7 +38,7 @@
              <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
                  <div>
                     <a href="#" onclick="setView('home')" class="flex items-center">
-                        <img src="assets/logo-rentar.PNG" alt="Rent.Ar Logo" class="h-6 mr-2"> 
+                        <img src="img/logo-rentar.PNG" alt="Rent.Ar Logo" class="h-6 mr-2"> 
                         <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
                     </a>
                     <p class="text-gray-400 font-sans mt-2">© 2025 Rent.Ar.</p>
@@ -225,9 +225,9 @@
             const header = document.getElementById('main-header');
             let headerContent = '';
             if (currentUser) {
-                headerContent = `<div class="container mx-auto px-4 py-4 flex items-center justify-between"><a href="#" class="flex items-center" onclick="setView('home')"><img src="assets/logo-rentar.PNG" alt="Rent.Ar Logo" class="h-8 mr-2"><span class="logo-text-header text-accent-cyan">Rent.Ar</span></a><div class="flex items-center space-x-4"><span class="text-gray-300">Hola, ${currentUser.email}</span><button onclick="handleLogout()" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button></div></div>`;
+                headerContent = `<div class="container mx-auto px-4 py-4 flex items-center justify-between"><a href="#" class="flex items-center" onclick="setView('home')"><img src="img/logo-rentar.PNG" alt="Rent.Ar Logo" class="h-8 mr-2"><span class="logo-text-header text-accent-cyan">Rent.Ar</span></a><div class="flex items-center space-x-4"><span class="text-gray-300">Hola, ${currentUser.email}</span><button onclick="handleLogout()" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button></div></div>`;
             } else {
-                headerContent = `<div class="container mx-auto px-4 py-4 flex items-center justify-between"><a href="#" class="flex items-center" onclick="setView('home')"><img src="assets/logo-rentar.PNG" alt="Rent.Ar Logo" class="h-8 mr-2"><span class="logo-text-header text-accent-cyan">Rent.Ar</span></a><nav class="flex space-x-4"><a href="#" onclick="setView('info', 'Cómo funciona')" class="hover:text-accent-cyan">Cómo funciona</a></nav><div class="flex space-x-3"><button onclick="setView('login')" class="bg-accent-blue px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button><button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button></div></div>`;
+                headerContent = `<div class="container mx-auto px-4 py-4 flex items-center justify-between"><a href="#" class="flex items-center" onclick="setView('home')"><img src="img/logo-rentar.PNG" alt="Rent.Ar Logo" class="h-8 mr-2"><span class="logo-text-header text-accent-cyan">Rent.Ar</span></a><nav class="flex space-x-4"><a href="#" onclick="setView('info', 'Cómo funciona')" class="hover:text-accent-cyan">Cómo funciona</a></nav><div class="flex space-x-3"><button onclick="setView('login')" class="bg-accent-blue px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button><button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button></div></div>`;
             }
             header.innerHTML = headerContent;
         }
@@ -244,4 +244,5 @@
         function renderInfoView(title) { return `<div class="p-8 rounded-xl"><h1 class="text-4xl font-bold">${title || 'Información'}</h1></div>`; }
     </script>
 </body>
+
 </html>
