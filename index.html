@@ -85,7 +85,11 @@
             } else { currentUser = null; }
             renderHeader();
         });
-
+function pruebaDeClick() {
+    console.log("¡CLICK DETECTADO! La conexión entre HTML y JS funciona.");
+    alert("¡CLICK DETECTADO!");
+    return false; // Previene el envío del formulario
+}
        async function handleRegister(event, role) {
     event.preventDefault();
     console.log("--- INICIANDO REGISTRO (VERSIÓN DE DEPURACIÓN FINAL) ---");
@@ -216,6 +220,7 @@
     </script>
 </body>
 </html>
+
 
 
 
