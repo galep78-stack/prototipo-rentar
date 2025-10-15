@@ -194,7 +194,14 @@ function pruebaDeClick() {
                 case 'dashboard_productor': htmlContent = renderProducerDashboard(); break;
                 case 'dashboard_proveedor': htmlContent = renderProviderDashboard(); break;
                 case 'provider_details': htmlContent = renderProviderDetailsView(data); break;
-                case 'info': htmlContent = renderInfoView(data); break;
+                // POR ESTO:
+case 'info':
+    if (data === 'Cómo funciona') {
+        htmlContent = renderComoFuncionaView();
+    } else {
+        htmlContent = renderInfoView(data);
+    }
+    break;
                 default: htmlContent = renderHomeView();
             }
             contentView.innerHTML = htmlContent;
@@ -269,6 +276,7 @@ function pruebaDeClick() {
     </script>
 </body>
 </html>
+
 
 
 
