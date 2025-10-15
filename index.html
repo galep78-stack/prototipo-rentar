@@ -86,30 +86,61 @@
             renderHeader();
         });
 
-        async function handleRegister(event, role) {
-            event.preventDefault();
-            const email = event.target.email.value;
-            const password = event.target.password.value;
-            try {
-                const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
-                if (authError) throw authError;
-                let userData = { id: authData.user.id, email, rol: role };
-                if (role === 'Productor') {
-                    userData.nombre_completo = event.target.nombre.value;
-                    userData.dni = event.target.dni.value;
-                } else {
-                    userData.nombre_empresa = event.target.empresa.value;
-                    userData.cuit = event.target.cuit.value;
-                }
-                const { error: dbError } = await _supabase.from('usuarios').insert(userData);
-                if (dbError) throw dbError;
-                alert('¡Registro exitoso! Ya puedes iniciar sesión.');
-                setView('login');
-            } catch (error) {
-    console.error("Error detallado de Supabase:", error);
-    alert("Falló el registro. Revisá la consola (F12) para ver el error específico.");
-}
+       async function handleRegister(event, role) {
+    event.preventDefault();
+    console.log("✅ PASO 1: La función handleRegister se ha iniciado para el rol:", role);
+
+    const email = event.target.email.value;
+    const password = event.target.password.value;
+
+    try {
+        console.log("📄 PASO 2: Intentando crear el usuario en el sistema de autenticación (Auth)...");
+        const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
+
+        if (authError) {
+            console.error("⛔️ ERROR en el paso de autenticación:", authError);
+            throw authError; // Forzamos que vaya al catch
         }
+
+        console.log("👍 PASO 3: Usuario creado exitosamente en Auth. ID:", authData.user.id);
+
+        let userData = {
+            id: authData.user.id,
+            email: email,
+            rol: role
+        };
+
+        if (role === 'Productor') {
+            userData.nombre_completo = event.target.nombre.value;
+            userData.dni = event.target.dni.value;
+        } else {
+            userData.nombre_empresa = event.target.empresa.value;
+            userData.cuit = event.target.cuit.value;
+        }
+
+        console.log("📦 PASO 4: Datos preparados para insertar en la base de datos:", userData);
+        console.log("⏳ PASO 5: Intentando insertar los datos en la tabla 'usuarios'...");
+
+        // Esta es la línea crítica
+        const { error: dbError } = await _supabase.from('usuarios').insert(userData);
+
+        console.log("📝 PASO 6: La operación de inserción ha respondido. Verificando si hubo un error...");
+
+        if (dbError) {
+            console.error("⛔️ ERROR al insertar en la base de datos:", dbError);
+            throw dbError; // Forzamos que vaya al catch
+        }
+
+        console.log("🎉 PASO 7: ¡Inserción exitosa en la base de datos! El registro se completó.");
+        alert('¡Registro exitoso! Ya puedes iniciar sesión.');
+        setView('login');
+
+    } catch (error) {
+        // Si todo va bien, ahora sí deberíamos llegar aquí si algo falla
+        console.error("🛑 CATCH FINAL: Se ha capturado un error general en el registro.", error);
+        alert("Hubo un error al registrar. Revisa la consola (F12) para más detalles.");
+    }
+}
 
         async function handleLogin(event) {
             event.preventDefault();
@@ -192,6 +223,7 @@
     </script>
 </body>
 </html>
+
 
 
 
