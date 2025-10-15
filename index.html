@@ -88,21 +88,34 @@
 
        async function handleRegister(event, role) {
     event.preventDefault();
-    console.log("✅ PASO 1: La función handleRegister se ha iniciado para el rol:", role);
-
-    const email = event.target.email.value;
-    const password = event.target.password.value;
+    console.log(`✅ INICIO DEL REGISTRO para rol: ${role}`);
 
     try {
-        console.log("📄 PASO 2: Intentando crear el usuario en el sistema de autenticación (Auth)...");
+        const email = event.target.email.value;
+        const password = event.target.password.value;
+        console.log("Datos básicos leídos:", { email, password });
+
+        // --- Verificación de campos específicos del rol ---
+        if (role === 'Productor') {
+            console.log("Verificando campos de Productor...");
+            console.log("Campo 'nombre':", event.target.nombre);
+            console.log("Campo 'dni':", event.target.dni);
+            // Si alguno de los de arriba es 'undefined', la siguiente línea fallará.
+        } else if (role === 'Proveedor') {
+            console.log("Verificando campos de Proveedor...");
+            console.log("Campo 'empresa':", event.target.empresa);
+            console.log("Campo 'cuit':", event.target.cuit);
+            // Si alguno de los de arriba es 'undefined', la siguiente línea fallará.
+        }
+
+        console.log("Iniciando creación de usuario en Auth...");
         const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
 
         if (authError) {
-            console.error("⛔️ ERROR en el paso de autenticación:", authError);
-            throw authError; // Forzamos que vaya al catch
+            console.error("⛔️ ERROR EN AUTH:", authError);
+            throw authError;
         }
-
-        console.log("👍 PASO 3: Usuario creado exitosamente en Auth. ID:", authData.user.id);
+        console.log("👍 Usuario creado en Auth con ID:", authData.user.id);
 
         let userData = {
             id: authData.user.id,
@@ -117,31 +130,24 @@
             userData.nombre_empresa = event.target.empresa.value;
             userData.cuit = event.target.cuit.value;
         }
+        console.log("📦 Datos listos para insertar:", userData);
 
-        console.log("📦 PASO 4: Datos preparados para insertar en la base de datos:", userData);
-        console.log("⏳ PASO 5: Intentando insertar los datos en la tabla 'usuarios'...");
-
-        // Esta es la línea crítica
         const { error: dbError } = await _supabase.from('usuarios').insert(userData);
 
-        console.log("📝 PASO 6: La operación de inserción ha respondido. Verificando si hubo un error...");
-
         if (dbError) {
-            console.error("⛔️ ERROR al insertar en la base de datos:", dbError);
-            throw dbError; // Forzamos que vaya al catch
+            console.error("⛔️ ERROR EN BASE DE DATOS:", dbError);
+            throw dbError;
         }
 
-        console.log("🎉 PASO 7: ¡Inserción exitosa en la base de datos! El registro se completó.");
+        console.log("🎉 ¡REGISTRO COMPLETO Y EXITOSO!");
         alert('¡Registro exitoso! Ya puedes iniciar sesión.');
         setView('login');
 
     } catch (error) {
-        // Si todo va bien, ahora sí deberíamos llegar aquí si algo falla
-        console.error("🛑 CATCH FINAL: Se ha capturado un error general en el registro.", error);
-        alert("Hubo un error al registrar. Revisa la consola (F12) para más detalles.");
+        console.error("🛑 ERROR CAPTURADO EN EL BLOQUE CATCH:", error);
+        alert("Hubo un error al registrar. Revisa la consola (F12).");
     }
 }
-
         async function handleLogin(event) {
             event.preventDefault();
             const email = event.target.email.value;
@@ -223,6 +229,7 @@
     </script>
 </body>
 </html>
+
 
 
 
