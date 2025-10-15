@@ -106,8 +106,9 @@
                 alert('¡Registro exitoso! Ya puedes iniciar sesión.');
                 setView('login');
             } catch (error) {
-                alert("Error: " + error.message);
-            }
+    console.error("Error detallado de Supabase:", error);
+    alert("Falló el registro. Revisá la consola (F12) para ver el error específico.");
+}
         }
 
         async function handleLogin(event) {
@@ -191,6 +192,7 @@
     </script>
 </body>
 </html>
+
 
 
 
