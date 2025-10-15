@@ -107,51 +107,60 @@ function pruebaDeClick() {
 }
        async function handleRegister(event, role) {
     event.preventDefault();
-    console.log("--- INICIANDO REGISTRO (VERSIÓN DE DEPURACIÓN FINAL) ---");
+    console.log("--- INICIANDO REGISTRO (VERSIÓN CORREGIDA) ---");
 
     const email = event.target.email.value;
     const password = event.target.password.value;
 
-    // 1. PASO DE AUTENTICACIÓN
-    const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
+    try {
+        // 1. PASO DE AUTENTICACIÓN
+        const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
 
-    if (authError) {
-        console.error("⛔️ FALLO EN EL PASO DE AUTH:", authError);
-        alert("Falló la creación del usuario. Revisa la consola.");
-        return; // Detiene la función aquí
-    }
-    console.log("✅ AUTH EXITOSO. Usuario y sesión creados:", authData);
+        if (authError) {
+            // Si falla aquí (ej: usuario ya existe), se detiene.
+            throw authError;
+        }
+        if (!authData.user) {
+            throw new Error("No se pudo crear el usuario en el sistema de autenticación.");
+        }
+        console.log("✅ AUTH EXITOSO. Usuario creado:", authData.user.id);
 
-    // 2. PREPARACIÓN DE DATOS PARA LA BASE DE DATOS
-    let userData = {
-        id: authData.user.id,
-        email: email,
-        rol: role
-    };
+        // 2. PREPARACIÓN DE DATOS PARA LA TABLA 'usuarios'
+        let userData = {
+            id: authData.user.id,
+            email: email,
+            rol: role
+        };
 
-    if (role === 'Productor') {
-        userData.nombre_completo = event.target.nombre.value;
-        userData.dni = event.target.dni.value;
-    } else {
-        userData.nombre_empresa = event.target.empresa.value;
-        userData.cuit = event.target.cuit.value;
-    }
-    console.log("📦 DATOS LISTOS PARA INSERTAR:", userData);
+        if (role === 'Productor') {
+            userData.nombre_completo = event.target.nombre.value;
+            userData.dni = event.target.dni.value;
+        } else { // Es Proveedor
+            userData.nombre_empresa = event.target.empresa.value;
+            userData.cuit = event.target.cuit.value;
+        }
+        console.log("📦 DATOS LISTOS PARA INSERTAR:", userData);
 
-    // 3. INSERCIÓN EN LA BASE DE DATOS (EL PASO CRÍTICO)
-    console.log("⏳ INTENTANDO INSERTAR EN LA TABLA 'usuarios'...");
-    const response = await _supabase.from('usuarios').insert(userData);
+        // 3. INSERCIÓN EN LA BASE DE DATOS
+        const { error: dbError } = await _supabase.from('usuarios').insert(userData);
 
-    // Esta es la línea más importante, nos mostrará la respuesta completa
-    console.log("📬 RESPUESTA COMPLETA DE LA OPERACIÓN DE INSERCIÓN:", response);
+        if (dbError) {
+            // Si falla aquí, lanza un error.
+            throw dbError;
+        }
+        console.log("🎉 ¡ÉXITO! DATOS GUARDADOS EN LA TABLA 'usuarios'.");
 
-    if (response.error) {
-         console.error("⛔️ FALLO DETECTADO EN LA INSERCIÓN:", response.error);
-         alert("El usuario se creó pero falló al guardar el perfil. Revisa la consola.");
-    } else {
-         console.log("🎉 ¡ÉXITO TOTAL! EL REGISTRO SE COMPLETÓ.");
-         alert('¡Registro exitoso! Ya puedes iniciar sesión.');
-         setView('login');
+        // 4. REDIRECCIÓN DIRECTA AL DASHBOARD
+        alert('¡Registro exitoso! Bienvenido/a a Rent.Ar.');
+        if (role === 'Productor') {
+            setView('dashboard_productor');
+        } else {
+            setView('dashboard_proveedor');
+        }
+
+    } catch (error) {
+        console.error("⛔️ ERROR EN EL PROCESO DE REGISTRO:", error);
+        alert("Error en el registro: " + error.message);
     }
 }
         async function handleLogin(event) {
@@ -275,6 +284,7 @@ function pruebaDeClick() {
     </script>
 </body>
 </html>
+
 
 
 
