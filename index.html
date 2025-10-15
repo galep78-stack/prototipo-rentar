@@ -88,64 +88,51 @@
 
        async function handleRegister(event, role) {
     event.preventDefault();
-    console.log(`✅ INICIO DEL REGISTRO para rol: ${role}`);
+    console.log("--- INICIANDO REGISTRO (VERSIÓN DE DEPURACIÓN FINAL) ---");
 
-    try {
-        const email = event.target.email.value;
-        const password = event.target.password.value;
-        console.log("Datos básicos leídos:", { email, password });
+    const email = event.target.email.value;
+    const password = event.target.password.value;
 
-        // --- Verificación de campos específicos del rol ---
-        if (role === 'Productor') {
-            console.log("Verificando campos de Productor...");
-            console.log("Campo 'nombre':", event.target.nombre);
-            console.log("Campo 'dni':", event.target.dni);
-            // Si alguno de los de arriba es 'undefined', la siguiente línea fallará.
-        } else if (role === 'Proveedor') {
-            console.log("Verificando campos de Proveedor...");
-            console.log("Campo 'empresa':", event.target.empresa);
-            console.log("Campo 'cuit':", event.target.cuit);
-            // Si alguno de los de arriba es 'undefined', la siguiente línea fallará.
-        }
+    // 1. PASO DE AUTENTICACIÓN
+    const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
 
-        console.log("Iniciando creación de usuario en Auth...");
-        const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
+    if (authError) {
+        console.error("⛔️ FALLO EN EL PASO DE AUTH:", authError);
+        alert("Falló la creación del usuario. Revisa la consola.");
+        return; // Detiene la función aquí
+    }
+    console.log("✅ AUTH EXITOSO. Usuario y sesión creados:", authData);
 
-        if (authError) {
-            console.error("⛔️ ERROR EN AUTH:", authError);
-            throw authError;
-        }
-        console.log("👍 Usuario creado en Auth con ID:", authData.user.id);
+    // 2. PREPARACIÓN DE DATOS PARA LA BASE DE DATOS
+    let userData = {
+        id: authData.user.id,
+        email: email,
+        rol: role
+    };
 
-        let userData = {
-            id: authData.user.id,
-            email: email,
-            rol: role
-        };
+    if (role === 'Productor') {
+        userData.nombre_completo = event.target.nombre.value;
+        userData.dni = event.target.dni.value;
+    } else {
+        userData.nombre_empresa = event.target.empresa.value;
+        userData.cuit = event.target.cuit.value;
+    }
+    console.log("📦 DATOS LISTOS PARA INSERTAR:", userData);
 
-        if (role === 'Productor') {
-            userData.nombre_completo = event.target.nombre.value;
-            userData.dni = event.target.dni.value;
-        } else {
-            userData.nombre_empresa = event.target.empresa.value;
-            userData.cuit = event.target.cuit.value;
-        }
-        console.log("📦 Datos listos para insertar:", userData);
+    // 3. INSERCIÓN EN LA BASE DE DATOS (EL PASO CRÍTICO)
+    console.log("⏳ INTENTANDO INSERTAR EN LA TABLA 'usuarios'...");
+    const response = await _supabase.from('usuarios').insert(userData);
 
-        const { error: dbError } = await _supabase.from('usuarios').insert(userData);
+    // Esta es la línea más importante, nos mostrará la respuesta completa
+    console.log("📬 RESPUESTA COMPLETA DE LA OPERACIÓN DE INSERCIÓN:", response);
 
-        if (dbError) {
-            console.error("⛔️ ERROR EN BASE DE DATOS:", dbError);
-            throw dbError;
-        }
-
-        console.log("🎉 ¡REGISTRO COMPLETO Y EXITOSO!");
-        alert('¡Registro exitoso! Ya puedes iniciar sesión.');
-        setView('login');
-
-    } catch (error) {
-        console.error("🛑 ERROR CAPTURADO EN EL BLOQUE CATCH:", error);
-        alert("Hubo un error al registrar. Revisa la consola (F12).");
+    if (response.error) {
+         console.error("⛔️ FALLO DETECTADO EN LA INSERCIÓN:", response.error);
+         alert("El usuario se creó pero falló al guardar el perfil. Revisa la consola.");
+    } else {
+         console.log("🎉 ¡ÉXITO TOTAL! EL REGISTRO SE COMPLETÓ.");
+         alert('¡Registro exitoso! Ya puedes iniciar sesión.');
+         setView('login');
     }
 }
         async function handleLogin(event) {
@@ -229,6 +216,7 @@
     </script>
 </body>
 </html>
+
 
 
 
