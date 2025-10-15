@@ -123,17 +123,19 @@ async function handleLogout() {
     setView('home');
 }
 
-// Función para registrar un nuevo usuario
+// Función para registrar un nuevo usuario (VERSIÓN FINAL Y ROBUSTA)
 async function handleRegister(event) {
-    event.preventDefault(); // Previene recarga
+    event.preventDefault(); // Previene la recarga de la página
 
     if (!selectedRole) {
         alert("Por favor, selecciona un rol primero.");
         return;
     }
 
-    const email = event.target.email.value;
-    const password = event.target.password.value;
+    // Usamos FormData para leer los datos del formulario de manera segura
+    const formData = new FormData(event.target);
+    const email = formData.get('email');
+    const password = formData.get('password');
 
     try {
         // 1. Crear usuario en Auth
@@ -148,11 +150,11 @@ async function handleRegister(event) {
         };
 
         if (selectedRole === 'Productor') {
-            userData.nombre_completo = event.target.nombre.value;
-            userData.dni = event.target.dni.value;
+            userData.nombre_completo = formData.get('nombre');
+            userData.dni = formData.get('dni');
         } else {
-            userData.nombre_empresa = event.target.empresa.value;
-            userData.cuit = event.target.cuit.value;
+            userData.nombre_empresa = formData.get('empresa');
+            userData.cuit = formData.get('cuit');
         }
 
         // 3. Insertar perfil en la tabla 'usuarios'
@@ -168,7 +170,6 @@ async function handleRegister(event) {
         alert("Error: " + error.message);
     }
 }
-
 
 // ==================================================================
 // == LÓGICA DE RENDERIZADO DE VISTAS ==
@@ -240,6 +241,7 @@ function renderInfoView(title) { return `<div class="p-8 rounded-xl"><h1 class="
     </script>
 </body>
 </html>
+
 
 
 
