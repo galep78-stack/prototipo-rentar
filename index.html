@@ -18,8 +18,12 @@
     </script>
     <style>
         body { background-color: #061637; color: white; min-height: 100vh; display: flex; flex-direction: column; font-family: Arial, sans-serif; }
-        .btn-secondary { border: 2px solid #5de0e6; color: #5de0e6; }
-        .role-selector.active { border-color: #004aad; background-color: rgba(0, 74, 173, 0.1); }
+        h1, h2, h3 { font-family: 'Helvetica World Bold', Arial, sans-serif; }
+        main { flex-grow: 1; }
+        .btn-secondary { border: 2px solid #5de0e6; color: #5de0e6; transition: background-color 0.3s; }
+        .btn-secondary:hover { background-color: rgba(93, 224, 230, 0.1); }
+        .logo-text-header { font-family: 'Helvetica World Bold', Arial, sans-serif; font-size: 1.75rem; font-weight: 700; color: white; }
+        .role-selector.active { border-color: #004aad; background-color: rgba(0, 74, 173, 0.1); box-shadow: 0 0 15px rgba(93, 224, 230, 0.3); }
     </style>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -30,11 +34,35 @@
         <div id="content-view"></div>
     </main>
     <footer class="bg-primary-dark border-t border-accent-blue/20">
-        </footer>
+        <div class="container mx-auto px-4 pt-10 pb-6">
+             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+                 <div>
+                    <a href="#" onclick="setView('home')" class="flex items-center">
+                        <img src="https://i.imgur.com/5v4pS1z.png" alt="Rent.Ar Logo" class="h-6 mr-2"> 
+                        <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
+                    </a>
+                    <p class="text-gray-400 font-sans mt-2">© 2025 Rent.Ar.</p>
+                </div>
+                <div>
+                    <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Soporte</h5>
+                    <ul class="space-y-2 font-sans">
+                        <li><a href="#" onclick="setView('info', 'Contacto')" class="text-gray-300 hover:text-accent-cyan transition">Contacto</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Síguenos</h5>
+                </div>
+             </div>
+             <div class="border-t border-accent-blue/20 mt-8 pt-6 text-center text-xs text-gray-500 font-sans">
+                <h6 class="font-bold text-gray-400 mb-2 uppercase">Aviso Legal</h6>
+                <p>Rent.ar es una plataforma que actúa como intermediario. No nos responsabilizamos por los acuerdos o transacciones entre las partes.</p>
+            </div>
+        </div>
+    </footer>
 
     <script>
         // ==================================================================
-        // == PEGA AQUÍ TUS CREDENCIALES DE SUPABASE ==
+        // == PASO 1: PEGA AQUÍ TUS CREDENCIALES DE SUPABASE ==
         // ==================================================================
         const SUPABASE_URL = 'https://lnugnwgwopfdlgvkmhks.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxudWdud2d3b3BmZGxndmttaGtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0OTk5MjEsImV4cCI6MjA3NjA3NTkyMX0.T8cm6rgkhUoGLSUzwziXUIWfd2oACoKcHNyNCBE4ltE';
@@ -42,90 +70,12 @@
 
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         let currentUser = null;
         let selectedRole = null;
         const contentView = document.getElementById('content-view');
 
-        _supabase.auth.onAuthStateChange(async (event, session) => { /* ... */ });
-        async function handleRegister(event, role) { /* ... */ }
-        async function handleLogin(event) { /* ... */ }
-        async function handleLogout() { await _supabase.auth.signOut(); setView('home'); }
-
-        const MAPA_TODOS_LOS_PROVEEDORES = "https://www.google.com/maps/d/embed?mid=1_E-4s5f_9mt4W24U85GgZ3-V8y0-gLU&ehbc=2E312F";
-
-        function showProviderOnMap(address) {
-            const iframe = document.getElementById('map-iframe');
-            if (iframe) {
-                iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-            }
-        }
-
-        function resetMap() {
-            const iframe = document.getElementById('map-iframe');
-            if (iframe) {
-                iframe.src = MAPA_TODOS_LOS_PROVEEDORES;
-            }
-        }
-
-        function setView(viewName, data = null) { renderView(viewName, data); }
-        async function renderView(viewName, data = null) {
-            renderHeader();
-            let htmlContent = '';
-            switch (viewName) {
-                case 'home': htmlContent = renderHomeView(); break;
-                case 'login': htmlContent = renderLoginView(); break;
-                case 'register': htmlContent = renderRegisterView(); break;
-                case 'dashboard_productor': htmlContent = renderProducerDashboard(); break;
-                case 'dashboard_proveedor': htmlContent = await renderProviderDashboard(); break;
-                case 'provider_details': htmlContent = renderProviderDetailsView(data); break;
-                case 'add_product': htmlContent = renderAddProductFormView(); break;
-                case 'edit_product': htmlContent = await renderEditProductFormView(data); break;
-                default: htmlContent = renderHomeView();
-            }
-            contentView.innerHTML = htmlContent;
-        }
-
-        window.onload = () => setView(window.location.hash.substring(1) || 'home');
-        function updateRegisterForm(role) { selectedRole = role; renderView('register'); }
-
-        function renderHeader() { /* ... */ }
-        function renderHomeView() { /* ... */ }
-        function renderLoginView() { /* ... */ }
-        function renderRegisterView() { /* ... */ }
-        function renderProviderDashboard() { /* ... */ }
-        function renderProviderDetailsView(providerId) { /* ... */ }
-        function renderAddProductFormView() { /* ... */ }
-        function renderEditProductFormView(productId) { /* ... */ }
-
-        function renderProducerDashboard() {
-            const proveedores_simulados = [ { id: 1, nombre: "Neo Rental", tipo: "Equipos", ubicacion: "CABA", address: "Avenida de Mayo 1370, Buenos Aires, Argentina" }, { id: 2, nombre: "Arenas Studios", tipo: "Locación", ubicacion: "CABA", address: "Av. Pedro de Mendoza 965, Buenos Aires, Argentina" }, { id: 3, nombre: "Estudios Multimedia", tipo: "Animación", ubicacion: "Córdoba", address: "Luis Jose de Tejeda 3962, Córdoba, Argentina" }, { id: 4, nombre: "PVestuarista", tipo: "Vestuario", ubicacion: "Rosario", address: "Rioja 1052, Rosario, Santa Fe, Argentina" } ];
-            let providersListHtml = proveedores_simulados.map(provider => `
-                <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-2">
-                    <div><h4 class="font-bold text-lg">${provider.nombre}</h4><p class="text-sm text-gray-400">${provider.tipo} en ${provider.ubicacion}</p></div>
-                    <div class="flex-shrink-0 flex gap-2">
-                        <button onclick="showProviderOnMap('${provider.address}')" class="bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold text-sm">Ver en Mapa</button>
-                        <button onclick="setView('provider_details', ${provider.id})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold text-sm">Ver Detalles</button>
-                    </div>
-                </div>
-            `).join('');
-
-            return `
-                <div class="p-8 rounded-xl bg-secondary-dark/50">
-                    <div class="flex justify-between items-center">
-                        <h1 class="text-4xl font-bold text-accent-cyan">Buscar Recursos</h1>
-                        <button onclick="resetMap()" class="text-sm btn-secondary px-3 py-1 rounded-lg">Mostrar Todos</button>
-                    </div>
-                    <p class="text-lg text-gray-300 my-6">Explora el mapa para ver todos los proveedores o haz clic en "Ver en Mapa" para localizar uno específico.</p>
-                    
-                    <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
-                        <iframe id="map-iframe" src="${MAPA_TODOS_LOS_PROVEEDORES}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                    </div>
-
-                    <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan">Proveedores Destacados</h2>
-                    <div class="space-y-4">${providersListHtml}</div>
-                </div>
-            `;
-        }
-    </script>
-</body>
-</html>
+        _supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session && session.user) {
+                try {
+                    const { data: userData, error } = await _supabase.from('usuarios').select('rol
