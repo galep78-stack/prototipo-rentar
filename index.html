@@ -175,7 +175,13 @@ function pruebaDeClick() {
             await _supabase.auth.signOut();
             setView('home');
         }
-
+const MAPA_TODOS_LOS_PROVEEDORES = "https://www.google.com/maps/d/embed?mid=1_4i7b_g-037o-1zL5-0o8-2h6k8";
+        function resetMap() {
+    const iframe = document.getElementById('map-iframe');
+    if (iframe) {
+        iframe.src = MAPA_TODOS_LOS_PROVEEDORES;
+    }
+}
         function showProviderOnMap(address) {
             const iframe = document.getElementById('map-iframe');
             if (iframe) {
@@ -276,6 +282,7 @@ case 'info':
     </script>
 </body>
 </html>
+
 
 
 
