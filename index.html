@@ -183,10 +183,11 @@ const MAPA_TODOS_LOS_PROVEEDORES = "https://www.google.com/maps/d/embed?mid=1_E-
     }
 }
         function showProviderOnMap(address) {
-            const iframe = document.getElementById('map-iframe');
-            if (iframe) {
-                iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
-            }
+    const iframe = document.getElementById('map-iframe');
+    if (iframe) {
+        iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
+}           }
         }
 
         function setView(viewName, data = null) { renderView(viewName, data); }
@@ -318,6 +319,7 @@ case 'info':
     </script>
 </body>
 </html>
+
 
 
 
