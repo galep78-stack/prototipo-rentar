@@ -210,21 +210,7 @@ async function handleGoogleLogin() {
         alert("Error: " + error.message);
     }
 }
- // ==================================================================
-// == DELEGACIÓN DE EVENTOS (LA SOLUCIÓN MÁS ROBUSTA) ==
-// ==================================================================
-document.addEventListener('click', function(event) {
-    // Verificamos si el elemento clickeado (o uno de sus padres) es el botón de logout
-    const logoutButton = event.target.closest('#logout-button');
 
-    if (logoutButton) {
-        // Prevenimos cualquier comportamiento por defecto que pudiera tener
-        event.preventDefault();
-        
-        console.log("Logout button clicked! Firing handleLogout...");
-        handleLogout();
-    }
-});
         async function handleLogout() {
             await _supabase.auth.signOut();
             setView('home');
@@ -386,6 +372,7 @@ function renderProductorForm() {
     </script>
 </body>
 </html>
+
 
 
 
