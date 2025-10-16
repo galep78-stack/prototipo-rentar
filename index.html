@@ -100,15 +100,34 @@ contentView.addEventListener('submit', (event) => {
         handleRegister(event, selectedRole);
     }
 });
-        _supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session && session.user) {
-                try {
-                    const { data: userData, error } = await _supabase.from('usuarios').select('rol').eq('id', session.user.id).single();
-                    if (error && error.code !== 'PGRST116') throw error;
-                    currentUser = { ...session.user, ...userData };
-                } catch(e) { console.error("Error al obtener perfil:", e); currentUser = session.user; }
-            } else { currentUser = null; }
-            renderHeader();
+      // ==================================================================
+// == MANEJO DE AUTENTICACIÓN Y SESIÓN (VERSIÓN FINAL) ==
+// ==================================================================
+let initialLoad = true; // Una bandera para controlar la primera carga
+
+_supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session && session.user) {
+        try {
+            const { data: userData, error } = await _supabase.from('usuarios').select('rol').eq('id', session.user.id).single();
+            if (error && error.code !== 'PGRST116') throw error;
+            currentUser = { ...session.user, ...userData };
+        } catch (e) {
+            console.error("Error al obtener perfil:", e);
+            currentUser = session.user;
+        }
+    } else {
+        currentUser = null;
+    }
+
+    // Siempre renderizamos el header para que se actualice en login/logout
+    renderHeader();
+
+    // Si es la primera vez que se ejecuta este código, cargamos la vista 'home'
+    if (initialLoad) {
+        setView('home');
+        initialLoad = false; // Desactivamos la bandera para que no vuelva a cargar 'home' en cada cambio
+    }
+});
         });
 function pruebaDeClick() {
     console.log("¡CLICK DETECTADO! La conexión entre HTML y JS funciona.");
@@ -388,6 +407,7 @@ function renderProductorForm() {
     </script>
 </body>
 </html>
+
 
 
 
