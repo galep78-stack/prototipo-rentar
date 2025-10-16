@@ -316,7 +316,6 @@ async function handleGoogleLogin() {
             contentView.innerHTML = htmlContent;
         }
 
-        window.onload = () => setView(window.location.hash.substring(1) || 'home');
         function updateRegisterForm(role) { selectedRole = role; renderView('register'); }
 
      function renderHeader() {
@@ -407,6 +406,7 @@ function renderProductorForm() {
     </script>
 </body>
 </html>
+
 
 
 
