@@ -93,15 +93,34 @@ const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // DATOS DE PRUEBA LOCALES
-        
-        const proveedores_simulados = [
-            { id: 1, nombre: "Neo Rental", tipo: "Equipos", ubicacion: "CABA", address: "Avenida de Mayo 1370, Buenos Aires, Argentina", opiniones: [ { user: 'Prod. Lihué', rating: 5, comment: 'Siempre tienen stock de todo.'}, { user: 'Cine Fértil', rating: 4, comment: 'Muy buena atención.' } ] },
-            { id: 2, nombre: "Arenas Studios", tipo: "Locación", ubicacion: "CABA", address: "Av. Pedro de Mendoza 965, Buenos Aires, Argentina", opiniones: [ { user: 'La Doble A', rating: 5, comment: 'Los mejores estudios de Buenos Aires.'} ] },
-            { id: 3, nombre: "Estudios Multimedia", tipo: "Animación", ubicacion: "Córdoba", address: "Luis Jose de Tejeda 3962, Córdoba, Argentina", opiniones: [ { user: 'El Birque', rating: 5, comment: 'Excelente trabajo de animación 2D.'} ] },
-            { id: 4, nombre: "PVestuarista", tipo: "Vestuario", ubicacion: "Rosario", address: "Rioja 1052, Rosario, Santa Fe, Argentina", opiniones: [ { user: 'Gato Grande', rating: 5, comment: 'Un placard inmenso y la mejor onda.'} ] }
-        ];
+     // DATOS REALES (Inicialmente vacía, se llenará con la BDD de Supabase)
+let proveedores = []; 
 
+// FUNCIONES ASÍNCRONAS PARA CARGAR Y MANEJAR DATOS
+async function loadProveedores() {
+    try {
+        // Obtenemos los datos de la tabla 'proveedores'. 
+        // Usamos .select('*') para obtener todas las columnas.
+        const { data, error } = await supabase
+            .from('proveedores') 
+            .select('*'); 
+            
+        if (error) throw error;
+        
+        // Asignamos los datos reales a la variable global
+        proveedores = data; 
+        
+        // Si ya estamos en la vista del dashboard, la volvemos a renderizar
+        // para que muestre los datos recién cargados.
+        if (window.location.hash.includes('dashboard_productor')) {
+            setView('dashboard_productor'); 
+        }
+
+    } catch (error) {
+        console.error('Error cargando proveedores:', error.message);
+        // Si hay un error, dejamos la lista vacía, pero la app sigue funcionando.
+    }
+}
         // FUNCIONES DE FORMULARIO (PLACEHOLDERS)
       async function handleLogin(event) {
     event.preventDefault();
@@ -354,6 +373,7 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     </script>
 </body>
 </html>
+
 
 
 
