@@ -25,8 +25,6 @@
         .logo-text-header { font-family: 'Helvetica World Bold', Arial, sans-serif; font-size: 1.75rem; font-weight: 700; color: white; }
         .role-selector.active { border-color: #004aad; background-color: rgba(0, 74, 173, 0.1); box-shadow: 0 0 15px rgba(93, 224, 230, 0.3); }
     </style>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <header id="main-header" class="sticky top-0 z-50 bg-primary-dark shadow-xl"></header>
@@ -35,6 +33,143 @@
     </main>
     <footer class="bg-primary-dark border-t border-accent-blue/20">
         <div class="container mx-auto px-4 pt-10 pb-6">
+             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+                 <div>
+                    <a href="#" onclick="setView('home')" class="flex items-center">
+                        <img src="https://i.imgur.com/5v4pS1z.png" alt="Rent.Ar Logo" class="h-6 mr-2"> 
+                        <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
+                    </a>
+                    <p class="text-gray-400 font-sans mt-2">© 2025 Rent.Ar.</p>
+                </div>
+                <div>
+                    <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Soporte</h5>
+                    <ul class="space-y-2 font-sans">
+                        <li><a href="#" onclick="setView('info', 'Contacto')" class="text-gray-300 hover:text-accent-cyan transition">Contacto</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Síguenos</h5>
+                </div>
+             </div>
+             <div class="border-t border-accent-blue/20 mt-8 pt-6 text-center text-xs text-gray-500 font-sans">
+                <h6 class="font-bold text-gray-400 mb-2 uppercase">Aviso Legal</h6>
+                <p>Rent.ar es una plataforma que actúa como intermediario. No nos responsabilizamos por los acuerdos o transacciones entre las partes.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let currentUser = null;
+        let selectedRole = null;
+        const contentView = document.getElementById('content-view');
+
+        const proveedores_simulados = [
+            { id: 1, nombre: "Neo Rental", tipo: "Equipos", ubicacion: "CABA", address: "Avenida de Mayo 1370, Buenos Aires, Argentina", opiniones: [ { user: 'Prod. Lihué', rating: 5, comment: 'Siempre tienen stock de todo.'}, { user: 'Cine Fértil', rating: 4, comment: 'Muy buena atención.' } ] },
+            { id: 2, nombre: "Arenas Studios", tipo: "Locación", ubicacion: "CABA", address: "Av. Pedro de Mendoza 965, Buenos Aires, Argentina", opiniones: [ { user: 'La Doble A', rating: 5, comment: 'Los mejores estudios de Buenos Aires.'} ] },
+            { id: 3, nombre: "Estudios Multimedia", tipo: "Animación", ubicacion: "Córdoba", address: "Luis Jose de Tejeda 3962, Córdoba, Argentina", opiniones: [ { user: 'El Birque', rating: 5, comment: 'Excelente trabajo de animación 2D.'} ] },
+            { id: 4, nombre: "PVestuarista", tipo: "Vestuario", ubicacion: "Rosario", address: "Rioja 1052, Rosario, Santa Fe, Argentina", opiniones: [ { user: 'Gato Grande', rating: 5, comment: 'Un placard inmenso y la mejor onda.'} ] }
+        ];
+
+        // --- LÓGICA DE NAVEGACIÓN Y VISTAS ---
+        function setView(viewName, data = null) {
+            renderView(viewName, data);
+            window.history.pushState({view: viewName, data: data}, '', `#${viewName}`);
+        }
+
+        function renderView(viewName, data = null) {
+            renderHeader();
+            let htmlContent = '';
+            switch (viewName) {
+                case 'home': htmlContent = renderHomeView(); break;
+                case 'login': htmlContent = renderLoginView(); break;
+                case 'register': htmlContent = renderRegisterView(); break;
+                case 'dashboard_productor': htmlContent = renderProducerDashboard(); break;
+                case 'dashboard_proveedor': htmlContent = renderProviderDashboard(); break;
+                case 'provider_details': htmlContent = renderProviderDetailsView(data); break;
+                case 'verification': htmlContent = renderVerificationView(data); break;
+                case 'info':
+                    if (data === '¿Cómo funciona?') {
+                        htmlContent = renderComoFuncionaView();
+                    } else {
+                        htmlContent = renderInfoView(data);
+                    }
+                    break;
+                default: htmlContent = renderHomeView();
+            }
+            contentView.innerHTML = htmlContent;
+        }
+
+        window.onload = () => setView(window.location.hash.substring(1) || 'home');
+        window.onpopstate = (event) => {
+            if (event.state) renderView(event.state.view, event.state.data);
+        };
+        
+        // --- FUNCIONES SIMULADAS DE LOGIN Y REGISTRO ---
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            currentUser = { email: email };
+            const role = Math.random() < 0.5 ? 'dashboard_productor' : 'dashboard_proveedor';
+            setView(role);
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            setView('home');
+        }
+
+        function updateRegisterForm(role) {
+            selectedRole = role;
+            renderView('register');
+        }
+        
+        // --- OTRAS FUNCIONES ---
+        function showProviderOnMap(address) {
+            const iframe = document.getElementById('map-iframe');
+            if (iframe) {
+                iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+            }
+        }
+        
+        const MAPA_TODOS_LOS_PROVEEDORES = "https://www.google.com/maps/d/embed?mid=1_E-4s5f_9mt4W24U85GgZ3-V8y0-gLU&ehbc=2E312F";
+
+        function resetMap() {
+            const iframe = document.getElementById('map-iframe');
+            if (iframe) {
+                iframe.src = MAPA_TODOS_LOS_PROVEEDORES;
+            }
+        }
+
+        // --- PLANTILLAS DE VISTAS ---
+        function renderHeader() {
+            const header = document.getElementById('main-header');
+            let headerContent = '';
+            if (currentUser) {
+                headerContent = `<div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between"><a href="#" class="mb-4 md:mb-0 flex items-center" onclick="setView('home')"><img src="https://i.imgur.com/5v4pS1z.png" alt="Rent.Ar Logo" class="h-8 mr-2"><span class="logo-text-header text-accent-cyan">Rent.Ar</span></a><div class="flex items-center space-x-4"><span class="text-gray-300">Hola, ${currentUser.email}</span><button id="logout-button" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button></div></div>`;
+            } else {
+                headerContent = `<div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between"><a href="#" class="mb-4 md:mb-0 flex items-center" onclick="setView('home')"><img src="https://i.imgur.com/5v4pS1z.png" alt="Rent.Ar Logo" class="h-8 mr-2"><span class="logo-text-header text-accent-cyan">Rent.Ar</span></a><div class="flex flex-col md:flex-row items-center gap-4"><button onclick="setView('info', '¿Cómo funciona?')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">¿Cómo funciona?</button><div class="flex space-x-3"><button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button><button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button></div></div></div>`;
+            }
+            header.innerHTML = headerContent;
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', handleLogout);
+            }
+        }
+
+        function renderHomeView() { return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);"><div class="text-center max-w-4xl"><h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1><div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8"><input type="text" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark"><button onclick="setView('dashboard_productor')" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button></div></div></section><section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark"><h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy productor</h3><p class="text-gray-600 mb-6">Buscá equipos y servicios.</p><button onclick="setView('dashboard_productor')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button></div><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy proveedor</h3><p class="text-gray-600 mb-6">Publicá tu inventario.</p><button onclick="setView('login')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button></div></div></section>`; }
+        function renderLoginView() { return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`; }
+        function renderProductorForm() { return `<form onsubmit="setView('verification', { email: this.email.value }); return false;" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+        function renderProveedorForm() { return `<form onsubmit="setView('verification', { email: this.email.value }); return false;" class="space-y-4"> <input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" minlength="6" name="password" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+        function renderRegisterView() { return `<div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Registrate en Rent.Ar</h2><p class="text-center mb-4 text-gray-700">Seleccioná tu tipo de cuenta:</p><div class="flex justify-center space-x-4 mb-8"><button onclick="updateRegisterForm('Productor')" class="role-selector p-4 rounded-xl border-2 ${selectedRole === 'Productor' ? 'active' : 'border-gray-300'}"><h3 class="font-bold text-lg">Soy Productor</h3></button><button onclick="updateRegisterForm('Proveedor')" class="role-selector p-4 rounded-xl border-2 ${selectedRole === 'Proveedor' ? 'active' : 'border-gray-300'}"><h3 class="font-bold text-lg">Soy Proveedor</h3></button></div>${selectedRole ? (selectedRole === 'Productor' ? renderProductorForm() : renderProveedorForm()) : '<p class="text-center text-gray-600">Por favor, seleccioná un rol.</p>'} <p class="mt-6 text-center text-sm text-gray-600">¿Ya tenés cuenta? <a href="#" onclick="setView('login')" class="text-accent-blue hover:underline">Inicia Sesión</a></p></div>`; }
+        function renderProducerDashboard() { let providersListHtml = proveedores_simulados.map(provider => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4"><div><h4 class="font-bold text-lg font-heading">${provider.nombre}</h4><p class="text-sm text-gray-400 font-sans">${provider.tipo} en ${provider.ubicacion}</p></div><div class="flex-shrink-0 flex gap-2"><button onclick="showProviderOnMap('${provider.address}')" class="bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold hover:bg-opacity-80 transition text-sm">Ver en Mapa</button><button onclick="setView('provider_details', ${provider.id})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold hover:bg-opacity-80 transition text-sm">Ver Detalles</button></div></div>`).join(''); return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><div class="flex justify-between items-center"><h1 class="text-4xl font-bold text-accent-cyan">Buscar Recursos</h1><button onclick="resetMap()" class="text-sm btn-secondary px-3 py-1 rounded-lg">Mostrar Todos</button></div><p class="text-lg text-gray-300 my-6">Explora el mapa o haz clic en "Ver en Mapa" para localizar un proveedor.</p><div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden"><iframe id="map-iframe" src="${MAPA_TODOS_LOS_PROVEEDORES}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe></div><h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan">Proveedores Destacados</h2><div class="space-y-4">${providersListHtml}</div></div>`; }
+        function renderProviderDashboard() { return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4">Agrega un nuevo servicio a tu catálogo.</p><button class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4">Mis Solicitudes</h3><p class="text-gray-600 mb-4">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`; }
+        function renderProviderDetailsView(providerId) { const provider = proveedores_simulados.find(p => p.id === providerId); if (!provider) return `<p>Proveedor no encontrado.</p>`; const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join(''); let opinionsHtml = provider.opiniones.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg">${op.user}</h4></div><p class="text-gray-300 italic">"${op.comment}"</p></div>`).join(''); return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p>Sin opiniones.</p>'}</div></div>`; }
+        function renderVerificationView(data) { return `<div class="max-w-xl mx-auto p-10 rounded-xl text-center bg-white text-primary-dark border-4 border-accent-cyan"><h2 class="text-3xl font-bold mb-4">¡Registro Exitoso!</h2><p class="mb-8 text-gray-700">¡Tu cuenta ha sido creada! Ya puedes iniciar sesión.</p><button onclick="setView('login')" class="bg-accent-blue text-white p-3 rounded-lg font-semibold">Ir a Iniciar Sesión</button></div>`; }
+        function renderInfoView(title) { return `<div class="p-8 rounded-xl"><h1 class="text-4xl font-bold">${title || 'Información'}</h1></div>`; }
+        function renderComoFuncionaView() { return `<div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h1 class="text-3xl font-bold text-center mb-4 text-accent-blue font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-center text-gray-600 mb-10 font-sans">Encuentra todo lo que necesitas para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center"><div class="flex flex-col items-center"><div class="flex justify-center items-center mx-auto bg-accent-blue/10 rounded-full h-20 w-20 mb-4"><svg class="w-10 h-10 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-xl font-bold mb-2 font-heading">1. Busca y Encuentra</h3><p class="text-gray-600 font-sans">Usa nuestra barra de búsqueda o explora el mapa para encontrar equipos, locaciones y servicios.</p></div><div class="flex flex-col items-center"><div class="flex justify-center items-center mx-auto bg-accent-blue/10 rounded-full h-20 w-20 mb-4"><svg class="w-10 h-10 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-xl font-bold mb-2 font-heading">2. Contacta y Cotiza</h3><p class="text-gray-600 font-sans">Comunícate directamente con los proveedores a través de la plataforma.</p></div><div class="flex flex-col items-center"><div class="flex justify-center items-center mx-auto bg-accent-blue/10 rounded-full h-20 w-20 mb-4"><svg class="w-10 h-10 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-xl font-bold mb-2 font-heading">3. Produce y Califica</h3><p class="text-gray-600 font-sans">Una vez finalizado el trabajo, califica tu experiencia para ayudar a la comunidad.</p></div></div></div>`; }
+    </script>
+</body>
+</html>        <div class="container mx-auto px-4 pt-10 pb-6">
              <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
                  <div>
                     <a href="#" onclick="setView('home')" class="flex items-center">
@@ -231,3 +366,4 @@
     </script>
 </body>
 </html>
+
