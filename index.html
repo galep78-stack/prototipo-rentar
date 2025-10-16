@@ -92,7 +92,9 @@
 const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
         // DATOS DE PRUEBA LOCALES
+        
         const proveedores_simulados = [
             { id: 1, nombre: "Neo Rental", tipo: "Equipos", ubicacion: "CABA", address: "Avenida de Mayo 1370, Buenos Aires, Argentina", opiniones: [ { user: 'Prod. Lihué', rating: 5, comment: 'Siempre tienen stock de todo.'}, { user: 'Cine Fértil', rating: 4, comment: 'Muy buena atención.' } ] },
             { id: 2, nombre: "Arenas Studios", tipo: "Locación", ubicacion: "CABA", address: "Av. Pedro de Mendoza 965, Buenos Aires, Argentina", opiniones: [ { user: 'La Doble A', rating: 5, comment: 'Los mejores estudios de Buenos Aires.'} ] },
@@ -101,14 +103,66 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         ];
 
         // FUNCIONES DE FORMULARIO (PLACEHOLDERS)
-        function handleLogin(event) {
-            event.preventDefault();
-            alert("Lógica de inicio de sesión no implementada todavía.");
-        }
+       async function handleLogin(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const email = form.email.value;
+    const password = form.password.value;
+    
+    try {
+        // Llama a la función de inicio de sesión de Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
 
-        function handleRegister(event) {
-            event.preventDefault();
-            alert(`Lógica de registro para ${selectedRole || 'el rol seleccionado'} no implementada todavía.`);
+        if (error) throw error;
+        
+        // Simulación: establecer el usuario actual
+        currentUser = data.user; 
+        alert(`¡Bienvenido, ${currentUser.email}!`);
+        
+        // **IMPORTANTE**: Aquí deberías usar el rol del usuario para redirigir
+        // Por ahora, redirigimos al dashboard del productor para mantener la funcionalidad.
+        setView('dashboard_productor'); 
+
+    } catch (error) {
+        alert(`Error al iniciar sesión: ${error.message}`);
+        console.error('Error en Supabase SignIn:', error);
+    }
+}
+
+      async function handleRegister(event) {
+    event.preventDefault();
+    
+    // Obtener los datos del formulario
+    const form = event.target;
+    const email = form.email.value;
+    const password = form.password.value;
+    
+    const roleToRegister = selectedRole || 'productor'; 
+
+    try {
+        // Llama a la función de registro de Supabase
+        const { error } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: { user_role: roleToRegister }
+            }
+        });
+
+        if (error) throw error;
+        
+        alert("¡Registro exitoso! Por favor, revisa tu correo electrónico para confirmar tu cuenta antes de iniciar sesión. 📧");
+        setView('login'); 
+
+    } catch (error) {
+        alert(`Error en el registro: ${error.message}`);
+        console.error('Error en Supabase SignUp:', error);
+    }
+}
         }
         
         // LÓGICA DE MAPAS (CORREGIDO Y FUNCIONAL)
@@ -260,5 +314,6 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     </script>
 </body>
 </html>
+
 
 
