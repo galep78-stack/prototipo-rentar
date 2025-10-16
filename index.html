@@ -92,22 +92,23 @@
         // ⚠️ PASO 1.3: CLAVES (TUS CLAVES REALES)
         const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
-        let supabase = null; // Inicializamos a null para asignarla más tarde.
+        // 🟢 NUEVO CLIENTE DE TRABAJO
+        let supabaseClient = null; 
 
         // DATOS REALES (Inicialmente vacía, se llenará con la BDD de Supabase)
         let proveedores = []; 
 
         // ===================================================================
-        // 🟢 FUNCIÓN DE INICIALIZACIÓN (CORRIGE EL REFERENCE ERROR)
+        // 🟢 FUNCIÓN DE INICIALIZACIÓN (SOLUCIONA EL TYPE ERROR)
         // ===================================================================
         function initializeSupabase() {
-            // Verificamos que la función createClient de Supabase esté disponible
-            if (typeof supabase.createClient !== 'function') {
+            // Accedemos al objeto global 'supabase' de la librería (sin let/const)
+            if (typeof supabase.createClient !== 'function') { 
                 console.error("Error: La librería de Supabase no se cargó correctamente. Revisa la URL CDN.");
                 return false; 
             }
-            // Asignamos el cliente a la variable global 'supabase'
-            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            // Asignamos el cliente a nuestra variable de trabajo 'supabaseClient'
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             return true;
         }
 
@@ -116,10 +117,12 @@
         // ===================================================================
 
         async function loadProveedores() { 
-            if (!supabase) return; // Salir si Supabase no se inicializó
+            // 🟢 CAMBIO: Usamos supabaseClient
+            if (!supabaseClient) return; 
 
             try {
-                const { data, error } = await supabase
+                // 🟢 CAMBIO: Usamos supabaseClient
+                const { data, error } = await supabaseClient
                     .from('proveedores') 
                     .select('*'); 
                     
@@ -148,14 +151,16 @@
         
         async function handleLogin(event) {
             event.preventDefault();
-            if (!supabase) return alert("Error de conexión a la BDD.");
+            // 🟢 CAMBIO: Usamos supabaseClient
+            if (!supabaseClient) return alert("Error de conexión a la BDD.");
             
             const form = event.target;
             const email = form.email.value;
             const password = form.password.value;
             
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({
+                // 🟢 CAMBIO: Usamos supabaseClient
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
@@ -181,7 +186,8 @@
 
         async function handleRegister(event) {
             event.preventDefault();
-            if (!supabase) return alert("Error de conexión a la BDD.");
+            // 🟢 CAMBIO: Usamos supabaseClient
+            if (!supabaseClient) return alert("Error de conexión a la BDD.");
 
             const form = event.target;
             const email = form.email.value;
@@ -190,7 +196,8 @@
             const roleToRegister = selectedRole || 'productor'; 
 
             try {
-                const { data: authData, error: authError } = await supabase.auth.signUp({
+                // 🟢 CAMBIO: Usamos supabaseClient
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
                     options: {
@@ -203,7 +210,8 @@
                 const user = authData.user || authData.session?.user; 
 
                 if (roleToRegister === 'proveedor' && user && user.id) {
-                    const { error: dbError } = await supabase
+                    // 🟢 CAMBIO: Usamos supabaseClient
+                    const { error: dbError } = await supabaseClient
                         .from('proveedores')
                         .insert([
                             { 
@@ -377,12 +385,12 @@
         // PUNTO DE ARRANQUE DE LA APLICACIÓN
         window.onload = () => { 
             
-            // 🟢 SOLUCIÓN AL REFERENCE ERROR
             if (initializeSupabase()) {
                 renderHeader();
                 loadProveedores(); 
             } else {
-                renderHeader();
+                // Renderizamos el encabezado incluso si la BDD falla
+                renderHeader(); 
             }
 
             const initialView = window.location.hash.substring(1) || 'home';
