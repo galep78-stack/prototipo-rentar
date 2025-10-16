@@ -328,18 +328,11 @@ async function loadProveedores() {
         function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
 
         function renderProducerDashboard() { 
-            let providersListHtml = proveedores_simulados.map(provider => `
-                <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
-                    <div>
-                        <h4 class="font-bold text-lg font-heading">${provider.nombre}</h4>
-                        <p class="text-sm text-gray-400 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
-                    </div>
-                    <div class="flex-shrink-0 flex gap-2">
-                        <button onclick="showProviderOnMap('${provider.address}')" class="bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
-                        <button onclick="setView('provider_details', ${provider.id})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Detalles</button>
-                    </div>
-                </div>`
-            ).join(''); 
+           // ⬅️ USAMOS LA NUEVA VARIABLE GLOBAL 'proveedores'
+    let providersListHtml = proveedores.map(provider => `
+        <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
+        </div>`
+    ).join('');
             
             return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
@@ -377,6 +370,7 @@ window.onload = async () => {
     </script>
 </body>
 </html>
+
 
 
 
