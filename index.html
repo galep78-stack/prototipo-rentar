@@ -252,16 +252,50 @@ function pruebaDeClick() {
         window.onload = () => setView(window.location.hash.substring(1) || 'home');
         function updateRegisterForm(role) { selectedRole = role; renderView('register'); }
 
-        function renderHeader() {
+     function renderHeader() {
             const header = document.getElementById('main-header');
             if (!header) return;
             let headerContent = '';
+
             if (currentUser) {
-                headerContent = `<div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between"><a href="#" class="mb-4 md:mb-0 flex items-center" onclick="setView('home')"><img src="/isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2"><span class="logo-text-header text-accent-cyan">Rent.Ar</span></a><div class="flex items-center space-x-4"><span class="text-gray-300">Hola, ${currentUser.email}</span><button onclick="handleLogout()" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button></div></div>`;
+                // Vista para usuario conectado
+                headerContent = `
+                    <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
+                        <a href="#" class="mb-4 md:mb-0 flex items-center" onclick="setView('home')">
+                            <img src="img/logo-rentar.png" alt="Rent.Ar Logo" class="h-8 mr-2">
+                            <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
+                        </a>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-gray-300">Hola, ${currentUser.email}</span>
+                            <button id="logout-button" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>
+                        </div>
+                    </div>
+                `;
             } else {
-                headerContent = `<div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between"><a href="#" class="mb-4 md:mb-0 flex items-center" onclick="setView('home')"><img src="/isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2"><span class="logo-text-header text-accent-cyan">Rent.Ar</span></a><nav class="flex space-x-4 text-sm md:text-base mb-4 md:mb-0 font-sans"><a href="#" onclick="setView('info', 'Cómo funciona')" class="text-white hover:text-accent-cyan transition">Cómo funciona</a></nav><div class="flex space-x-3 mt-4 md:mt-0"><button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button><button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button></div></div>`;
+                // Vista para usuario desconectado (CON EL CAMBIO APLICADO)
+                headerContent = `
+                    <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
+                        <a href="#" class="mb-4 md:mb-0 flex items-center" onclick="setView('home')">
+                            <img src="img/logo-rentar.png" alt="Rent.Ar Logo" class="h-8 mr-2">
+                            <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
+                        </a>
+                        <div class="flex flex-col md:flex-row items-center gap-4">
+                            <button onclick="setView('info', '¿Cómo funciona?')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">¿Cómo funciona?</button>
+                            <div class="flex space-x-3">
+                                <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
+                                <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
+            
             header.innerHTML = headerContent;
+
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', handleLogout);
+            }
         }
         
         const proveedores_simulados = [
@@ -284,6 +318,7 @@ function pruebaDeClick() {
     </script>
 </body>
 </html>
+
 
 
 
