@@ -103,8 +103,48 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         ];
 
         // FUNCIONES DE FORMULARIO (PLACEHOLDERS)
-       async function handleLogin(event) {
+      async function handleLogin(event) {
     event.preventDefault();
+    
+    // 1. Obtener los valores del formulario
+    const form = event.target;
+    const email = form.email.value;
+    const password = form.password.value;
+    
+    try {
+        // 2. Llama a la función de inicio de sesión de Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
+
+        if (error) throw error;
+        
+        // 3. Almacenar el usuario
+        // Supabase devuelve el usuario y la sesión en 'data' si es exitoso.
+        currentUser = data.user; 
+        
+        alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
+
+        // 4. Lógica de Redirección (Usando el rol del usuario, si está disponible)
+        
+        // **NOTA IMPORTANTE:** Supabase guarda el rol en 'user_metadata', 
+        // por lo que accedemos a él mediante currentUser.user_metadata.user_role.
+        const userRole = currentUser.user_metadata.user_role;
+
+        if (userRole === 'proveedor') {
+            setView('dashboard_proveedor');
+        } else {
+            // Asume 'productor' si no hay rol o si es un rol diferente
+            setView('dashboard_productor'); 
+        }
+
+    } catch (error) {
+        // Manejo de errores (ej: credenciales incorrectas, correo no confirmado)
+        alert(`Error al iniciar sesión: ${error.message}`);
+        console.error('Error en Supabase SignIn:', error);
+    }
+}
     
     const form = event.target;
     const email = form.email.value;
@@ -314,6 +354,7 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     </script>
 </body>
 </html>
+
 
 
 
