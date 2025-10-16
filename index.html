@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rent.Ar - Prototipo Funcional Completo (Corregido)</title>
+    <title>Rent.Ar - Prototipo Funcional Completo (Diseño Restaurado)</title>
     
-    <script src="http://googleusercontent.com/cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -23,7 +23,7 @@
         .btn-secondary { border: 2px solid #5de0e6; color: #5de0e6; transition: background-color 0.3s; }
         .btn-secondary:hover { background-color: rgba(93, 224, 230, 0.1); }
         .logo-text-header { font-family: 'Helvetica World Bold', Arial, sans-serif; font-size: 1.75rem; font-weight: 700; color: white; }
-        /* CLASE CORREGIDA PARA EL REGISTRO DE ROL */
+        /* ESTILOS DE ROL CORREGIDOS */
         .role-selector { 
             border: 2px solid #ccc; /* Borde normal */
             transition: all 0.3s ease-in-out; 
@@ -36,7 +36,7 @@
         }
     </style>
     
-    <script src="http://googleusercontent.com/cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <header id="main-header" class="sticky top-0 z-50 bg-primary-dark shadow-xl"></header>
@@ -63,7 +63,7 @@
                      <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Seguinos</h5>
                      <ul class="space-y-2 font-sans">
                          <li>
-                             <a href="http://googleusercontent.com/www.instagram.com/somosrent.ar" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-accent-cyan transition flex items-center">
+                             <a href="https://www.instagram.com/somosrent.ar" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-accent-cyan transition flex items-center">
                                  <svg xmlns="http://www.w3.org/2000/svg" width="1.25em" height="1.25em" viewBox="0 0 24 24" fill="currentColor" class="mr-2">
                                      <path d="M7.8 2h8.4C17.9 2 19 3.1 19 4.6v8.8c0 1.5-1.1 2.6-2.8 2.6H7.8C6.1 16 5 14.9 5 13.4V4.6C5 3.1 6.1 2 7.8 2zm-.2 2a.6.6 0 0 0-.6.6v8.8a.6.6 0 0 0 .6.6h8.4a.6.6 0 0 0 .6-.6V4.6a.6.6 0 0 0-.6-.6H7.6zM12 7.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9zm0 8a3.5 3.5 0 1 1 0-7a3.5 3.5 0 0 1 0 7zm5.5-8.5a1 1 0 1 0 0 2a1 1 0 0 0 0-2z"/>
                                  </svg>
@@ -82,11 +82,11 @@
 
     <script>
         // ==================================================================
-        // == CÓDIGO LIMPIO Y FUNCIONAL (CON CORRECCIONES) ==
+        // == CÓDIGO LIMPIO Y FUNCIONAL (CON CORRECCIONES Y DISEÑO RESTAURADO) ==
         // ==================================================================
 
         // VARIABLES GLOBALES
-        let currentUser = null; // Siempre null para mostrar la vista de "desconectado"
+        let currentUser = null; 
         let selectedRole = null;
         const contentView = document.getElementById('content-view');
 
@@ -109,12 +109,12 @@
             alert(`Lógica de registro para ${selectedRole || 'el rol seleccionado'} no implementada todavía.`);
         }
         
-        // LÓGICA DE MAPAS (CORREGIDO)
+        // LÓGICA DE MAPAS (CORREGIDO Y FUNCIONAL)
         function showProviderOnMap(address) {
             const iframe = document.getElementById('map-iframe');
             if (iframe) {
                 const encodedAddress = encodeURIComponent(address);
-                // URL de Google Maps para incrustar búsquedas (q=)
+                // URL estándar para incrustar búsquedas de Google Maps
                 const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&z=15&output=embed`;
                 iframe.src = mapUrl;
                 console.log(`Ubicando: ${address}`);
@@ -129,17 +129,17 @@
             contentView.innerHTML = renderView(viewName, data);
         }
 
-        // LÓGICA DE REGISTRO (CORREGIDO)
+        // LÓGICA DE REGISTRO
         function updateRegisterForm(role) {
             selectedRole = role;
-            setView('register'); // Vuelve a renderizar la vista 'register' con el formulario correcto
+            setView('register'); 
         }
 
         function renderView(viewName, data) {
             switch (viewName) {
                 case 'home': return renderHomeView();
                 case 'login': return renderLoginView();
-                case 'register': return renderRegisterView(); // AHORA IMPLEMENTADO
+                case 'register': return renderRegisterView(); 
                 case 'dashboard_productor': return renderProducerDashboard();
                 case 'dashboard_proveedor': return renderProviderDashboard();
                 case 'provider_details': return renderProviderDetailsView(data);
@@ -151,7 +151,6 @@
         function renderHeader() {
             const header = document.getElementById('main-header');
             if (!header) return;
-            // Mostramos siempre la vista de "desconectado"
             header.innerHTML = `
                 <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
                     <a href="#" onclick="setView('home')" class="flex items-center mb-4 md:mb-0">
@@ -178,7 +177,6 @@
             return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`; 
         }
 
-        // VISTA DE REGISTRO COMPLETA (CORREGIDA)
         function renderRegisterView() {
             const productorActive = selectedRole === 'productor' ? 'active' : '';
             const proveedorActive = selectedRole === 'proveedor' ? 'active' : '';
@@ -211,11 +209,9 @@
             `;
         }
 
-        // MANTENEMOS LOS FORMULARIOS SIMULADOS
         function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
         function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
 
-        // DASHBOARD DE PRODUCTOR (CON IFRAME INICIAL CORRECTO)
         function renderProducerDashboard() { 
             let providersListHtml = proveedores_simulados.map(provider => `
                 <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
@@ -234,14 +230,13 @@
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
                     <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
-                        <iframe id="map-iframe" src="https://maps.google.com/maps?q=Buenos%20Aires,%20Argentina&z=10&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                        <iframe id="map-iframe" src="https://maps.google.com/maps?q=Buenos%20Aires%2C%20Argentina&z=11&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                     </div>
                     <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Proveedores Destacados</h2>
                     <div class="space-y-4">${providersListHtml}</div>
                 </div>`; 
         }
 
-        // OTRAS VISTAS (SIN CAMBIOS)
         function renderProviderDashboard() { return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`; }
         function renderProviderDetailsView(providerId) { const provider = proveedores_simulados.find(p => p.id === providerId); if (!provider) return `<p>Proveedor no encontrado.</p>`; const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join(''); let opinionsHtml = provider.opiniones.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join(''); return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div></div>`; }
         
