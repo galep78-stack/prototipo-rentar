@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rent.Ar - Prototipo Funcional Completo (Diseño Restaurado)</title>
+    <title>Rent.Ar - Prototipo Funcional Completo (Final)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -36,49 +36,7 @@
     </style>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-    <header id="main-header" class="sticky top-0 z-50 bg-primary-dark shadow-xl"></header>
-    <main class="container mx-auto px-4 py-8 flex-grow">
-        <div id="content-view"></div>
-    </main>
-    <footer class="bg-primary-dark border-t border-accent-blue/20">
-        <div class="container mx-auto px-4 pt-10 pb-6">
-             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
-                 <div>
-                     <a href="#" onclick="setView('home')" class="flex items-center">
-                         <img src="logo-rentar.png" alt="Rent.Ar Logo" class="h-6 mr-2"> 
-                         <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
-                     </a>
-                     <p class="text-gray-400 font-sans mt-2">© 2025 Rent.Ar.</p>
-                 </div>
-                 <div>
-                     <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Soporte</h5>
-                     <ul class="space-y-2 font-sans">
-                         <li><a href="mailto:contactorentar@gmail.com" class="text-gray-300 hover:text-accent-cyan transition">Contacto</a></li>
-                     </ul>
-                 </div>
-                 <div>
-                     <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Seguinos</h5>
-                     <ul class="space-y-2 font-sans">
-                         <li>
-                             <a href="https://www.instagram.com/somosrent.ar" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-accent-cyan transition flex items-center">
-                                 <svg xmlns="http://www.w3.org/2000/svg" width="1.25em" height="1.25em" viewBox="0 0 24 24" fill="currentColor" class="mr-2">
-                                     <path d="M7.8 2h8.4C17.9 2 19 3.1 19 4.6v8.8c0 1.5-1.1 2.6-2.8 2.6H7.8C6.1 16 5 14.9 5 13.4V4.6C5 3.1 6.1 2 7.8 2zm-.2 2a.6.6 0 0 0-.6.6v8.8a.6.6 0 0 0 .6.6h8.4a.6.6 0 0 0 .6-.6V4.6a.6.6 0 0 0-.6-.6H7.6zM12 7.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9zm0 8a3.5 3.5 0 1 1 0-7a3.5 3.5 0 0 1 0 7zm5.5-8.5a1 1 0 1 0 0 2a1 1 0 0 0 0-2z"/>
-                                 </svg>
-                                 <span>@somosrentar</span>
-                             </a>
-                         </li>
-                     </ul>
-                 </div>
-             </div>
-             <div class="border-t border-accent-blue/20 mt-8 pt-6 col-span-2 md:col-span-4 text-center text-xs text-gray-500 font-sans">
-                 <h6 class="font-bold text-gray-400 mb-2 uppercase">Aviso Legal</h6>
-                 <p>Rent.ar es una plataforma que actúa como intermediario. No nos responsabilizamos por los acuerdos o transacciones entre las partes.</p>
-             </div>
-        </div>
-    </footer>
-
+    
     <script>
         // ==================================================================
         // == CÓDIGO CORREGIDO Y LISTO PARA SUPABASE ==
@@ -101,7 +59,7 @@
         // FUNCIONES ASÍNCRONAS PARA CARGAR Y MANEJAR DATOS
         // ===================================================================
 
-        // 🟢 CORRECCIÓN CRÍTICA: La función DEBE ser ASÍNCRONA.
+        // 🟢 CORRECCIÓN FINAL: La función es ASÍNCRONA.
         async function loadProveedores() { 
             try {
                 // Obtenemos los datos de la tabla 'proveedores'. 
@@ -115,8 +73,8 @@
                 // a los nombres que espera el Front-end (nombre, address)
                 proveedores = data.map(p => ({
                     id: p.id,
-                    nombre: p.nombre_empresa || p.nombre || 'Nombre no definido', // Usa nombre_empresa o nombre
-                    address: p.direccion || 'Dirección no definida',            // Usa direccion
+                    nombre: p.nombre_empresa || p.nombre || 'Nombre no definido', 
+                    address: p.direccion || 'Dirección no definida',            
                     tipo: 'Empresa',          
                     ubicacion: 'BDD',        
                     opiniones: []             
@@ -129,7 +87,6 @@
 
             } catch (error) {
                 console.error('Error cargando proveedores (revisa RLS/claves):', error.message);
-                // Si falla, al menos la app no se bloquea y muestra los datos simulados si existieran.
                 proveedores = []; 
             }
         }
@@ -199,7 +156,6 @@
                                 user_id: user.id,
                                 nombre_empresa: form.empresa.value,
                                 cuit: form.cuit.value,
-                                // Estos campos deben existir en tu formulario si los necesitas
                                 direccion: form.address ? form.address.value : 'No especificada', 
                                 email_contacto: email
                             }
@@ -365,12 +321,9 @@
         function renderComoFuncionaView() { return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`; }
 
         // PUNTO DE ARRANQUE DE LA APLICACIÓN
-        window.onload = () => { // 🟢 ¡CORRECTO! YA NO ES ASÍNCRONO
+        window.onload = () => { 
             renderHeader();
-            
-            // 🟢 CORRECTO: Se inicia la carga de datos sin esperar (sin 'await')
             loadProveedores(); 
-            
             const initialView = window.location.hash.substring(1) || 'home';
             setView(initialView); 
         };
