@@ -173,51 +173,42 @@ function pruebaDeClick() {
         alert("Error en el registro: " + error.message);
     }
 }
-       // MODIFICADA: Ahora verifica el rol seleccionado antes de iniciar sesión
-async function handleLogin(event) {
-    event.preventDefault();
-    
-    // Verificamos que se haya seleccionado un rol para el login
-    if (!selectedLoginRole) {
-        alert("Por favor, selecciona si eres Productor o Proveedor.");
-        return;
-    }
-
-    const email = event.target.email.value;
-    const password = event.target.password.value;
-    
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = event.target.email.value;
+            const password = event.target.password.value;
+            try {
+                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                const { data: userData, error: profileError } = await _supabase.from('usuarios').select('rol').eq('id', data.user.id).single();
+                if (profileError) throw profileError;
+                if (userData.rol === 'Productor') setView('dashboard_productor');
+                else if (userData.rol === 'Proveedor') setView('dashboard_proveedor');
+                else setView('home');
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+        // NUEVA: Función para manejar el inicio de sesión con Google
+async function handleGoogleLogin() {
     try {
-        // 1. Autenticar al usuario con su email y contraseña
-        const { data: authData, error: authError } = await _supabase.auth.signInWithPassword({ email, password });
-        if (authError) throw authError;
-
-        // 2. Verificar si el rol en la base de datos coincide con el seleccionado
-        const { data: userData, error: profileError } = await _supabase
-            .from('usuarios')
-            .select('rol')
-            .eq('id', authData.user.id)
-            .single();
-        
-        if (profileError) throw profileError;
-
-        // 3. Si los roles no coinciden, cerramos la sesión y mostramos un error
-        if (userData.rol !== selectedLoginRole) {
-            await _supabase.auth.signOut(); // Cerramos la sesión inmediatamente
-            throw new Error(`Tus credenciales son correctas, pero no para el rol de "${selectedLoginRole}". Por favor, selecciona el rol correcto.`);
-        }
-
-        // 4. Si todo está bien, redirigimos al dashboard correspondiente
-        alert('¡Inicio de sesión exitoso!');
-        if (userData.rol === 'Productor') {
-            setView('dashboard_productor');
-        } else {
-            setView('dashboard_proveedor');
-        }
-
+        const { error } = await _supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                // Aquí puedes añadir metadata para el nuevo usuario
+                queryParams: {
+                    prompt: 'select_account',
+                },
+                // Almacenamos el rol que queremos asignar en el localStorage
+                // para recuperarlo después de la redirección.
+                data: { role: 'Productor' }
+            }
+        });
+        if (error) throw error;
     } catch (error) {
-        alert("Error al iniciar sesión: " + error.message);
+        console.error("Error al iniciar sesión con Google:", error);
+        alert("Error: " + error.message);
     }
-}
 }
         async function handleLogout() {
             await _supabase.auth.signOut();
@@ -379,8 +370,6 @@ function renderProductorForm() {
     </script>
 </body>
 </html>
-
-
 
 
 
