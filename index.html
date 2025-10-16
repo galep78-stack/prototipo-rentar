@@ -359,8 +359,7 @@ let proveedores = [];
 
         // PUNTO DE ARRANQUE DE LA APLICACIÓN
 window.onload = () => { 
-    
-    // ⬅️ LLAMAMOS A LA FUNCIÓN DE INICIALIZACIÓN AQUÍ
+      // ⬅️ LLAMAMOS A LA FUNCIÓN DE INICIALIZACIÓN AQUÍ
     if (initializeSupabase()) {
         renderHeader();
         loadProveedores(); 
@@ -374,8 +373,8 @@ window.onload = () => {
     const initialView = window.location.hash.substring(1) || 'home';
     setView(initialView); 
 };
-        };
-    </script>
+          </script>
 </body>
 </html>
+
 
