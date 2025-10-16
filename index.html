@@ -174,20 +174,38 @@ function pruebaDeClick() {
     }
 }
         async function handleLogin(event) {
-            event.preventDefault();
-            const email = event.target.email.value;
-            const password = event.target.password.value;
-            try {
-                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                const { data: userData, error: profileError } = await _supabase.from('usuarios').select('rol').eq('id', data.user.id).single();
-                if (profileError) throw profileError;
-                if (userData.rol === 'Productor') setView('dashboard_productor');
-                else if (userData.rol === 'Proveedor') setView('dashboard_proveedor');
-                else setView('home');
-            } catch (error) {
-                alert("Error: " + error.message);
-            }
+    event.preventDefault(); // Previene que la página se recargue
+
+    const email = event.target.email.value;
+    const password = event.target.password.value;
+
+    // Usamos un bloque try...catch para manejar errores (ej: contraseña incorrecta)
+    try {
+        // PASO 1: Intentamos iniciar sesión con Supabase Auth
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error; // Si hay un error de autenticación, salta al catch
+
+        // PASO 2: Si el login es exitoso, buscamos el rol del usuario en nuestra tabla 'usuarios'
+        // Usamos el 'id' del usuario que nos devolvió el login exitoso (data.user.id)
+        const { data: userData, error: profileError } = await _supabase.from('usuarios').select('rol').eq('id', data.user.id).single();
+        if (profileError) throw profileError; // Si no se encuentra el perfil, salta al catch
+
+        // PASO 3: Redirigimos al dashboard correspondiente según el rol
+        if (userData.rol === 'Productor') {
+            setView('dashboard_productor');
+        } else if (userData.rol === 'Proveedor') {
+            setView('dashboard_proveedor');
+        } else {
+            // Si por alguna razón no tiene rol, lo mandamos a la home
+            setView('home');
+        }
+
+    } catch (error) {
+        // Si algo en el bloque 'try' falla, se ejecuta esto
+        console.error("Error en el inicio de sesión:", error);
+        alert("Error al iniciar sesión: " + error.message);
+    }
+}
         }
         // NUEVA: Función para manejar el inicio de sesión con Google
 async function handleGoogleLogin() {
@@ -370,6 +388,7 @@ function renderProductorForm() {
     </script>
 </body>
 </html>
+
 
 
 
