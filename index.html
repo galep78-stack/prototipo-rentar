@@ -290,7 +290,7 @@ async function renderEditOfferView(offerId) {
         }
 
         // Función REGISTRAR (handleRegister)
-        async function handleRegister(event) {
+    async function handleRegister(event) {
     event.preventDefault();
     if (!supabaseClient) return alert("Error de conexión a la BDD.");
 
@@ -298,8 +298,8 @@ async function renderEditOfferView(offerId) {
     const email = form.email.value;
     const password = form.password.value;
     const roleToRegister = selectedRole || 'productor'; 
-
-    // Aquí capturamos el display_name para el header
+    
+    // Aquí capturamos el display_name para el header (nombre empresa o nombre)
     const nombreEmpresa = form.empresa ? form.empresa.value : form.nombre.value; 
 
     try {
@@ -309,16 +309,20 @@ async function renderEditOfferView(offerId) {
             options: { 
                 data: { 
                     user_role: roleToRegister,
-                    display_name: nombreEmpresa // ⬅️ Guardamos el nombre para el header
+                    display_name: nombreEmpresa 
                 } 
             }
         });
 
-        // 🛑 Corregido: Si hay error de AUTH, se lanza authError
-        if (authError) throw authError;
+        // 1. Manejo del error de autenticación
+        if (authError) {
+             // Si hay error en la autenticación, lanza el error específico para que el catch lo maneje
+             throw new Error(authError.message); 
+        }
         
         const user = authData.user || authData.session?.user; 
 
+        // 2. Manejo de la inserción de datos de la empresa (Proveedor)
         if (roleToRegister === 'proveedor' && user && user.id) {
             const { error: dbError } = await supabaseClient
                 .from('proveedores')
@@ -332,15 +336,18 @@ async function renderEditOfferView(offerId) {
                     }
                 ]);
             
-            // 🛑 Corregido: Si hay error de DB, se lanza dbError
-            if (dbError) throw dbError;
+            // Si hay error en la base de datos, lanza el error específico
+            if (dbError) {
+                 throw new Error(dbError.message); 
+            }
         }
         
+        // 3. Éxito
         alert("¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta y poder iniciar sesión. 📧");
         setView('login'); 
 
     } catch (error) {
-        // El bloque catch captura CUALQUIER error (authError o dbError)
+        // El bloque catch captura CUALQUIER error (auth o db) y lo muestra
         alert(`Error en el registro: ${error.message}`);
         console.error('Error en Supabase SignUp/Insert:', error);
     }
@@ -805,6 +812,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
