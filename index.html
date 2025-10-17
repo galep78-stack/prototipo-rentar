@@ -297,6 +297,15 @@
         function renderHeader() {
             const header = document.getElementById('main-header');
             if (!header) return;
+            const authButtons = currentUser 
+        ? // Estado CONECTADO
+          `<button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>` 
+        : // Estado DESCONECTADO
+          `<div class="flex space-x-3">
+               <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
+               <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
+           </div>`;
+            
             header.innerHTML = `
                 <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
                     <a href="#" onclick="setView('home')" class="flex items-center mb-4 md:mb-0">
@@ -418,4 +427,5 @@
     </script>
 </body>
 </html>
+
 
