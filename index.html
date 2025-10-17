@@ -429,39 +429,43 @@ async function renderEditOfferView(offerId) {
 
         // 🟢 Función para guardar los datos del perfil
         async function handleProfileUpdate(event) {
-            event.preventDefault();
-            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
+    event.preventDefault();
+    if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
 
-            const form = event.target;
-            const nuevoNombre = form.nombre_update.value;
-            const nuevaDireccion = form.direccion_update.value;
-            const nuevoCuit = form.cuit_update ? form.cuit_update.value : null;
+    const form = event.target;
+    const nuevoNombre = form.nombre_update.value;
+    const nuevaDireccion = form.direccion_update.value;
+    // 🟢 CLAVE: CUIT debe ser extraído si el campo existe en el formulario (solo proveedores)
+    const nuevoCuit = form.cuit_update ? form.cuit_update.value : null; 
 
-            const userRole = currentUser.user_metadata.user_role;
-            const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores'; 
+    const userRole = currentUser.user_metadata.user_role;
+    const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores'; 
 
-            const updateData = {
-                nombre_empresa: nuevoNombre, 
-                direccion: nuevaDireccion,
-                ...(nuevoCuit && { cuit: nuevoCuit }) // Añade CUIT solo si existe
-            };
-            
-            try {
-                const { error } = await supabaseClient
-                    .from(tableName)
-                    .update(updateData)
-                    .eq('user_id', currentUser.id); 
-                
-                if (error) throw error;
-                
-                alert(`¡Perfil de ${userRole} actualizado con éxito!`);
-                setView('home'); 
+    const updateData = {
+        // 🟢 Nombres de columna SIN tildes/caracteres especiales
+        nombre_empresa: nuevoNombre, 
+        direccion: nuevaDireccion,
+        ...(nuevoCuit && { cuit: nuevoCuit }) // Solo incluye CUIT si fue proporcionado
+    };
+    
+    try {
+        const { error } = await supabaseClient
+            .from(tableName)
+            // 🟢 CRUCIAL: La actualización
+            .update(updateData)
+            .eq('user_id', currentUser.id); 
+        
+        if (error) throw error;
+        
+        alert(`¡Perfil de ${userRole} actualizado con éxito!`);
+        setView('home'); 
 
-            } catch (error) {
-                alert(`Error al actualizar perfil: ${error.message}. Asegúrate de tener permiso de UPDATE RLS.`);
-                console.error('Error en handleProfileUpdate:', error);
-            }
-        }
+    } catch (error) {
+        // Esto alertará si el problema es de RLS o de nombre de columna
+        alert(`Error al actualizar perfil: ${error.message}.`); 
+        console.error('Error en handleProfileUpdate:', error);
+    }
+}
 async function handleRemoveOffer(offerId) {
     if (!supabaseClient || !currentUser) {
         alert("Error: Debes iniciar sesión para eliminar ofertas.");
@@ -786,6 +790,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
