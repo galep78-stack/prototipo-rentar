@@ -161,6 +161,13 @@ async function checkInitialSessionAndSync() {
 function setupAuthListener() {
     if (!supabaseClient) return;
 
+    // Lógica para obtener la sesión inicial
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        // Asigna el estado inicial
+        currentUser = session ? session.user : null;
+        renderHeader();
+    });
+    
     // Escucha eventos (ej: cuando se cierra o abre sesión en otra pestaña)
     supabaseClient.auth.onAuthStateChange((event, session) => {
         // Esta línea es crucial para mantener la sincronía del estado en tiempo real
@@ -435,24 +442,23 @@ function setupAuthListener() {
         window.onload = () => { 
     
     if (initializeSupabase()) {
-        // 1. 🟢 Primero verifica si hay una sesión guardada (asíncrona)
-        checkInitialSessionAndSync();
-        
-        // 2. 🟢 Luego, inicia el listener para cambios futuros
+        // 🟢 NUEVO PASO: Solo iniciar el listener de eventos
         setupAuthListener(); 
-
+        
         loadProveedores(); 
+    } else {
+        // Renderizar el header incluso si falla la BDD
+        renderHeader(); 
     }
     
-    // 3. Renderiza el header inmediatamente, luego el check lo actualizará.
-    renderHeader(); 
-
+    // 🟢 RENDERIZADO INMEDIATO: Muestra la vista 'home' o la que esté en el hash
     const initialView = window.location.hash.substring(1) || 'home';
     setView(initialView); 
 };
     </script>
 </body>
 </html>
+
 
 
 
