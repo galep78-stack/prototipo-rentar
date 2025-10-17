@@ -402,16 +402,19 @@
 
             const isProvider = currentUser.user_metadata.user_role === 'proveedor';
             const userRole = isProvider ? 'Proveedor' : 'Productor';
+            // 🆕 Determinamos el dashboard de destino según el rol
+            const dashboardView = isProvider ? 'dashboard_proveedor' : 'dashboard_productor'; 
             
-            // 🟢 CARGA DE DATOS ASÍNCRONA
             const profileData = await getProfileData(currentUser.id, userRole.toLowerCase());
             
             const currentNombre = profileData.nombre || (isProvider ? 'Nombre de la Empresa' : 'Nombre Completo');
-            const currentCuit = profileData.cuit || 'CUIT';
-            const currentDireccion = profileData.direccion || 'Dirección no definida';
+            const currentCuit = profileData.cuit || '';
+            const currentDireccion = profileData.direccion || '';
 
             return `
                 <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+                    <button onclick="setView('${dashboardView}')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+
                     <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Perfil (${userRole})</h2>
                     
                     <p class="text-gray-600 mb-6 text-center">
@@ -436,7 +439,7 @@
                         ` : ''}
 
                         <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
-                        <button type="button" onclick="setView('home')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar</button>
+                        <button type="button" onclick="setView('${dashboardView}')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Volver al Dashboard</button>
                     </form>
                 </div>
             `;
@@ -628,3 +631,4 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
