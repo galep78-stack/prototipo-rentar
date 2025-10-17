@@ -295,23 +295,31 @@ async function handleLogout() {
         }
         
         function renderHeader() {
-            const header = document.getElementById('main-header');
-            if (!header) return;
-            header.innerHTML = `
-                <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
-                    <a href="#" onclick="setView('home')" class="flex items-center mb-4 md:mb-0">
-                        <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
-                        <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
-                    </a>
-                    <div class="flex flex-col md:flex-row items-center gap-4">
-                        <button onclick="setView('info', '¿Cómo funciona?')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">¿Cómo funciona?</button>
-                        <div class="flex space-x-3">
-                            <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
-                            <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
-                        </div>
-                    </div>
-                </div>`;
-        }
+    const header = document.getElementById('main-header');
+    if (!header) return;
+
+    // Lógica para mostrar botones según el estado de conexión
+    const authButtons = currentUser 
+        ? // Estado: CONECTADO (Muestra Cerrar Sesión)
+          `<button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>` 
+        : // Estado: DESCONECTADO (Muestra Iniciar Sesión y Registrar)
+          `<div class="flex space-x-3">
+               <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
+               <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
+           </div>`;
+
+    header.innerHTML = `
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
+            <a href="#" onclick="setView('home')" class="flex items-center mb-4 md:mb-0">
+                <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
+                <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
+            </a>
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <button onclick="setView('info', '¿Cómo funciona?')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">¿Cómo funciona?</button>
+                ${authButtons}
+            </div>
+        </div>`;
+}
         
         // FUNCIONES QUE GENERAN EL HTML DE CADA VISTA
         
@@ -418,4 +426,5 @@ async function handleLogout() {
     </script>
 </body>
 </html>
+
 
