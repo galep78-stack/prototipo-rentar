@@ -237,7 +237,26 @@
                 console.error('Error en Supabase SignUp/Insert:', error);
             }
         }
+        async function handleLogout() {
+    try {
+        // Cierra la sesión en Supabase
+        const { error } = await supabaseClient.auth.signOut(); 
+
+        if (error) throw error;
+
+        // 1. Limpia el estado local
+        currentUser = null;
+        alert("Sesión cerrada correctamente.");
         
+        // 2. Redirige y actualiza el encabezado
+        setView('home'); 
+        renderHeader(); 
+        
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error.message);
+        alert('Ocurrió un error al intentar cerrar la sesión.');
+    }
+}
         // LÓGICA DE MAPAS
         function showProviderOnMap(address) {
             const iframe = document.getElementById('map-iframe');
@@ -399,3 +418,4 @@
     </script>
 </body>
 </html>
+
