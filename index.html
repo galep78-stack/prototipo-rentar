@@ -123,17 +123,17 @@
         }
 
         function goToDashboard() {
-            if (currentUser) {
-                const userRole = currentUser.user_metadata.user_role;
-                if (userRole === 'proveedor') {
-                    setView('dashboard_proveedor');
-                } else {
-                    setView('dashboard_productor');
-                }
-            } else {
-                setView('home');
-            }
+    if (currentUser) {
+        const userRole = currentUser.user_metadata.user_role;
+        if (userRole === 'proveedor') {
+            setView('dashboard_proveedor');
+        } else {
+            setView('dashboard_productor');
         }
+    } else {
+        setView('home'); // Si no está logueado, va a la página inicial
+    }
+}
         
         async function handleLogout() {
             try {
@@ -688,4 +688,5 @@
     </script>
 </body>
 </html>
+
 
