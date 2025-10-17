@@ -650,56 +650,52 @@
         }
         
         // Función auxiliar para el header (Corregida)
-        function renderHeader() {
-            const header = document.getElementById('main-header');
-            const isLoggedIn = !!currentUser;
-            const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
-            const displayName = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.display_name : null;
+       function renderHeader() {
+    const header = document.getElementById('main-header');
+    if (!header) return;
 
-            let authButtons;
-            if (isLoggedIn) {
-                const dashboardView = userRole === 'proveedor' ? 'dashboard_proveedor' : 'dashboard_productor';
-                authButtons = `
-                    <div class="flex items-center space-x-4">
-                        <span class="text-sm font-sans text-gray-300 hidden sm:block">
-                            Hola, <strong class="text-accent-cyan">${displayName || currentUser.email}</strong>
-                        </span>
-                        <button onclick="setView('${dashboardView}')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold hidden sm:block">Dashboard</button>
-                        <div class="relative group">
-                            <button class="bg-accent-cyan text-primary-dark px-4 py-2 rounded-lg font-semibold hover:bg-accent-cyan/90 transition">
-                                Menú
-                            </button>
-                            <div class="absolute right-0 mt-2 w-48 bg-white text-primary-dark rounded-lg shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 origin-top-right">
-                                <a href="#" onclick="setView('${dashboardView}')" class="block px-4 py-2 hover:bg-gray-100 sm:hidden">Dashboard</a>
-                                <a href="#" onclick="setView('profile_edit')" class="block px-4 py-2 hover:bg-gray-100">Editar Perfil</a>
-                                <a href="#" onclick="handleLogout()" class="block px-4 py-2 text-red-600 hover:bg-red-50 rounded-b-lg">Cerrar Sesión</a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                authButtons = `
-                    <div class="flex space-x-3">
-                        <button onclick="setView('login')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
-                        <button onclick="setView('register')" class="bg-accent-cyan text-primary-dark px-4 py-2 rounded-lg font-semibold">Regístrate</button>
-                    </div>
-                `;
-            }
+    const isLoggedIn = !!currentUser;
+    // La variable displayName lee el nombre guardado en metadatos, si no, usa el email
+    const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
+    const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
+    const dashboardView = isLoggedIn && userRole === 'proveedor' ? 'dashboard_proveedor' : 'dashboard_productor';
 
-            header.innerHTML = `
-                <div class="container mx-auto px-4">
-                    <nav class="flex justify-between items-center py-4">
-                        <a href="#" onclick="goToDashboard()" class="flex items-center transition hover:opacity-80">
-                            <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
-                        </a>
-                        <div class="hidden md:flex space-x-6 text-lg font-heading">
-                            <a href="#" onclick="setView('info', '¿Cómo funciona?')" class="text-gray-300 hover:text-accent-cyan transition">¿Cómo funciona?</a>
-                        </div>
-                        ${authButtons}
-                    </nav>
+
+    const authButtons = isLoggedIn 
+        ? // Estado: CONECTADO (Botones para usuario logueado)
+          `<div class="flex items-center space-x-3">
+               <span class="text-sm font-sans text-gray-300 mr-3 hidden md:block">
+                   Hola, <strong class="text-accent-cyan">${displayName}</strong>
+               </span>
+               <button onclick="setView('profile_edit')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Mi Perfil</button>
+               <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>
+           </div>`
+        : // Estado: DESCONECTADO (Botones de login/registro)
+          `<div class="flex space-x-3">
+               <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
+               <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
+           </div>`;
+
+    header.innerHTML = `
+        <div class="container mx-auto px-4">
+            <nav class="flex justify-between items-center py-4">
+                <a href="#" onclick="setView('home')" class="flex items-center transition hover:opacity-80">
+                    <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
+                </a>
+                
+                <div class="flex space-x-4 items-center">
+                    
+                    <button onclick="setView('info', '¿Cómo funciona?')" 
+                            class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold hidden md:block">
+                        ¿Cómo funciona?
+                    </button>
+                    
+                    ${authButtons}
                 </div>
-            `;
-        }
+            </nav>
+        </div>
+    `;
+}
 
         // Vistas HTML (Corregidas y Consolidadas)
         function renderHomeView() { 
@@ -866,4 +862,5 @@
     </script>
 </body>
 </html>
+
 
