@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rent.Ar - Prototipo Funcional Completo (Recuperado y Final)</title>
+    <title>Rent.Ar - Prototipo Funcional Completo (Final)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -23,12 +23,12 @@
         .btn-secondary { border: 2px solid #5de0e6; color: #5de0e6; transition: background-color 0.3s; }
         .btn-secondary:hover { background-color: rgba(93, 224, 230, 0.1); }
         .logo-text-header { font-family: 'Helvetica World Bold', Arial, sans-serif; font-size: 1.75rem; font-weight: 700; color: white; }
-        .role-selector { 
+        .role-selector { 
             border: 2px solid #ccc;
-            transition: all 0.3s ease-in-out; 
+            transition: all 0.3s ease-in-out; 
             box-shadow: none;
         }
-        .role-selector.active { 
+        .role-selector.active { 
             border-color: #004aad;
             background-color: rgba(0, 74, 173, 0.1);
             box-shadow: 0 0 15px rgba(93, 224, 230, 0.5);
@@ -45,7 +45,7 @@
              <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
                  <div>
                      <a href="#" onclick="setView('home')" class="flex items-center">
-                         <img src="logo-rentar.png" alt="Rent.Ar Logo" class="h-6 mr-2"> 
+                         <img src="logo-rentar.png" alt="Rent.Ar Logo" class="h-6 mr-2"> 
                          <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
                      </a>
                      <p class="text-gray-400 font-sans mt-2">© 2025 Rent.Ar.</p>
@@ -81,7 +81,7 @@
     
     <script>
         // ==================================================================
-        // == CÓDIGO FINAL CON ESTRUCTURA CORREGIDA Y FUNCIONALIDADES ==
+        // == CÓDIGO FINAL Y ESTABLE (TODOS LOS CAMBIOS CONSOLIDADOS) ==
         // ==================================================================
 
         // VARIABLES GLOBALES
@@ -92,10 +92,8 @@
         // ⚠️ CLAVES (TUS CLAVES REALES)
         const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
-        let supabaseClient = null;
-        let proveedorProfileData = null; // Para la carga asíncrona del perfil
-
-        // DATOS REALES (Inicialmente vacía, se llenará con la BDD de Supabase)
+        let supabaseClient = null; 
+        let proveedorProfileData = null; // Variable para datos del perfil logueado
         let proveedores = []; 
 
         // ===================================================================
@@ -117,13 +115,13 @@
             // 1. Consulta el estado de la sesión inicial (para cargar el estado al entrar)
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
                 currentUser = session ? session.user : null;
-                renderHeader(); // ⬅️ Dibuja el header con el estado correcto
+                renderHeader(); 
             });
 
             // 2. Escucha cambios futuros (login/logout)
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 currentUser = session ? session.user : null;
-                renderHeader(); // ⬅️ Actualiza el header cuando el usuario interactúa
+                renderHeader(); 
             });
         }
         
@@ -169,7 +167,8 @@
                 } else {
                     setView('dashboard_productor'); 
                 }
-                // El AuthListener se encarga de llamar a renderHeader()
+                // El AuthListener se encarga de llamar a renderHeader() inmediatamente
+                // después de que el estado de Supabase cambia.
 
             } catch (error) {
                 alert(`Error al iniciar sesión: ${error.message}`);
@@ -206,7 +205,7 @@
                                 user_id: user.id,
                                 nombre_empresa: form.empresa.value,
                                 cuit: form.cuit.value,
-                                direccion: form.direccion.value, // ⬅️ Campo Direccion agregado
+                                direccion: form.direccion.value, // ⬅️ Dirección agregada
                                 email_contacto: email
                             }
                         ]);
@@ -290,7 +289,8 @@
                 proveedores = []; 
             }
         }
-
+        
+        // 🟢 Función para cargar los datos del perfil (editable)
         async function getProfileData(userId, role) {
             if (!supabaseClient || !userId) return null;
             
@@ -305,7 +305,6 @@
                     
                 if (error || !data) return {};
                 
-                // Mapea los datos de la DB
                 return {
                     nombre: data.nombre_empresa,
                     cuit: data.cuit,
@@ -315,6 +314,7 @@
             return { nombre: currentUser.user_metadata.full_name || 'Productor', direccion: 'N/A' };
         }
 
+        // 🟢 Función para guardar los datos del perfil
         async function handleProfileUpdate(event) {
             event.preventDefault();
             if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
@@ -345,16 +345,58 @@
                 setView('home'); 
 
             } catch (error) {
-                alert(`Error al actualizar perfil: ${error.message}.`);
+                alert(`Error al actualizar perfil: ${error.message}. Asegúrate de tener permiso de UPDATE RLS.`);
                 console.error('Error en handleProfileUpdate:', error);
             }
         }
+
 
         // ===================================================================
         // FUNCIONES DE VISTA (RENDERIZADO)
         // ===================================================================
 
-        // 🟢 renderProfileEditView ahora es ASÍNCRONA para cargar datos antes de mostrar el formulario
+        // 🟢 NUEVO ROUTER ESTABLE PARA VISTAS ASÍNCRONAS/SÍNCRONAS
+        function setView(viewName, data = null) {
+            window.location.hash = viewName;
+            
+            const isAsyncView = viewName === 'profile_edit' || viewName === 'my_products';
+            
+            if (isAsyncView) {
+                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() : renderMyProductsView();
+                
+                // Muestra un loader mientras espera
+                contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
+
+                renderPromise.then(html => {
+                    // Solo actualiza si el usuario no ha navegado a otra vista
+                    if (window.location.hash === `#${viewName}`) { 
+                         contentView.innerHTML = html;
+                    }
+                }).catch(error => {
+                    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error}</p>`;
+                });
+                return;
+            }
+            
+            // Manejo de vistas síncronas
+            contentView.innerHTML = renderView(viewName, data);
+        }
+
+        // 🟢 FUNCIÓN PRINCIPAL DE RENDERIZADO (SIN LÓGICA ASÍNCRONA)
+        function renderView(viewName, data) {
+            switch (viewName) {
+                case 'home': return renderHomeView();
+                case 'login': return renderLoginView();
+                case 'register': return renderRegisterView(); 
+                case 'dashboard_productor': return renderProducerDashboard();
+                case 'dashboard_proveedor': return renderProviderDashboard();
+                case 'provider_details': return renderProviderDetailsView(data);
+                case 'info': return renderInfoView(data);
+                default: return renderHomeView();
+            }
+        }
+
+        // 🟢 FUNCIÓN ASÍNCRONA PARA EL PERFIL (SE LLAMA DESDE setView)
         async function renderProfileEditView() {
             if (!currentUser) return renderLoginView();
 
@@ -400,7 +442,7 @@
             `;
         }
 
-        // 🟢 renderMyProductsView ahora es ASÍNCRONA y lista las ofertas del usuario
+        // 🟢 FUNCIÓN ASÍNCRONA PARA MIS PRODUCTOS (SE LLAMA DESDE setView)
         async function renderMyProductsView() {
             if (!currentUser) return renderLoginView();
 
@@ -445,47 +487,144 @@
                 </div>`;
         }
 
-        // Funciones síncronas de vista (sin cambios)
-        function setView(viewName, data = null) {
-            window.location.hash = viewName;
-            
-            // 🟢 MODIFICACIÓN DEL ROUTER para manejar vistas ASÍNCRONAS
-            if (viewName === 'profile_edit' || viewName === 'my_products') {
-                // Muestra un loader mientras espera los datos
-                contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan">Cargando datos...</div>`;
-                
-                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() : renderMyProductsView();
-                
-                renderPromise.then(html => {
-                    contentView.innerHTML = html;
-                }).catch(error => {
-                    contentView.innerHTML = `<p class="text-red-500">Error fatal al cargar la vista: ${error.message}</p>`;
-                });
-                return; // Sale de setView, ya que el contenido se llenará de forma asíncrona
-            }
-            
-            // Para vistas síncronas (home, login, etc.)
-            contentView.innerHTML = renderView(viewName, data);
+
+        function renderHeader() {
+            const header = document.getElementById('main-header');
+            if (!header) return;
+
+            const authButtons = currentUser 
+                ? // Estado: CONECTADO
+                  `<div class="flex space-x-3">
+                       <button onclick="setView('profile_edit')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Mi Perfil</button>
+                       <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>
+                   </div>`
+                : // Estado: DESCONECTADO
+                  `<div class="flex space-x-3">
+                       <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
+                       <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
+                   </div>`;
+
+            header.innerHTML = `
+                <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
+                    <a href="#" onclick="setView('home')" class="flex items-center mb-4 md:mb-0">
+                        <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
+                        <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
+                    </a>
+                    <div class="flex flex-col md:flex-row items-center gap-4">
+                        <button onclick="setView('info', '¿Cómo funciona?')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">¿Cómo funciona?</button>
+                        ${authButtons}
+                    </div>
+                </div>`;
         }
 
-        // Resto de funciones (renderHomeView, renderLoginView, etc.) deben seguir aquí...
-        
-    // PUNTO DE ARRANQUE DE LA APLICACIÓN
-    window.onload = () => { 
-        
-        const isSupabaseInitialized = initializeSupabase();
-        
-        // 2. Renderiza el header y la vista 'home' inmediatamente.
-        renderHeader(); 
-        const initialView = window.location.hash.substring(1) || 'home';
-        setView(initialView); 
-        
-        // 3. Ejecuta la lógica de Auth y carga de datos DESPUÉS de renderizar la página.
-        if (isSupabaseInitialized) {
-            setupAuthListener(); 
-            loadProveedores(); 
+        // Resto de funciones síncronas (renderHomeView, renderLoginView, etc.)
+        function renderHomeView() { 
+            return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);"><div class="text-center max-w-4xl"><h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1><div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8"><input type="text" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark"><button onclick="setView('dashboard_productor')" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button></div></div></section><section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark"><h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy productor</h3><p class="text-gray-600 mb-6">Buscá equipos y servicios.</p><button onclick="setView('dashboard_productor')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button></div><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy proveedor</h3><p class="text-gray-600 mb-6">Publicá tu inventario.</p><button onclick="setView('register')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button></div></div></section>`; 
         }
-    };
-    </script>
+
+        function renderLoginView() { 
+            return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`; 
+        }
+
+        function renderRegisterView() {
+            const productorActive = selectedRole === 'productor' ? 'active' : '';
+            const proveedorActive = selectedRole === 'proveedor' ? 'active' : '';
+            let formHtml = '';
+
+            if (selectedRole === 'productor') {
+                formHtml = renderProductorForm();
+            } else if (selectedRole === 'proveedor') {
+                formHtml = renderProveedorForm();
+            } else {
+                formHtml = '<p class="text-center text-gray-500 font-sans">Selecciona tu rol para continuar con el registro.</p>';
+            }
+
+            return `
+                <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+                    <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Crear Cuenta</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                        <div onclick="updateRegisterForm('productor')" class="role-selector ${productorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
+                            <h3 class="font-bold text-lg font-heading">Soy Productor/a 🎬</h3>
+                            <p class="text-sm text-gray-600 font-sans">Busco recursos y servicios.</p>
+                        </div>
+                        <div onclick="updateRegisterForm('proveedor')" class="role-selector ${proveedorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
+                            <h3 class="font-bold text-lg font-heading">Soy Proveedor/a 🛠️</h3>
+                            <p class="text-sm text-gray-600 font-sans">Ofrezco equipos o locaciones.</p>
+                        </div>
+                    </div>
+                    ${formHtml}
+                    <p class="mt-6 text-center text-sm text-gray-600 font-sans">¿Ya tenés cuenta? <a href="#" onclick="setView('login')" class="text-accent-blue hover:underline">Iniciá Sesión</a></p>
+                </div>
+            `;
+        }
+
+        function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección Principal (Ej: Calle Falsa 123)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+        function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+
+        function renderProducerDashboard() { 
+            let providersListHtml = proveedores.map(provider => `
+                <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
+                    <div>
+                        <h4 class="font-bold text-lg font-heading">${provider.nombre}</h4>
+                        <p class="text-sm text-gray-400 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
+                    </div>
+                    <div class="flex-shrink-0 flex gap-2">
+                        <button onclick="showProviderOnMap('${provider.address}')" class="bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
+                        <button onclick="setView('provider_details', ${provider.id})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Detalles</button>
+                    </div>
+                </div>`
+            ).join(''); 
+            
+            return `
+                <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+                    <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
+                    <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
+                        <iframe id="map-iframe" src="http://googleusercontent.com/maps.google.com/7" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Proveedores Destacados</h2>
+                    <div class="space-y-4">${providersListHtml}</div>
+                </div>`; 
+        }
+
+        function renderProviderDashboard() { 
+            return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3><p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p><button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`; 
+        }
+
+        function renderProviderDetailsView(providerId) { 
+            const provider = proveedores.find(p => p.id === providerId); 
+            if (!provider) return `<p>Proveedor no encontrado.</p>`; 
+            const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join(''); 
+            let opinionsHtml = provider.opiniones.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join(''); 
+            return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div></div>`; 
+        }
+
+        function renderInfoView(title) {
+            if (title === '¿Cómo funciona?') {
+                return renderComoFuncionaView();
+            }
+            return `<div class="p-8 rounded-xl"><h1 class="text-4xl font-bold font-heading">${title || 'Información'}</h1></div>`; 
+        }
+
+        function renderComoFuncionaView() { return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`; }
+
+// PUNTO DE ARRANQUE DE LA APLICACIÓN
+window.onload = () => { 
+    
+    // 1. Inicializa el cliente Supabase (síncrono)
+    const isSupabaseInitialized = initializeSupabase();
+    
+    // 2. Renderiza el header y la vista 'home' inmediatamente.
+    renderHeader(); 
+    const initialView = window.location.hash.substring(1) || 'home';
+    setView(initialView); 
+    
+    // 3. Ejecuta la lógica de Auth y carga de datos DESPUÉS de renderizar la página.
+    if (isSupabaseInitialized) {
+        setupAuthListener(); 
+        loadProveedores(); 
+    }
+};
+
+</script>
 </body>
 </html>
