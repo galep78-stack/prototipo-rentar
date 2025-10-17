@@ -413,11 +413,15 @@ async function handleRemoveOffer(offerId) {
         function setView(viewName, data = null) {
             window.location.hash = viewName;
             
-            const isAsyncView = viewName === 'profile_edit' || viewName === 'my_products';
-            
-            if (isAsyncView) {
-                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() : renderMyProductsView();
-                
+            const isAsyncView = viewName === 'profile_edit' || viewName === 'my_products' || viewName === 'edit_offer'; // ⬅️ NUEVO CASO
+
+if (isAsyncView) {
+    // ...
+    const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() : 
+                          viewName === 'my_products' ? renderMyProductsView() : 
+                          renderEditOfferView(data); // ⬅️ NUEVA LLAMADA CON EL ID (data)
+    // ...
+}
                 // Muestra un loader mientras espera
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
 
@@ -690,6 +694,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
