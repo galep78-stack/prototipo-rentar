@@ -145,7 +145,29 @@
                 console.error('Error cargando proveedores (revisa RLS/claves):', error.message);
                 proveedores = []; 
             }
-        }
+        // 🟢 FUNCIÓN PARA VERIFICAR SESIÓN INICIAL Y SINCRONIZAR ESTADO
+async function checkInitialSessionAndSync() {
+    if (!supabaseClient) return;
+    
+    // Consulta a Supabase si hay una sesión activa guardada
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    // Asigna el estado y asegura que el header se dibuje correctamente
+    currentUser = user;
+    renderHeader(); // ⬅️ Dibuja el header basado en el estado REAL de la sesión
+}
+
+// 🟢 FUNCIÓN DE ESCUCHA (Para cuando el usuario usa el botón de Login/Logout)
+function setupAuthListener() {
+    if (!supabaseClient) return;
+
+    // Escucha eventos (ej: cuando se cierra o abre sesión en otra pestaña)
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        // Esta línea es crucial para mantener la sincronía del estado en tiempo real
+        currentUser = session ? session.user : null;
+        renderHeader();
+    });
+}}
         
         // FUNCIONES DE FORMULARIO
         
@@ -429,6 +451,7 @@
     </script>
 </body>
 </html>
+
 
 
 
