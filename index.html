@@ -153,6 +153,59 @@ function renderAddOfferView() {
         </div>
     `;
 }        
+      // 🟢 FUNCIÓN ASÍNCRONA: Carga y renderiza el formulario de edición
+async function renderEditOfferView(offerId) {
+    if (!supabaseClient || !currentUser || !offerId) return setView('dashboard_proveedor');
+
+    let offer = null;
+    try {
+        // 1. Cargar datos de la oferta específica
+        const { data, error } = await supabaseClient
+            .from('ofertas')
+            .select('*')
+            .eq('id', offerId)
+            .single();
+
+        if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
+        
+        offer = data;
+
+    } catch (error) {
+        return `<div class="p-8 text-red-500 font-sans">Error al cargar la oferta: ${error.message}</div>`;
+    }
+    
+    const categories = ["Equipos", "Locacion", "Servicio"];
+    const categoryOptions = categories.map(cat => 
+        `<option value="${cat}" ${offer.categoria === cat ? 'selected' : ''}>${cat} (${cat})</option>`
+    ).join('');
+
+    return `
+        <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+            <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Oferta: ${offer.titulo}</h2>
+            
+            <form onsubmit="handleUpdateOffer(event, '${offer.id}')" class="space-y-6">
+                
+                <input type="text" name="titulo" value="${offer.titulo}" required class="w-full p-3 border rounded-lg">
+                
+                <textarea name="descripcion" rows="4" required class="w-full p-3 border rounded-lg">${offer.descripcion}</textarea>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select name="categoria" required class="w-full p-3 border rounded-lg">
+                        <option value="">Seleccionar Categoría</option>
+                        ${categoryOptions}
+                    </select>
+                    
+                    <input type="number" name="precio" value="${offer.precio}" required class="w-full p-3 border rounded-lg">
+                </div>
+
+                <input type="text" name="ubicacion" value="${offer.ubicacion}" required class="w-full p-3 border rounded-lg">
+
+                <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+                <button type="button" onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar Edición</button>
+            </form>
+        </div>
+    `;
+}
         // Función CERRAR SESIÓN (handleLogout)
         async function handleLogout() {
             try {
@@ -694,6 +747,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
