@@ -270,6 +270,42 @@ function setupAuthListener() {
                 console.error('Error en Supabase SignUp/Insert:', error);
             }
         }
+// Función para insertar la nueva oferta en Supabase
+async function handleAddOffer(event) {
+    event.preventDefault();
+    
+    // El proveedor debe estar logueado para publicar
+    if (!supabaseClient || !currentUser) {
+        alert("Error: Debes iniciar sesión para publicar ofertas.");
+        return;
+    }
+
+    const form = event.target;
+    
+    const offerData = {
+        user_id: currentUser.id, // ⬅️ Vincula la oferta al proveedor logueado
+        titulo: form.titulo.value,
+        descripcion: form.descripcion.value,
+        categoria: form.categoria.value,
+        precio: parseFloat(form.precio.value), 
+        ubicacion: form.ubicacion.value
+    };
+
+    try {
+        const { error } = await supabaseClient
+            .from('ofertas') // ⬅️ Inserta en la nueva tabla 'ofertas'
+            .insert([offerData]);
+
+        if (error) throw error;
+        
+        alert("¡Oferta publicada con éxito!");
+        setView('dashboard_proveedor'); // Redirige al dashboard
+
+    } catch (error) {
+        alert(`Error al publicar la oferta: ${error.message}.`);
+        console.error('Error en handleAddOffer:', error);
+    }
+}
         async function handleLogout() {
     try {
         // Cierra la sesión en Supabase
@@ -323,6 +359,7 @@ function setupAuthListener() {
                 case 'dashboard_proveedor': return renderProviderDashboard();
                 case 'provider_details': return renderProviderDetailsView(data);
                 case 'info': return renderInfoView(data);
+                    case 'add_offer': return renderAddOfferView();
                 default: return renderHomeView();
             }
         }
@@ -424,7 +461,11 @@ function setupAuthListener() {
                 </div>`; 
         }
 
-        function renderProviderDashboard() { return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`; }
+        function renderProviderDashboard() { return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
+    <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+        <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
+    </div>
+    </div>`;</div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`; }
         function renderProviderDetailsView(providerId) { 
             const provider = proveedores.find(p => p.id === providerId); 
             if (!provider) return `<p>Proveedor no encontrado.</p>`; 
@@ -460,9 +501,39 @@ window.onload = () => {
         loadProveedores(); 
     }
 };
+        function renderAddOfferView() {
+    return `
+        <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+            <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+            <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
+            <form onsubmit="handleAddOffer(event)" class="space-y-6">
+                
+                <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Blackmagic 6K)" required class="w-full p-3 border rounded-lg">
+                
+                <textarea name="descripcion" placeholder="Descripción detallada del equipo o servicio" rows="4" required class="w-full p-3 border rounded-lg"></textarea>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select name="categoria" required class="w-full p-3 border rounded-lg">
+                        <option value="">Seleccionar Categoría</option>
+                        <option value="Equipos">Equipos (Cámaras, Luces, Audio)</option>
+                        <option value="Locacion">Locación (Estudios, Casas)</option>
+                        <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
+                    </select>
+                    
+                    <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
+                </div>
+
+                <input type="text" name="ubicacion" placeholder="Ubicación de la Oferta (Ej: CABA, Córdoba)" required class="w-full p-3 border rounded-lg">
+
+                <button type="submit" class="w-full bg-secondary-dark text-white p-3 rounded-lg font-semibold hover:bg-secondary-dark/90">Publicar Oferta Ahora</button>
+            </form>
+        </div>
+    `;
+}
     </script>
 </body>
 </html>
+
 
 
 
