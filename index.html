@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rent.Ar - Prototipo Funcional Completo (Final)</title>
+    <title>Rent.Ar - Prototipo Funcional Completo (Estable)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -44,7 +44,7 @@
         <div class="container mx-auto px-4 pt-10 pb-6">
              <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
                  <div>
-                     <a href="#" onclick="setView('home')" class="flex items-center">
+                     <a href="#" onclick="goToDashboard()" class="flex items-center">
                          <img src="logo-rentar.png" alt="Rent.Ar Logo" class="h-6 mr-2"> 
                          <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
                      </a>
@@ -81,7 +81,7 @@
     
     <script>
         // ==================================================================
-        // == CÓDIGO FINAL Y ESTABLE (TODOS LOS CAMBIOS CONSOLIDADOS) ==
+        // == CÓDIGO FINAL Y ESTABLE (ESTRUCTURA REPARADA) ==
         // ==================================================================
 
         // VARIABLES GLOBALES
@@ -93,7 +93,6 @@
         const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
         let supabaseClient = null; 
-        let proveedorProfileData = null; // Variable para datos del perfil logueado
         let proveedores = []; 
 
         // ===================================================================
@@ -112,101 +111,30 @@
         function setupAuthListener() {
             if (!supabaseClient) return;
 
-            // 1. Consulta el estado de la sesión inicial (para cargar el estado al entrar)
-            supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            supabase.auth.getSession().then(({ data: { session } }) => {
                 currentUser = session ? session.user : null;
                 renderHeader(); 
             });
 
-            // 2. Escucha cambios futuros (login/logout)
-            supabaseClient.auth.onAuthStateChange((event, session) => {
+            supabase.auth.onAuthStateChange((event, session) => {
                 currentUser = session ? session.user : null;
                 renderHeader(); 
             });
         }
-function renderAddOfferView() {
-    return `
-        <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
-            <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
-            <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
-            <form onsubmit="handleAddOffer(event)" class="space-y-6">
-                
-                <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Blackmagic 6K)" required class="w-full p-3 border rounded-lg">
-                
-                <textarea name="descripcion" placeholder="Descripción detallada del equipo o servicio" rows="4" required class="w-full p-3 border rounded-lg"></textarea>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select name="categoria" required class="w-full p-3 border rounded-lg">
-                        <option value="">Seleccionar Categoría</option>
-                        <option value="Equipos">Equipos (Cámaras, Luces, Audio)</option>
-                        <option value="Locacion">Locación (Estudios, Casas)</option>
-                        <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
-                    </select>
-                    
-                    <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
-                </div>
 
-                <input type="text" name="ubicacion" placeholder="Ubicación de la Oferta (Ej: CABA, Córdoba)" required class="w-full p-3 border rounded-lg">
-
-                <button type="submit" class="w-full bg-secondary-dark text-white p-3 rounded-lg font-semibold hover:bg-secondary-dark/90">Publicar Oferta Ahora</button>
-            </form>
-        </div>
-    `;
-}        
-      // 🟢 FUNCIÓN ASÍNCRONA: Carga y renderiza el formulario de edición
-async function renderEditOfferView(offerId) {
-    if (!supabaseClient || !currentUser || !offerId) return setView('dashboard_proveedor');
-
-    let offer = null;
-    try {
-        // 1. Cargar datos de la oferta específica
-        const { data, error } = await supabaseClient
-            .from('ofertas')
-            .select('*')
-            .eq('id', offerId)
-            .single();
-
-        if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
+        function goToDashboard() {
+            if (currentUser) {
+                const userRole = currentUser.user_metadata.user_role;
+                if (userRole === 'proveedor') {
+                    setView('dashboard_proveedor');
+                } else {
+                    setView('dashboard_productor');
+                }
+            } else {
+                setView('home');
+            }
+        }
         
-        offer = data;
-
-    } catch (error) {
-        return `<div class="p-8 text-red-500 font-sans">Error al cargar la oferta: ${error.message}</div>`;
-    }
-    
-    const categories = ["Equipos", "Locacion", "Servicio"];
-    const categoryOptions = categories.map(cat => 
-        `<option value="${cat}" ${offer.categoria === cat ? 'selected' : ''}>${cat} (${cat})</option>`
-    ).join('');
-
-    return `
-        <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
-            <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Oferta: ${offer.titulo}</h2>
-            
-            <form onsubmit="handleUpdateOffer(event, '${offer.id}')" class="space-y-6">
-                
-                <input type="text" name="titulo" value="${offer.titulo}" required class="w-full p-3 border rounded-lg">
-                
-                <textarea name="descripcion" rows="4" required class="w-full p-3 border rounded-lg">${offer.descripcion}</textarea>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select name="categoria" required class="w-full p-3 border rounded-lg">
-                        <option value="">Seleccionar Categoría</option>
-                        ${categoryOptions}
-                    </select>
-                    
-                    <input type="number" name="precio" value="${offer.precio}" required class="w-full p-3 border rounded-lg">
-                </div>
-
-                <input type="text" name="ubicacion" value="${offer.ubicacion}" required class="w-full p-3 border rounded-lg">
-
-                <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
-                <button type="button" onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar Edición</button>
-            </form>
-        </div>
-    `;
-}
-        // Función CERRAR SESIÓN (handleLogout)
         async function handleLogout() {
             try {
                 const { error } = await supabaseClient.auth.signOut(); 
@@ -214,14 +142,12 @@ async function renderEditOfferView(offerId) {
                 currentUser = null;
                 alert("Sesión cerrada correctamente.");
                 setView('home'); 
-                // renderHeader() es llamado por el AuthListener
             } catch (error) {
                 console.error('Error al cerrar sesión:', error.message);
                 alert('Ocurrió un error al intentar cerrar la sesión.');
             }
         }
 
-        // Función INICIAR SESIÓN (handleLogin)
         async function handleLogin(event) {
             event.preventDefault();
             if (!supabaseClient) return alert("Error de conexión a la BDD.");
@@ -248,16 +174,13 @@ async function renderEditOfferView(offerId) {
                 } else {
                     setView('dashboard_productor'); 
                 }
-                // El AuthListener se encarga de llamar a renderHeader() inmediatamente
-                // después de que el estado de Supabase cambia.
-
+                
             } catch (error) {
                 alert(`Error al iniciar sesión: ${error.message}`);
                 console.error('Error en Supabase SignIn:', error);
             }
         }
 
-        // Función REGISTRAR (handleRegister)
         async function handleRegister(event) {
             event.preventDefault();
             if (!supabaseClient) return alert("Error de conexión a la BDD.");
@@ -286,7 +209,7 @@ async function renderEditOfferView(offerId) {
                                 user_id: user.id,
                                 nombre_empresa: form.empresa.value,
                                 cuit: form.cuit.value,
-                                direccion: form.direccion.value, // ⬅️ Dirección agregada
+                                direccion: form.direccion.value,
                                 email_contacto: email
                             }
                         ]);
@@ -306,7 +229,6 @@ async function renderEditOfferView(offerId) {
             }
         }
         
-        // Función AGREGAR OFERTA (handleAddOffer)
         async function handleAddOffer(event) {
             event.preventDefault();
             if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
@@ -337,71 +259,46 @@ async function renderEditOfferView(offerId) {
                 console.error('Error en handleAddOffer:', error);
             }
         }
-async function handleRemoveOffer(offerId) {
-    if (!supabaseClient || !currentUser) return alert("Error: Debes iniciar sesión.");
 
-    if (!confirm("¿Estás seguro de que deseas eliminar esta oferta?")) {
-        return; // El usuario canceló la eliminación
-    }
+        async function handleProfileUpdate(event) {
+            event.preventDefault();
+            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
 
-    try {
-        // Utilizamos el método DELETE de Supabase:
-        const { error } = await supabaseClient
-            .from('ofertas')
-            .delete()
-            .eq('id', offerId) // Filtra por el ID de la oferta
-            .eq('user_id', currentUser.id); // 🟢 CRUCIAL: Asegura que solo el dueño puede eliminarla
+            const form = event.target;
+            const nuevoNombre = form.nombre_update.value;
+            const nuevaDireccion = form.direccion_update.value;
+            const nuevoCuit = form.cuit_update ? form.cuit_update.value : null;
 
-        if (error) throw error;
-        
-        alert("Oferta eliminada con éxito.");
-        
-        // Refrescar la vista de Mis Productos (llamando al router de nuevo)
-        setView('my_products'); 
+            const userRole = currentUser.user_metadata.user_role;
+            const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores'; 
 
-    } catch (error) {
-        alert(`Error al eliminar la oferta: ${error.message}.`);
-        console.error('Error en handleRemoveOffer:', error);
-    }
-}
-// 🟢 FUNCIÓN PARA ACTUALIZAR UNA OFERTA EXISTENTE
-async function handleUpdateOffer(event, offerId) {
-    event.preventDefault();
-    if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para editar ofertas.");
-    
-    const form = event.target;
-    
-    const updateData = {
-        titulo: form.titulo.value,
-        descripcion: form.descripcion.value,
-        categoria: form.categoria.value,
-        precio: parseFloat(form.precio.value),
-        ubicacion: form.ubicacion.value
-        // user_id no se actualiza, ya que es el dueño
-    };
+            const updateData = {
+                nombre_empresa: nuevoNombre, 
+                direccion: nuevaDireccion,
+                ...(nuevoCuit && { cuit: nuevoCuit }) 
+            };
+            
+            try {
+                const { error } = await supabaseClient
+                    .from(tableName)
+                    .update(updateData)
+                    .eq('user_id', currentUser.id); 
+                
+                if (error) throw error;
+                
+                alert(`¡Perfil de ${userRole} actualizado con éxito!`);
+                setView('home'); 
 
-    try {
-        // 1. Utilizamos el método UPDATE de Supabase
-        const { error } = await supabaseClient
-            .from('ofertas')
-            .update(updateData)
-            .eq('id', offerId) // Filtra por el ID de la oferta a modificar
-            .eq('user_id', currentUser.id); // 🟢 CRUCIAL: Asegura que solo el dueño pueda editarla
+            } catch (error) {
+                alert(`Error al actualizar perfil: ${error.message}. Asegúrate de tener permiso de UPDATE RLS.`);
+                console.error('Error en handleProfileUpdate:', error);
+            }
+        }
 
-        if (error) throw error;
-        
-        alert("Oferta actualizada con éxito.");
-        setView('my_products'); // Vuelve al listado de productos
-
-    } catch (error) {
-        alert(`Error al actualizar la oferta: ${error.message}.`);
-        console.error('Error en handleUpdateOffer:', error);
-    }
-}
         // ===================================================================
-        // 🟢 FUNCIONES DE CARGA DE DATOS Y PERFIL
+        // 🟢 FUNCIONES DE CARGA DE DATOS Y PERFIL (GETTERS)
         // ===================================================================
-        
+
         async function loadProveedores() { 
             if (!supabaseClient) return; 
 
@@ -430,8 +327,7 @@ async function handleUpdateOffer(event, offerId) {
                 proveedores = []; 
             }
         }
-        
-        // 🟢 Función para cargar los datos del perfil (editable)
+
         async function getProfileData(userId, role) {
             if (!supabaseClient || !userId) return null;
             
@@ -455,95 +351,48 @@ async function handleUpdateOffer(event, offerId) {
             return { nombre: currentUser.user_metadata.full_name || 'Productor', direccion: 'N/A' };
         }
 
-        // 🟢 Función para guardar los datos del perfil
-        async function handleProfileUpdate(event) {
-            event.preventDefault();
-            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
-
-            const form = event.target;
-            const nuevoNombre = form.nombre_update.value;
-            const nuevaDireccion = form.direccion_update.value;
-            const nuevoCuit = form.cuit_update ? form.cuit_update.value : null;
-
-            const userRole = currentUser.user_metadata.user_role;
-            const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores'; 
-
-            const updateData = {
-                nombre_empresa: nuevoNombre, 
-                direccion: nuevaDireccion,
-                ...(nuevoCuit && { cuit: nuevoCuit }) // Añade CUIT solo si existe
-            };
-            
-            try {
-                const { error } = await supabaseClient
-                    .from(tableName)
-                    .update(updateData)
-                    .eq('user_id', currentUser.id); 
-                
-                if (error) throw error;
-                
-                alert(`¡Perfil de ${userRole} actualizado con éxito!`);
-                setView('home'); 
-
-            } catch (error) {
-                alert(`Error al actualizar perfil: ${error.message}. Asegúrate de tener permiso de UPDATE RLS.`);
-                console.error('Error en handleProfileUpdate:', error);
+        // LÓGICA DE MAPAS
+        function showProviderOnMap(address) {
+            const iframe = document.getElementById('map-iframe');
+            if (iframe) {
+                const encodedAddress = encodeURIComponent(address);
+                const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&z=15&output=embed`;
+                iframe.src = mapUrl;
+                console.log(`Ubicando: ${address}`);
+            } else {
+                console.error("Error: No se encontró el iframe con id='map-iframe'.");
             }
         }
-
 
         // ===================================================================
         // FUNCIONES DE VISTA (RENDERIZADO)
         // ===================================================================
 
-        // 🟢 NUEVO ROUTER ESTABLE PARA VISTAS ASÍNCRONAS/SÍNCRONAS
         function setView(viewName, data = null) {
             window.location.hash = viewName;
             
-            const isAsyncView = viewName === 'profile_edit' || viewName === 'my_products' || viewName === 'edit_offer'; // ⬅️ NUEVO CASO
-
-if (isAsyncView) {
-    // ...
-    const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() : 
-                          viewName === 'my_products' ? renderMyProductsView() : 
-                          renderEditOfferView(data); // ⬅️ NUEVA LLAMADA CON EL ID (data)
-    // ...
-}
-                // Muestra un loader mientras espera
+            const isAsyncView = viewName === 'profile_edit' || viewName === 'my_products' || viewName === 'edit_offer';
+            
+            if (isAsyncView) {
+                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() : 
+                                      viewName === 'my_products' ? renderMyProductsView() : 
+                                      renderEditOfferView(data);
+                
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
 
                 renderPromise.then(html => {
-                    // Solo actualiza si el usuario no ha navegado a otra vista
                     if (window.location.hash === `#${viewName}`) { 
                          contentView.innerHTML = html;
                     }
                 }).catch(error => {
-                    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error}</p>`;
+                    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
                 });
                 return;
             }
             
-            // Manejo de vistas síncronas
             contentView.innerHTML = renderView(viewName, data);
         }
-function goToOfferPost() {
-    if (currentUser) {
-        const userRole = currentUser.user_metadata.user_role;
-        
-        if (userRole === 'proveedor') {
-            // Si está logueado como proveedor, va directamente al formulario
-            setView('add_offer');
-        } else {
-            // Si está logueado como productor (o tiene un rol diferente), va a su dashboard
-            alert("Debes ser proveedor para publicar ofertas.");
-            goToDashboard(); // Lo envía a su dashboard principal
-        }
-    } else {
-        // Si no está logueado, lo envía a iniciar sesión (o registrar)
-        setView('login'); 
-    }
-}
-        // 🟢 FUNCIÓN PRINCIPAL DE RENDERIZADO (SIN LÓGICA ASÍNCRONA)
+
         function renderView(viewName, data) {
             switch (viewName) {
                 case 'home': return renderHomeView();
@@ -553,19 +402,17 @@ function goToOfferPost() {
                 case 'dashboard_proveedor': return renderProviderDashboard();
                 case 'provider_details': return renderProviderDetailsView(data);
                 case 'info': return renderInfoView(data);
-                    case 'add_offer': return renderAddOfferView();
+                case 'add_offer': return renderAddOfferView(); // ⬅️ Caso agregado
                 default: return renderHomeView();
             }
         }
 
-        // 🟢 FUNCIÓN ASÍNCRONA PARA EL PERFIL (SE LLAMA DESDE setView)
         async function renderProfileEditView() {
             if (!currentUser) return renderLoginView();
 
             const isProvider = currentUser.user_metadata.user_role === 'proveedor';
             const userRole = isProvider ? 'Proveedor' : 'Productor';
-            // 🆕 Determinamos el dashboard de destino según el rol
-            const dashboardView = isProvider ? 'dashboard_proveedor' : 'dashboard_productor'; 
+            const dashboardView = isProvider ? 'dashboard_proveedor' : 'dashboard_productor';
             
             const profileData = await getProfileData(currentUser.id, userRole.toLowerCase());
             
@@ -607,23 +454,33 @@ function goToOfferPost() {
             `;
         }
 
-        // 🟢 FUNCIÓN ASÍNCRONA PARA MIS PRODUCTOS (SE LLAMA DESDE setView)
         async function renderMyProductsView() {
             if (!currentUser) return renderLoginView();
 
             let productListHtml = `<p class="text-gray-400">Cargando productos...</p>`;
             
             try {
-                // 🟢 CARGAR SOLO LAS OFERTAS DEL USUARIO ACTUAL
                 const { data: offers, error } = await supabaseClient
                     .from('ofertas')
                     .select('*')
-                    .eq('user_id', currentUser.id); // Filtra por el ID del usuario logueado
+                    .eq('user_id', currentUser.id); 
 
                 if (error) throw error;
                 
                 if (offers.length > 0) {
-                async function renderMyProductsView()
+                    productListHtml = offers.map(offer => `
+                        <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
+                            <div>
+                                <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+                                <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion}</p>
+                                <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
+                            </div>
+                            <div class="flex-shrink-0 flex gap-2">
+                                <button onclick="setView('edit_offer', '${offer.id}')" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Editar</button>
+                                <button onclick="handleRemoveOffer('${offer.id}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold">Eliminar</button>
+                            </div>
+                        </div>
+                    `).join('');
                 } else {
                     productListHtml = `<p class="text-gray-400">Aún no has publicado ninguna oferta.</p>`;
                 }
@@ -641,40 +498,62 @@ function goToOfferPost() {
                 </div>`;
         }
 
+        async function renderEditOfferView(offerId) {
+            if (!supabaseClient || !currentUser || !offerId) return setView('dashboard_proveedor');
 
-        function renderHeader() {
-            const header = document.getElementById('main-header');
-            if (!header) return;
+            let offer = null;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('ofertas')
+                    .select('*')
+                    .eq('id', offerId)
+                    .single();
 
-            const authButtons = currentUser 
-                ? // Estado: CONECTADO
-                  `<div class="flex space-x-3">
-                       <button onclick="setView('profile_edit')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Mi Perfil</button>
-                       <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>
-                   </div>`
-                : // Estado: DESCONECTADO
-                  `<div class="flex space-x-3">
-                       <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
-                       <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
-                   </div>`;
+                if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
+                
+                offer = data;
 
-            header.innerHTML = `
-                <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
-                    <a href="#" onclick="setView('home')" class="flex items-center mb-4 md:mb-0">
-                        <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
-                        <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
-                    </a>
-                    <div class="flex flex-col md:flex-row items-center gap-4">
-                        <button onclick="setView('info', '¿Cómo funciona?')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">¿Cómo funciona?</button>
-                        ${authButtons}
-                    </div>
-                </div>`;
+            } catch (error) {
+                return `<div class="p-8 text-red-500 font-sans">Error al cargar la oferta: ${error.message}</div>`;
+            }
+            
+            const categories = ["Equipos", "Locacion", "Servicio"];
+            const categoryOptions = categories.map(cat => 
+                `<option value="${cat}" ${offer.categoria === cat ? 'selected' : ''}>${cat}</option>`
+            ).join('');
+
+            return `
+                <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+                    <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Oferta: ${offer.titulo}</h2>
+                    
+                    <form onsubmit="handleUpdateOffer(event, '${offer.id}')" class="space-y-6">
+                        
+                        <input type="text" name="titulo" value="${offer.titulo}" required class="w-full p-3 border rounded-lg">
+                        
+                        <textarea name="descripcion" rows="4" required class="w-full p-3 border rounded-lg">${offer.descripcion}</textarea>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <select name="categoria" required class="w-full p-3 border rounded-lg">
+                                <option value="">Seleccionar Categoría</option>
+                                ${categoryOptions}
+                            </select>
+                            
+                            <input type="number" name="precio" value="${offer.precio}" required class="w-full p-3 border rounded-lg">
+                        </div>
+
+                        <input type="text" name="ubicacion" value="${offer.ubicacion}" required class="w-full p-3 border rounded-lg">
+
+                        <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+                        <button type="button" onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar Edición</button>
+                    </form>
+                </div>
+            `;
         }
 
-        // Resto de funciones síncronas (renderHomeView, renderLoginView, etc.)
         function renderHomeView() { 
-    return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);"><div class="text-center max-w-4xl"><h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1><div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8"><input type="text" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark"><button onclick="setView('dashboard_productor')" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button></div></div></section><section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark"><h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy productor</h3><p class="text-gray-600 mb-6">Buscá equipos y servicios.</p><button onclick="setView('dashboard_productor')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button></div><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy proveedor</h3><p class="text-gray-600 mb-6">Publicá tu inventario.</p><button onclick="goToOfferPost()" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button></div></div></section>`; 
-}
+            return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);"><div class="text-center max-w-4xl"><h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1><div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8"><input type="text" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark"><button onclick="setView('dashboard_productor')" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button></div></div></section><section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark"><h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy productor</h3><p class="text-gray-600 mb-6">Buscá equipos y servicios.</p><button onclick="setView('dashboard_productor')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button></div><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy proveedor</h3><p class="text-gray-600 mb-6">Publicá tu inventario.</p><button onclick="goToOfferPost()" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button></div></div></section>`; 
+        }
+
         function renderLoginView() { 
             return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`; 
         }
@@ -739,32 +618,29 @@ function goToOfferPost() {
                 </div>`; 
         }
 
-       function renderProviderDashboard() { 
-    return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
-        <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1>
-        <p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
-                <h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3>
-                <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
-                <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
-            </div>
-            
-            <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
-                <h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3>
-                <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
-                <button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button>
-            </div>
-            
-            <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
-                <h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3>
-                <p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p>
-                <button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button>
-            </div>
-        </div>
-    </div>`; 
-}
+        function renderProviderDashboard() { 
+            return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
+                <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1>
+                <p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3>
+                        <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
+                        <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
+                    </div>
+                    <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3>
+                        <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
+                        <button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button>
+                    </div>
+                    <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3>
+                        <p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p>
+                        <button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button>
+                    </div>
+                </div>
+            </div>`; 
+        }
 
         function renderProviderDetailsView(providerId) { 
             const provider = proveedores.find(p => p.id === providerId); 
@@ -782,6 +658,36 @@ function goToOfferPost() {
         }
 
         function renderComoFuncionaView() { return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`; }
+
+        function renderAddOfferView() {
+            return `
+                <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+                    <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+                    <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
+                    <form onsubmit="handleAddOffer(event)" class="space-y-6">
+                        
+                        <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Blackmagic 6K)" required class="w-full p-3 border rounded-lg">
+                        
+                        <textarea name="descripcion" placeholder="Descripción detallada del equipo o servicio" rows="4" required class="w-full p-3 border rounded-lg"></textarea>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <select name="categoria" required class="w-full p-3 border rounded-lg">
+                                <option value="">Seleccionar Categoría</option>
+                                <option value="Equipos">Equipos (Cámaras, Luces, Audio)</option>
+                                <option value="Locacion">Locación (Estudios, Casas)</option>
+                                <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
+                            </select>
+                            
+                            <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
+                        </div>
+
+                        <input type="text" name="ubicacion" placeholder="Ubicación de la Oferta (Ej: CABA, Córdoba)" required class="w-full p-3 border rounded-lg">
+
+                        <button type="submit" class="w-full bg-secondary-dark text-white p-3 rounded-lg font-semibold hover:bg-secondary-dark/90">Publicar Oferta Ahora</button>
+                    </form>
+                </div>
+            `;
+        }
 
 // PUNTO DE ARRANQUE DE LA APLICACIÓN
 window.onload = () => { 
@@ -804,15 +710,3 @@ window.onload = () => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
