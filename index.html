@@ -193,25 +193,34 @@ function setupAuthListener() {
                     email: email,
                     password: password,
                 });
+const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
+    });
 
-                if (error) throw error;
-                
-                currentUser = data.user; 
-                alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
+    if (error) throw error;
+    
+    currentUser = data.user;
+    alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
 
-                const userRole = currentUser.user_metadata.user_role;
+    const userRole = currentUser.user_metadata.user_role;
 
-                if (userRole === 'proveedor') {
-                    setView('dashboard_proveedor');
-                } else {
-                    setView('dashboard_productor'); 
-                }
+    if (userRole === 'proveedor') {
+        setView('dashboard_proveedor');
+    } else {
+        setView('dashboard_productor');
+    }
 
-            } catch (error) {
-                alert(`Error al iniciar sesión: ${error.message}`);
-                console.error('Error en Supabase SignIn:', error);
-            }
-        }
+    // 🟢 CLAVE: Fuerza la sincronización y el redibujado del encabezado
+    // Obtener el objeto de usuario más reciente
+    const { data: { user } } = await supabaseClient.auth.getUser(); 
+    currentUser = user; // Asegura que la variable global tenga el objeto User
+    renderHeader();      // ⬅️ ¡PEGA ESTA LÍNEA AQUÍ! Esto actualiza el botón a "Cerrar Sesión"
+
+} catch (error) {
+    alert(`Error al iniciar sesión: ${error.message}`);
+    console.error('Error en Supabase SignIn:', error);
+}
 
         async function handleRegister(event) {
             event.preventDefault();
@@ -459,6 +468,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
