@@ -364,6 +364,40 @@ async function handleRemoveOffer(offerId) {
         console.error('Error en handleRemoveOffer:', error);
     }
 }
+// 🟢 FUNCIÓN PARA ACTUALIZAR UNA OFERTA EXISTENTE
+async function handleUpdateOffer(event, offerId) {
+    event.preventDefault();
+    if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para editar ofertas.");
+    
+    const form = event.target;
+    
+    const updateData = {
+        titulo: form.titulo.value,
+        descripcion: form.descripcion.value,
+        categoria: form.categoria.value,
+        precio: parseFloat(form.precio.value),
+        ubicacion: form.ubicacion.value
+        // user_id no se actualiza, ya que es el dueño
+    };
+
+    try {
+        // 1. Utilizamos el método UPDATE de Supabase
+        const { error } = await supabaseClient
+            .from('ofertas')
+            .update(updateData)
+            .eq('id', offerId) // Filtra por el ID de la oferta a modificar
+            .eq('user_id', currentUser.id); // 🟢 CRUCIAL: Asegura que solo el dueño pueda editarla
+
+        if (error) throw error;
+        
+        alert("Oferta actualizada con éxito.");
+        setView('my_products'); // Vuelve al listado de productos
+
+    } catch (error) {
+        alert(`Error al actualizar la oferta: ${error.message}.`);
+        console.error('Error en handleUpdateOffer:', error);
+    }
+}
         // ===================================================================
         // 🟢 FUNCIONES DE CARGA DE DATOS Y PERFIL
         // ===================================================================
@@ -747,6 +781,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
