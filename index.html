@@ -179,47 +179,42 @@ function setupAuthListener() {
         // FUNCIONES DE FORMULARIO
         
         async function handleLogin(event) {
-            event.preventDefault();
-            // 🟢 CAMBIO: Usamos supabaseClient
-            if (!supabaseClient) return alert("Error de conexión a la BDD.");
-            
-            const form = event.target;
-            const email = form.email.value;
-            const password = form.password.value;
-            
-            try {
-                // 🟢 CAMBIO: Usamos supabaseClient
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password,
-                });
-const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password,
-    });
-
-    if (error) throw error;
+    event.preventDefault();
+    if (!supabaseClient) return alert("Error de conexión a la BDD.");
     
-    currentUser = data.user;
-    alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
+    const form = event.target;
+    const email = form.email.value;
+    const password = form.password.value;
+    
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
 
-    const userRole = currentUser.user_metadata.user_role;
+        if (error) throw error;
+        
+        // 1. Asignamos el usuario del objeto 'data'
+        currentUser = data.user; 
+        alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
 
-    if (userRole === 'proveedor') {
-        setView('dashboard_proveedor');
-    } else {
-        setView('dashboard_productor');
+        const userRole = currentUser.user_metadata.user_role;
+
+        // 2. Redirigimos
+        if (userRole === 'proveedor') {
+            setView('dashboard_proveedor');
+        } else {
+            setView('dashboard_productor'); 
+        }
+
+        // 3. 🟢 ÚLTIMA LÍNEA CLAVE: Dibuja el nuevo header.
+        //    (Ya no necesitamos el await extra, solo el render.)
+        renderHeader(); 
+
+    } catch (error) {
+        alert(`Error al iniciar sesión: ${error.message}`);
+        console.error('Error en Supabase SignIn:', error);
     }
-
-    // 🟢 CLAVE: Fuerza la sincronización y el redibujado del encabezado
-    // Obtener el objeto de usuario más reciente
-    const { data: { user } } = await supabaseClient.auth.getUser(); 
-    currentUser = user; // Asegura que la variable global tenga el objeto User
-    renderHeader();      // ⬅️ ¡PEGA ESTA LÍNEA AQUÍ! Esto actualiza el botón a "Cerrar Sesión"
-
-} catch (error) {
-    alert(`Error al iniciar sesión: ${error.message}`);
-    console.error('Error en Supabase SignIn:', error);
 }
 
         async function handleRegister(event) {
@@ -468,6 +463,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
