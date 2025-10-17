@@ -167,7 +167,92 @@ function renderAddOfferView() {
                 alert('Ocurrió un error al intentar cerrar la sesión.');
             }
         }
+// 🟢 FUNCIÓN PARA ACTUALIZAR UNA OFERTA EXISTENTE
+async function handleUpdateOffer(event, offerId) {
+    event.preventDefault();
+    if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para editar ofertas.");
+    
+    const form = event.target;
+    
+    const updateData = {
+        titulo: form.titulo.value,
+        descripcion: form.descripcion.value,
+        categoria: form.categoria.value,
+        precio: parseFloat(form.precio.value),
+        ubicacion: form.ubicacion.value
+    };
 
+    try {
+        // Utilizamos el método UPDATE de Supabase
+        const { error } = await supabaseClient
+            .from('ofertas')
+            .update(updateData)
+            .eq('id', offerId) // Filtra por el ID de la oferta
+            .eq('user_id', currentUser.id); // CRUCIAL: Asegura que solo el dueño pueda editarla
+
+        if (error) throw error;
+        
+        alert("Oferta actualizada con éxito.");
+        setView('my_products'); // Vuelve al listado de productos actualizado
+
+    } catch (error) {
+        alert(`Error al actualizar la oferta: ${error.message}.`);
+        console.error('Error en handleUpdateOffer:', error);
+    }
+}
+ // 🟢 FUNCIÓN ASÍNCRONA: Carga y renderiza el formulario de edición
+async function renderEditOfferView(offerId) {
+    if (!supabaseClient || !currentUser || !offerId) return setView('dashboard_proveedor');
+
+    let offer = null;
+    try {
+        // 1. Cargar datos de la oferta específica
+        const { data, error } = await supabaseClient
+            .from('ofertas')
+            .select('*')
+            .eq('id', offerId)
+            .single();
+
+        if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
+        
+        offer = data;
+
+    } catch (error) {
+        return `<div class="p-8 text-red-500 font-sans">Error al cargar la oferta: ${error.message}</div>`;
+    }
+    
+    const categories = ["Equipos", "Locacion", "Servicio"];
+    const categoryOptions = categories.map(cat => 
+        `<option value="${cat}" ${offer.categoria === cat ? 'selected' : ''}>${cat}</option>`
+    ).join('');
+
+    return `
+        <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+            <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Oferta: ${offer.titulo}</h2>
+            
+            <form onsubmit="handleUpdateOffer(event, '${offer.id}')" class="space-y-6">
+                
+                <input type="text" name="titulo" value="${offer.titulo}" required class="w-full p-3 border rounded-lg">
+                
+                <textarea name="descripcion" rows="4" required class="w-full p-3 border rounded-lg">${offer.descripcion}</textarea>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select name="categoria" required class="w-full p-3 border rounded-lg">
+                        <option value="">Seleccionar Categoría</option>
+                        ${categoryOptions}
+                    </select>
+                    
+                    <input type="number" name="precio" value="${offer.precio}" required class="w-full p-3 border rounded-lg">
+                </div>
+
+                <input type="text" name="ubicacion" value="${offer.ubicacion}" required class="w-full p-3 border rounded-lg">
+
+                <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+                <button type="button" onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar Edición</button>
+            </form>
+        </div>
+    `;
+}
         // Función INICIAR SESIÓN (handleLogin)
         async function handleLogin(event) {
             event.preventDefault();
@@ -377,7 +462,36 @@ function renderAddOfferView() {
                 console.error('Error en handleProfileUpdate:', error);
             }
         }
+async function handleRemoveOffer(offerId) {
+    if (!supabaseClient || !currentUser) {
+        alert("Error: Debes iniciar sesión para eliminar ofertas.");
+        return;
+    }
 
+    if (!confirm("¿Estás seguro de que deseas eliminar esta oferta? Esta acción es irreversible.")) {
+        return; 
+    }
+
+    try {
+        // Utilizamos el método DELETE de Supabase:
+        const { error } = await supabaseClient
+            .from('ofertas')
+            .delete()
+            .eq('id', offerId) 
+            .eq('user_id', currentUser.id); // CRUCIAL: Asegura que solo el dueño pueda eliminarla
+
+        if (error) throw error;
+        
+        alert("Oferta eliminada con éxito.");
+        
+        // Refrescar la vista de Mis Productos
+        setView('my_products'); 
+
+    } catch (error) {
+        alert(`Error al eliminar la oferta: ${error.message}. Asegúrate de tener permiso DELETE RLS.`);
+        console.error('Error en handleRemoveOffer:', error);
+    }
+}
 
         // ===================================================================
         // FUNCIONES DE VISTA (RENDERIZADO)
@@ -493,31 +607,29 @@ function goToOfferPost() {
         // 🟢 FUNCIÓN ASÍNCRONA PARA MIS PRODUCTOS (SE LLAMA DESDE setView)
         async function renderMyProductsView() {
             if (!currentUser) return renderLoginView();
-
             let productListHtml = `<p class="text-gray-400">Cargando productos...</p>`;
-            
             try {
                 // 🟢 CARGAR SOLO LAS OFERTAS DEL USUARIO ACTUAL
                 const { data: offers, error } = await supabaseClient
                     .from('ofertas')
                     .select('*')
                     .eq('user_id', currentUser.id); // Filtra por el ID del usuario logueado
-
                 if (error) throw error;
-                
                 if (offers.length > 0) {
                     productListHtml = offers.map(offer => `
-                        <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
-                            <div>
-                                <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
-                                <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion}</p>
-                                <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
-                            </div>
-                            <div class="flex-shrink-0 flex gap-2">
-                                <button class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Editar</button>
-                            </div>
-                        </div>
-                    `).join('');
+    <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
+        <div>
+            <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+            <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion}</p>
+            <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
+        </div>
+        <div class="flex-shrink-0 flex gap-2 space-x-2">
+            <button onclick="setView('edit_offer', '${offer.id}')" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Editar</button>
+            
+            <button onclick="handleRemoveOffer('${offer.id}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold">Eliminar</button>
+        </div>
+    </div>
+`).join('');
                 } else {
                     productListHtml = `<p class="text-gray-400">Aún no has publicado ninguna oferta.</p>`;
                 }
@@ -534,7 +646,6 @@ function goToOfferPost() {
                     <div class="space-y-4">${productListHtml}</div>
                 </div>`;
         }
-
 
         function renderHeader() {
             const header = document.getElementById('main-header');
@@ -675,6 +786,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
