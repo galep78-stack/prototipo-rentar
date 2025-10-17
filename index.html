@@ -288,7 +288,20 @@ async function renderEditOfferView(offerId) {
                 console.error('Error en Supabase SignIn:', error);
             }
         }
-
+function goToDashboard() {
+    if (currentUser) {
+        // Si tiene sesión, verifica el rol para el dashboard correcto
+        const userRole = currentUser.user_metadata.user_role;
+        if (userRole === 'proveedor') {
+            setView('dashboard_proveedor');
+        } else {
+            setView('dashboard_productor');
+        }
+    } else {
+        // Si no está logueado, lo envía a la página principal
+        setView('home');
+    }
+}
         // Función REGISTRAR (handleRegister)
     async function handleRegister(event) {
     event.preventDefault();
@@ -816,6 +829,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
