@@ -775,16 +775,32 @@ function updateRegisterForm(role) {
         }
 
         function renderProviderDashboard() { 
-            return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3><p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p><button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`; 
-        }
-
-        function renderProviderDetailsView(providerId) { 
-            const provider = proveedores.find(p => p.id === providerId); 
-            if (!provider) return `<p>Proveedor no encontrado.</p>`; 
-            const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join(''); 
-            let opinionsHtml = provider.opiniones.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join(''); 
-            return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div></div>`; 
-        }
+           function renderProviderDashboard() { 
+    return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
+        <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1>
+        <p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+                <h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3>
+                <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
+                <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
+            </div>
+            
+            <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+                <h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3>
+                <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
+                <button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button>
+            </div>
+            
+            <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+                <h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3>
+                <p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p>
+                <button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button>
+            </div>
+        </div>
+    </div>`; 
+}
 
         function renderInfoView(title) {
             if (title === '¿Cómo funciona?') {
@@ -816,6 +832,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
