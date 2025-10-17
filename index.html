@@ -441,7 +441,8 @@
                 case 'dashboard_proveedor': return renderProviderDashboard();
                 case 'provider_details': return renderProviderDetailsView(data);
                 case 'info': return renderInfoView(data);
-                case 'add_offer': return renderAddOfferView(); 
+                case 'add_offer': return renderAddOfferView();
+                    case 'como_funciona': return renderComoFuncionaView();
                 default: return renderHomeView();
             }
         }
@@ -684,10 +685,10 @@
                 </a>
                 
                 <div class="hidden md:flex flex-grow justify-center">
-                    <button onclick="setView('info', '¿Cómo funciona?')" 
-                            class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">
-                        ¿Cómo funciona?
-                    </button>
+                    <button onclick="setView('info_como_funciona')" 
+        class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">
+    ¿Cómo funciona?
+</button>
                 </div>
                 
                 <div class="flex items-center space-x-4">
@@ -863,6 +864,7 @@
     </script>
 </body>
 </html>
+
 
 
 
