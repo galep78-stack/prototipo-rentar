@@ -85,100 +85,97 @@
         // ==================================================================
 
         // VARIABLES GLOBALES
-        let currentUser = null; 
-        let selectedRole = null;
-        const contentView = document.getElementById('content-view');
+let currentUser = null; 
+let selectedRole = null;
+const contentView = document.getElementById('content-view');
 
-        // ⚠️ PASO 1.3: CLAVES (TUS CLAVES REALES)
-        const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
-        // 🟢 NUEVO CLIENTE DE TRABAJO
-        let supabaseClient = null; 
+// ⚠️ CLAVES (TUS CLAVES REALES)
+const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
+let supabaseClient = null; 
 
-        // DATOS REALES (Inicialmente vacía, se llenará con la BDD de Supabase)
-        let proveedores = []; 
+// DATOS REALES (Inicialmente vacía, se llenará con la BDD de Supabase)
+let proveedores = []; 
 
-        // ===================================================================
-        // 🟢 FUNCIÓN DE INICIALIZACIÓN (SOLUCIONA EL TYPE ERROR)
-        // ===================================================================
-        function initializeSupabase() {
-            // Accedemos al objeto global 'supabase' de la librería (sin let/const)
-            if (typeof supabase.createClient !== 'function') { 
-                console.error("Error: La librería de Supabase no se cargó correctamente. Revisa la URL CDN.");
-                return false; 
-            }
-            // Asignamos el cliente a nuestra variable de trabajo 'supabaseClient'
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            return true;
-        }
-
-        // ===================================================================
-        // FUNCIONES ASÍNCRONAS PARA CARGAR Y MANEJAR DATOS
-        // ===================================================================
-
-        async function loadProveedores() { 
-            // 🟢 CAMBIO: Usamos supabaseClient
-            if (!supabaseClient) return; 
-
-            try {
-                // 🟢 CAMBIO: Usamos supabaseClient
-                const { data, error } = await supabaseClient
-                    .from('proveedores') 
-                    .select('*'); 
-                    
-                if (error) throw error;
-
-                proveedores = data.map(p => ({
-                    id: p.id,
-                    nombre: p.nombre_empresa || p.nombre || 'Nombre no definido', 
-                    address: p.direccion || 'Dirección no definida',            
-                    tipo: 'Empresa',          
-                    ubicacion: 'BDD',        
-                    opiniones: []             
-                }));
-                
-                if (window.location.hash.includes('dashboard_productor')) {
-                    setView('dashboard_productor'); 
-                }
-
-            } catch (error) {
-                console.error('Error cargando proveedores (revisa RLS/claves):', error.message);
-                proveedores = []; 
-            }
-        // 🟢 FUNCIÓN PARA VERIFICAR SESIÓN INICIAL Y SINCRONIZAR ESTADO
-async function checkInitialSessionAndSync() {
-    if (!supabaseClient) return;
-    
-    // Consulta a Supabase si hay una sesión activa guardada
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    
-    // Asigna el estado y asegura que el header se dibuje correctamente
-    currentUser = user;
-    renderHeader(); // ⬅️ Dibuja el header basado en el estado REAL de la sesión
+// ===================================================================
+// 🟢 FUNCIÓN DE INICIALIZACIÓN (SOLUCIONA EL TYPE ERROR)
+// ===================================================================
+function initializeSupabase() {
+    if (typeof supabase.createClient !== 'function') {
+        console.error("Error: La librería de Supabase no se cargó correctamente.");
+        return false;
+    }
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return true;
 }
 
-// 🟢 FUNCIÓN DE ESCUCHA (Para cuando el usuario usa el botón de Login/Logout)
+// 🟢 FUNCIÓN PARA ESCUCHAR EVENTOS DE AUTENTICACIÓN (NUEVA LÓGICA DE ESTADO)
 function setupAuthListener() {
     if (!supabaseClient) return;
 
-    // Lógica para obtener la sesión inicial
+    // 1. Consulta el estado de la sesión inicial (para cargar el estado al entrar)
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
-        // Asigna el estado inicial
         currentUser = session ? session.user : null;
-        renderHeader();
+        renderHeader(); // ⬅️ Actualiza el header a 'Cerrar Sesión' si hay sesión guardada
     });
-    
-    // Escucha eventos (ej: cuando se cierra o abre sesión en otra pestaña)
+
+    // 2. Escucha cambios futuros (login/logout)
     supabaseClient.auth.onAuthStateChange((event, session) => {
-        // Esta línea es crucial para mantener la sincronía del estado en tiempo real
         currentUser = session ? session.user : null;
-        renderHeader();
+        renderHeader(); // ⬅️ Actualiza el header cuando el usuario interactúa
     });
-}}
+}
+
+// ===================================================================
+// FUNCIONES ASÍNCRONAS PARA CARGAR Y MANEJAR DATOS
+// ===================================================================
+
+async function loadProveedores() { 
+    if (!supabaseClient) return; 
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('proveedores') 
+            .select('*'); 
+            
+        if (error) throw error;
+
+        proveedores = data.map(p => ({
+            id: p.id,
+            nombre: p.nombre_empresa || p.nombre || 'Nombre no definido', 
+            address: p.direccion || 'Dirección no definida',            
+            tipo: 'Empresa',          
+            ubicacion: p.ubicacion || 'BDD',
+            opiniones: []             
+        }));
         
-        // FUNCIONES DE FORMULARIO
-        
-        async function handleLogin(event) {
+        if (window.location.hash.includes('dashboard_productor')) {
+            setView('dashboard_productor'); 
+        }
+
+    } catch (error) {
+        console.error('Error cargando proveedores (revisa RLS/claves):', error.message);
+        proveedores = []; 
+    }
+}
+
+// Función CERRAR SESIÓN (handleLogout)
+async function handleLogout() {
+    try {
+        const { error } = await supabaseClient.auth.signOut(); 
+        if (error) throw error;
+        currentUser = null;
+        alert("Sesión cerrada correctamente.");
+        setView('home'); 
+        // renderHeader() es llamado por el AuthListener
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error.message);
+        alert('Ocurrió un error al intentar cerrar la sesión.');
+    }
+}
+
+// Función INICIAR SESIÓN (handleLogin)
+async function handleLogin(event) {
     event.preventDefault();
     if (!supabaseClient) return alert("Error de conexión a la BDD.");
     
@@ -194,22 +191,18 @@ function setupAuthListener() {
 
         if (error) throw error;
         
-        // 1. Asignamos el usuario del objeto 'data'
         currentUser = data.user; 
         alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
 
         const userRole = currentUser.user_metadata.user_role;
 
-        // 2. Redirigimos
         if (userRole === 'proveedor') {
             setView('dashboard_proveedor');
         } else {
             setView('dashboard_productor'); 
         }
-
-        // 3. 🟢 ÚLTIMA LÍNEA CLAVE: Dibuja el nuevo header.
-        //    (Ya no necesitamos el await extra, solo el render.)
-        renderHeader(); 
+        // El AuthListener se encarga de llamar a renderHeader() inmediatamente
+        // después de que el estado de Supabase cambia.
 
     } catch (error) {
         alert(`Error al iniciar sesión: ${error.message}`);
@@ -217,125 +210,136 @@ function setupAuthListener() {
     }
 }
 
-        async function handleRegister(event) {
-            event.preventDefault();
-            // 🟢 CAMBIO: Usamos supabaseClient
-            if (!supabaseClient) return alert("Error de conexión a la BDD.");
+// Función REGISTRAR (handleRegister)
+async function handleRegister(event) {
+    event.preventDefault();
+    if (!supabaseClient) return alert("Error de conexión a la BDD.");
 
-            const form = event.target;
-            const email = form.email.value;
-            const password = form.password.value;
+    const form = event.target;
+    const email = form.email.value;
+    const password = form.password.value;
+    const roleToRegister = selectedRole || 'productor'; 
+
+    try {
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+            email: email,
+            password: password,
+            options: { data: { user_role: roleToRegister } }
+        });
+
+        if (authError) throw error;
+        
+        const user = authData.user || authData.session?.user; 
+
+        if (roleToRegister === 'proveedor' && user && user.id) {
+            const { error: dbError } = await supabaseClient
+                .from('proveedores')
+                .insert([
+                    { 
+                        user_id: user.id,
+                        nombre_empresa: form.empresa.value,
+                        cuit: form.cuit.value,
+                        direccion: form.address ? form.address.value : 'No especificada', 
+                        email_contacto: email
+                    }
+                ]);
             
-            const roleToRegister = selectedRole || 'productor'; 
-
-            try {
-                // 🟢 CAMBIO: Usamos supabaseClient
-                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: { user_role: roleToRegister }
-                    }
-                });
-
-                if (authError) throw authError;
-                
-                const user = authData.user || authData.session?.user; 
-
-                if (roleToRegister === 'proveedor' && user && user.id) {
-                    // 🟢 CAMBIO: Usamos supabaseClient
-                    const { error: dbError } = await supabaseClient
-                        .from('proveedores')
-                        .insert([
-                            { 
-                                user_id: user.id,
-                                nombre_empresa: form.empresa.value,
-                                cuit: form.cuit.value,
-                                direccion: form.address ? form.address.value : 'No especificada', 
-                                email_contacto: email
-                            }
-                        ]);
-                    
-                    if (dbError) {
-                        console.error("Error al insertar datos de proveedor:", dbError);
-                        alert(`Error al guardar datos de empresa: ${dbError.message}. Perfil incompleto.`);
-                    }
-                }
-                
-                alert("¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta y poder iniciar sesión. 📧");
-                setView('login'); 
-
-            } catch (error) {
-                alert(`Error en el registro: ${error.message}`);
-                console.error('Error en Supabase SignUp/Insert:', error);
+            if (dbError) {
+                console.error("Error al insertar datos de proveedor:", dbError);
+                alert(`Error al guardar datos de empresa: ${dbError.message}. Perfil incompleto.`);
             }
         }
-        async function handleLogout() {
-    try {
-        // Cierra la sesión en Supabase
-        const { error } = await supabaseClient.auth.signOut(); 
-
-        if (error) throw error;
-
-        // 1. Limpia el estado local
-        currentUser = null;
-        alert("Sesión cerrada correctamente.");
         
-        // 2. Redirige y actualiza el encabezado
-        setView('home'); 
-        renderHeader(); 
-        
+        alert("¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta y poder iniciar sesión. 📧");
+        setView('login'); 
+
     } catch (error) {
-        console.error('Error al cerrar sesión:', error.message);
-        alert('Ocurrió un error al intentar cerrar la sesión.');
+        alert(`Error en el registro: ${error.message}`);
+        console.error('Error en Supabase SignUp/Insert:', error);
     }
 }
-        // LÓGICA DE MAPAS
-        function showProviderOnMap(address) {
-            const iframe = document.getElementById('map-iframe');
-            if (iframe) {
-                const encodedAddress = encodeURIComponent(address);
-                const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&z=15&output=embed`;
-                iframe.src = mapUrl;
-                console.log(`Ubicando: ${address}`);
-            } else {
-                console.error("Error: No se encontró el iframe con id='map-iframe'.");
-            }
-        }
 
-        // LÓGICA DE NAVEGACIÓN Y RENDERIZADO
-        function setView(viewName, data = null) {
-            window.location.hash = viewName;
-            contentView.innerHTML = renderView(viewName, data);
-        }
+// Función AGREGAR OFERTA (handleAddOffer)
+async function handleAddOffer(event) {
+    event.preventDefault();
+    if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
 
-        function updateRegisterForm(role) {
-            selectedRole = role;
-            setView('register'); 
-        }
+    const form = event.target;
+    
+    const offerData = {
+        user_id: currentUser.id, 
+        titulo: form.titulo.value,
+        descripcion: form.descripcion.value,
+        categoria: form.categoria.value,
+        precio: parseFloat(form.precio.value),
+        ubicacion: form.ubicacion.value
+    };
 
-        function renderView(viewName, data) {
-            switch (viewName) {
-                case 'home': return renderHomeView();
-                case 'login': return renderLoginView();
-                case 'register': return renderRegisterView(); 
-                case 'dashboard_productor': return renderProducerDashboard();
-                case 'dashboard_proveedor': return renderProviderDashboard();
-                case 'provider_details': return renderProviderDetailsView(data);
-                case 'info': return renderInfoView(data);
-                default: return renderHomeView();
-            }
-        }
+    try {
+        const { error } = await supabaseClient
+            .from('ofertas') 
+            .insert([offerData]);
+
+        if (error) throw error;
         
-        function renderHeader() {
-         const header = document.getElementById('main-header');
+        alert("¡Oferta publicada con éxito!");
+        setView('dashboard_proveedor'); 
+
+    } catch (error) {
+        alert(`Error al publicar la oferta: ${error.message}.`);
+        console.error('Error en handleAddOffer:', error);
+    }
+}
+
+// LÓGICA DE MAPAS
+function showProviderOnMap(address) {
+    const iframe = document.getElementById('map-iframe');
+    if (iframe) {
+        const encodedAddress = encodeURIComponent(address);
+        const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&z=15&output=embed`;
+        iframe.src = mapUrl;
+        console.log(`Ubicando: ${address}`);
+    } else {
+        console.error("Error: No se encontró el iframe con id='map-iframe'.");
+    }
+}
+
+// ===================================================================
+// FUNCIONES DE VISTA (RENDERIZADO)
+// ===================================================================
+
+function setView(viewName, data = null) {
+    window.location.hash = viewName;
+    contentView.innerHTML = renderView(viewName, data);
+}
+
+function updateRegisterForm(role) {
+    selectedRole = role;
+    setView('register'); 
+}
+
+function renderView(viewName, data) {
+    switch (viewName) {
+        case 'home': return renderHomeView();
+        case 'login': return renderLoginView();
+        case 'register': return renderRegisterView(); 
+        case 'dashboard_productor': return renderProducerDashboard();
+        case 'dashboard_proveedor': return renderProviderDashboard();
+        case 'provider_details': return renderProviderDetailsView(data);
+        case 'info': return renderInfoView(data);
+        case 'add_offer': return renderAddOfferView();
+        default: return renderHomeView();
+    }
+}
+
+function renderHeader() {
+    const header = document.getElementById('main-header');
     if (!header) return;
 
-    // 🟢 Lógica Clave: Muestra Cerrar Sesión si currentUser tiene datos, si no, muestra Iniciar/Registrar
     const authButtons = currentUser 
-        ? // Estado: CONECTADO (Muestra Cerrar Sesión)
+        ? // Estado: CONECTADO
           `<button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>` 
-        : // Estado: DESCONECTADO (Muestra Iniciar Sesión y Registrar)
+        : // Estado: DESCONECTADO
           `<div class="flex space-x-3">
                <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
                <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
@@ -353,97 +357,127 @@ function setupAuthListener() {
             </div>
         </div>`;
 }
-        
-        // FUNCIONES QUE GENERAN EL HTML DE CADA VISTA
-        
-        function renderHomeView() { 
-            return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);"><div class="text-center max-w-4xl"><h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1><div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8"><input type="text" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark"><button onclick="setView('dashboard_productor')" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button></div></div></section><section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark"><h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy productor</h3><p class="text-gray-600 mb-6">Buscá equipos y servicios.</p><button onclick="setView('dashboard_productor')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button></div><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy proveedor</h3><p class="text-gray-600 mb-6">Publicá tu inventario.</p><button onclick="setView('register')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button></div></div></section>`; 
-        }
-        
-        function renderLoginView() { 
-            return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`; 
-        }
 
-        function renderRegisterView() {
-            const productorActive = selectedRole === 'productor' ? 'active' : '';
-            const proveedorActive = selectedRole === 'proveedor' ? 'active' : '';
-            let formHtml = '';
+function renderHomeView() { 
+    return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);"><div class="text-center max-w-4xl"><h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1><div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8"><input type="text" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark"><button onclick="setView('dashboard_productor')" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button></div></div></section><section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark"><h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy productor</h3><p class="text-gray-600 mb-6">Buscá equipos y servicios.</p><button onclick="setView('dashboard_productor')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button></div><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy proveedor</h3><p class="text-gray-600 mb-6">Publicá tu inventario.</p><button onclick="setView('register')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button></div></div></section>`; 
+}
 
-            if (selectedRole === 'productor') {
-                formHtml = renderProductorForm();
-            } else if (selectedRole === 'proveedor') {
-                formHtml = renderProveedorForm();
-            } else {
-                formHtml = '<p class="text-center text-gray-500 font-sans">Selecciona tu rol para continuar con el registro.</p>';
-            }
+function renderLoginView() { 
+    return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`; 
+}
 
-            return `
-                <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
-                    <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Crear Cuenta</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                        <div onclick="updateRegisterForm('productor')" class="role-selector ${productorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
-                            <h3 class="font-bold text-lg font-heading">Soy Productor/a 🎬</h3>
-                            <p class="text-sm text-gray-600 font-sans">Busco recursos y servicios.</p>
-                        </div>
-                        <div onclick="updateRegisterForm('proveedor')" class="role-selector ${proveedorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
-                            <h3 class="font-bold text-lg font-heading">Soy Proveedor/a 🛠️</h3>
-                            <p class="text-sm text-gray-600 font-sans">Ofrezco equipos o locaciones.</p>
-                        </div>
-                    </div>
-                    ${formHtml}
-                    <p class="mt-6 text-center text-sm text-gray-600 font-sans">¿Ya tenés cuenta? <a href="#" onclick="setView('login')" class="text-accent-blue hover:underline">Iniciá Sesión</a></p>
+function renderRegisterView() {
+    const productorActive = selectedRole === 'productor' ? 'active' : '';
+    const proveedorActive = selectedRole === 'proveedor' ? 'active' : '';
+    let formHtml = '';
+
+    if (selectedRole === 'productor') {
+        formHtml = renderProductorForm();
+    } else if (selectedRole === 'proveedor') {
+        formHtml = renderProveedorForm();
+    } else {
+        formHtml = '<p class="text-center text-gray-500 font-sans">Selecciona tu rol para continuar con el registro.</p>';
+    }
+
+    return `
+        <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+            <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Crear Cuenta</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                <div onclick="updateRegisterForm('productor')" class="role-selector ${productorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
+                    <h3 class="font-bold text-lg font-heading">Soy Productor/a 🎬</h3>
+                    <p class="text-sm text-gray-600 font-sans">Busco recursos y servicios.</p>
                 </div>
-            `;
-        }
+                <div onclick="updateRegisterForm('proveedor')" class="role-selector ${proveedorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
+                    <h3 class="font-bold text-lg font-heading">Soy Proveedor/a 🛠️</h3>
+                    <p class="text-sm text-gray-600 font-sans">Ofrezco equipos o locaciones.</p>
+                </div>
+            </div>
+            ${formHtml}
+            <p class="mt-6 text-center text-sm text-gray-600 font-sans">¿Ya tenés cuenta? <a href="#" onclick="setView('login')" class="text-accent-blue hover:underline">Iniciá Sesión</a></p>
+        </div>
+    `;
+}
 
-        function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
-        function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
 
-        function renderProducerDashboard() { 
-            let providersListHtml = proveedores.map(provider => `
-                <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
-                    <div>
-                        <h4 class="font-bold text-lg font-heading">${provider.nombre}</h4>
-                        <p class="text-sm text-gray-400 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
-                    </div>
-                    <div class="flex-shrink-0 flex gap-2">
-                        <button onclick="showProviderOnMap('${provider.address}')" class="bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
-                        <button onclick="setView('provider_details', ${provider.id})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Detalles</button>
-                    </div>
-                </div>`
-            ).join(''); 
-            
-            return `
-                <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-                    <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
-                    <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
-                        <iframe id="map-iframe" src="http://googleusercontent.com/maps.google.com/7" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                    </div>
-                    <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Proveedores Destacados</h2>
-                    <div class="space-y-4">${providersListHtml}</div>
-                </div>`; 
-        }
+function renderProducerDashboard() { 
+    let providersListHtml = proveedores.map(provider => `
+        <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
+            <div>
+                <h4 class="font-bold text-lg font-heading">${provider.nombre}</h4>
+                <p class="text-sm text-gray-400 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
+            </div>
+            <div class="flex-shrink-0 flex gap-2">
+                <button onclick="showProviderOnMap('${provider.address}')" class="bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
+                <button onclick="setView('provider_details', ${provider.id})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Detalles</button>
+            </div>
+        </div>`
+    ).join(''); 
+    
+    return `
+        <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
+            <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
+                <iframe id="map-iframe" src="http://googleusercontent.com/maps.google.com/7" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+            <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Proveedores Destacados</h2>
+            <div class="space-y-4">${providersListHtml}</div>
+        </div>`; 
+}
 
-        function renderProviderDashboard() { return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`; }
-        function renderProviderDetailsView(providerId) { 
-            const provider = proveedores.find(p => p.id === providerId); 
-            if (!provider) return `<p>Proveedor no encontrado.</p>`; 
-            const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join(''); 
-            let opinionsHtml = provider.opiniones.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join(''); 
-            return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div></div>`; 
-        }
-        
-        function renderInfoView(title) {
-            if (title === '¿Cómo funciona?') {
-                return renderComoFuncionaView();
-            }
-            return `<div class="p-8 rounded-xl"><h1 class="text-4xl font-bold font-heading">${title || 'Información'}</h1></div>`; 
-        }
+function renderProviderDashboard() { 
+    return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`; 
+}
 
-        function renderComoFuncionaView() { return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`; }
+function renderProviderDetailsView(providerId) { 
+    const provider = proveedores.find(p => p.id === providerId); 
+    if (!provider) return `<p>Proveedor no encontrado.</p>`; 
+    const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join(''); 
+    let opinionsHtml = provider.opiniones.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join(''); 
+    return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div></div>`; 
+}
 
-        // PUNTO DE ARRANQUE DE LA APLICACIÓN
-        // PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
+function renderInfoView(title) {
+    if (title === '¿Cómo funciona?') {
+        return renderComoFuncionaView();
+    }
+    return `<div class="p-8 rounded-xl"><h1 class="text-4xl font-bold font-heading">${title || 'Información'}</h1></div>`; 
+}
+
+function renderComoFuncionaView() { return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`; }
+
+function renderAddOfferView() {
+    return `
+        <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+            <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+            <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
+            <form onsubmit="handleAddOffer(event)" class="space-y-6">
+                
+                <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Blackmagic 6K)" required class="w-full p-3 border rounded-lg">
+                
+                <textarea name="descripcion" placeholder="Descripción detallada del equipo o servicio" rows="4" required class="w-full p-3 border rounded-lg"></textarea>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select name="categoria" required class="w-full p-3 border rounded-lg">
+                        <option value="">Seleccionar Categoría</option>
+                        <option value="Equipos">Equipos (Cámaras, Luces, Audio)</option>
+                        <option value="Locacion">Locación (Estudios, Casas)</option>
+                        <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
+                    </select>
+                    
+                    <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
+                </div>
+
+                <input type="text" name="ubicacion" placeholder="Ubicación de la Oferta (Ej: CABA, Córdoba)" required class="w-full p-3 border rounded-lg">
+
+                <button type="submit" class="w-full bg-secondary-dark text-white p-3 rounded-lg font-semibold hover:bg-secondary-dark/90">Publicar Oferta Ahora</button>
+            </form>
+        </div>
+    `;
+}
+
+// PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
 window.onload = () => { 
     
     // 1. Inicializa el cliente Supabase (síncrono)
@@ -460,9 +494,11 @@ window.onload = () => {
         loadProveedores(); 
     }
 };
-    </script>
+
+</script>
 </body>
 </html>
+
 
 
 
