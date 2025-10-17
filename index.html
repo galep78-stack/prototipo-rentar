@@ -508,16 +508,18 @@ function goToOfferPost() {
                 if (offers.length > 0) {
                     productListHtml = offers.map(offer => `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
-                            <div>
-                                <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
-                                <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion}</p>
-                                <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
-                            </div>
-                            <div class="flex-shrink-0 flex gap-2">
-                                <button class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Editar</button>
-                            </div>
-                        </div>
-                    `).join('');
+        <div>
+            <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+            <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion}</p>
+            <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
+        </div>
+        <div class="flex-shrink-0 flex gap-2 space-x-2">
+            <button class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Editar</button>
+            
+            <button onclick="handleRemoveOffer('${offer.id}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold">Eliminar</button>
+        </div>
+    </div>
+`).join('');
                 } else {
                     productListHtml = `<p class="text-gray-400">Aún no has publicado ninguna oferta.</p>`;
                 }
@@ -675,6 +677,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
