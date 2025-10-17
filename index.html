@@ -182,24 +182,7 @@
             }
         }
 
-        // La función handleLogout ya tiene la llamada a renderHeader() al final.
-        async function handleLogout() {
-            try {
-                const { error } = await supabaseClient.auth.signOut(); 
-
-                if (error) throw error;
-
-                currentUser = null;
-                alert("Sesión cerrada correctamente.");
-                setView('home'); 
-                renderHeader(); 
-                
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error.message);
-                alert('Ocurrió un error al intentar cerrar la sesión.');
-            }
-        }
-        
+             
         // ... (El resto de tus funciones como handleRegister, renderHeader, etc. están correctas)
         
         async function handleRegister(event) {
@@ -382,3 +365,4 @@
     </script>
 </body>
 </html>
+
