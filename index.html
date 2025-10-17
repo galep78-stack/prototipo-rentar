@@ -92,7 +92,8 @@ const contentView = document.getElementById('content-view');
 // ⚠️ CLAVES (TUS CLAVES REALES)
 const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
-let supabaseClient = null; 
+let supabaseClient = null;
+        let proveedorProfileData = null;
 
 // DATOS REALES (Inicialmente vacía, se llenará con la BDD de Supabase)
 let proveedores = []; 
@@ -105,9 +106,17 @@ function initializeSupabase() {
         console.error("Error: La librería de Supabase no se cargó correctamente.");
         return false;
     }
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    return true;
-}
+   supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // 🟢 CARGA INICIAL DEL PERFIL DEL PROVEEDOR (Si existe)
+        supabaseClient.auth.getUser().then(({ data: { user } }) => {
+             if (user && user.user_metadata.user_role === 'proveedor') {
+                 getProfileData(user.id, 'proveedor').then(data => {
+                     proveedorProfileData = data;
+                 });
+             }
+        });
+        return true;
+    }
 
 // 🟢 FUNCIÓN PARA ESCUCHAR EVENTOS DE AUTENTICACIÓN (NUEVA LÓGICA DE ESTADO)
 function setupAuthListener() {
@@ -331,6 +340,22 @@ function updateRegisterForm(role) {
 }
 
 function renderView(viewName, data) {
+    // Si la vista requiere datos asíncronos (como 'profile_edit'), la llamamos directamente
+    if (viewName === 'profile_edit') {
+        // Ejecuta la función asíncrona y envuelve el resultado en un contenedor
+        // Esto podría ser complejo de manejar sin un framework. Para simplificar,
+        // nos aseguraremos de que la función asíncrona devuelva el HTML directamente.
+        
+        // Usamos una lógica de carga:
+        renderProfileEditView().then(html => {
+            document.getElementById('content-view').innerHTML = html;
+        });
+        
+        // Retorna un mensaje de carga mientras se obtienen los datos.
+        return `<div class="text-center p-10 text-accent-cyan">Cargando datos del perfil...</div>`;
+    }
+
+    // Para las vistas síncronas:
     switch (viewName) {
         case 'home': return renderHomeView();
         case 'login': return renderLoginView();
@@ -340,7 +365,6 @@ function renderView(viewName, data) {
         case 'provider_details': return renderProviderDetailsView(data);
         case 'info': return renderInfoView(data);
         case 'add_offer': return renderAddOfferView();
-            case 'profile_edit': return renderProfileEditView();
         default: return renderHomeView();
     }
 }
@@ -381,39 +405,82 @@ function renderHomeView() {
 function renderLoginView() { 
     return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`; 
 }
-function renderProfileEditView() {
-    if (!currentUser) return renderLoginView(); // Redirigir si no está conectado
+// NUEVA FUNCIÓN ASÍNCRONA PARA CARGAR LOS DATOS DEL USUARIO
+async function getProfileData(userId, role) {
+    if (!supabaseClient || !userId) return null;
+    
+    const tableName = role === 'proveedor' ? 'proveedores' : 'productores';
+    
+    // NOTA: Asumimos que tienes una tabla 'productores' o que el productor
+    // guarda sus datos en otra parte si no es proveedor. Por ahora, solo cargamos la data del proveedor.
+    if (tableName === 'proveedores') {
+        const { data, error } = await supabaseClient
+            .from(tableName)
+            .select('*')
+            .eq('user_id', userId)
+            .single(); // Espera solo una fila
+            
+        if (error || !data) return {};
+        
+        // Mapea los nombres de las columnas de la DB a nombres del formulario (ej: nombre_empresa -> nombre)
+        return {
+            nombre: data.nombre_empresa,
+            cuit: data.cuit,
+            direccion: data.direccion
+            // Agrega aquí más campos si los tienes
+        };
+    }
+    // Retorna datos base para productor (si no hay tabla 'productores')
+    return { nombre: currentUser.user_metadata.full_name || 'Productor', direccion: 'N/A' };
+}
+
+
+// REEMPLAZO COMPLETO: renderProfileEditView ahora es ASÍNCRONA
+async function renderProfileEditView() {
+    if (!currentUser) return renderLoginView();
 
     const isProvider = currentUser.user_metadata.user_role === 'proveedor';
+    const userRole = isProvider ? 'Proveedor' : 'Productor';
     
-    // NOTA: Para una aplicación real, se deben cargar los datos actuales 
-    // del proveedor/productor desde Supabase antes de renderizar.
-    // Aquí solo creamos el formulario de edición base.
+    // 🟢 CARGA DE DATOS ASÍNCRONA
+    const profileData = await getProfileData(currentUser.id, userRole.toLowerCase());
+    
+    // Si no se encuentran datos de proveedor, usamos placeholders
+    const currentNombre = profileData.nombre || (isProvider ? 'Nombre de la Empresa' : 'Nombre Completo');
+    const currentCuit = profileData.cuit || 'CUIT';
+    const currentDireccion = profileData.direccion || 'Dirección no definida';
 
     return `
         <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
-            <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Mi Perfil</h2>
+            <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Perfil (${userRole})</h2>
             
             <p class="text-gray-600 mb-6 text-center">
-                Estás conectado como: <strong>${isProvider ? 'Proveedor' : 'Productor'}</strong> (${currentUser.email})
+                Estás conectado como: <strong>${currentUser.email}</strong>
             </p>
 
             <form onsubmit="handleProfileUpdate(event)" class="space-y-4">
                 <h3 class="text-xl font-bold mb-3 border-b pb-2">Información de ${isProvider ? 'Empresa' : 'Usuario'}</h3>
                 
-                <input type="text" name="nombre_update" placeholder="${isProvider ? 'Nombre de la Empresa' : 'Nombre Completo'}" 
-                       value="[Cargar Nombre Actual]" required class="w-full p-3 border rounded-lg">
+                <label class="block text-sm font-medium text-gray-700">Nombre / Empresa</label>
+                <input type="text" name="nombre_update" 
+                       value="${currentNombre}" required class="w-full p-3 border rounded-lg">
                 
-                <input type="text" name="direccion_update" placeholder="Nueva Dirección" 
-                       value="[Cargar Dirección Actual]" required class="w-full p-3 border rounded-lg">
+                <label class="block text-sm font-medium text-gray-700">Dirección</label>
+                <input type="text" name="direccion_update" 
+                       value="${currentDireccion}" required class="w-full p-3 border rounded-lg">
                 
+                ${isProvider ? `
+                    <label class="block text-sm font-medium text-gray-700">CUIT</label>
+                    <input type="text" name="cuit_update" 
+                           value="${currentCuit}" required class="w-full p-3 border rounded-lg">
+                ` : ''}
+
                 <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
                 <button type="button" onclick="setView('home')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar</button>
             </form>
         </div>
     `;
 }
-        
 function renderRegisterView() {
     const productorActive = selectedRole === 'productor' ? 'active' : '';
     const proveedorActive = selectedRole === 'proveedor' ? 'active' : '';
@@ -567,6 +634,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
