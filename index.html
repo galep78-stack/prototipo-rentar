@@ -232,19 +232,20 @@ async function handleRegister(event) {
         const user = authData.user || authData.session?.user; 
 
         if (roleToRegister === 'proveedor' && user && user.id) {
-            const { error: dbError } = await supabaseClient
-                .from('proveedores')
-                .insert([
-                    { 
-                        user_id: user.id,
-                        nombre_empresa: form.empresa.value,
-                        cuit: form.cuit.value,
-                        direccion: form.address ? form.address.value : 'No especificada', 
-                        email_contacto: email
-                    }
-                ]);
-            
-            if (dbError) {
+                const { error: dbError } = await supabaseClient
+                    .from('proveedores')
+                    .insert([
+                        { 
+                            user_id: user.id,
+                            nombre_empresa: form.empresa.value,
+                            cuit: form.cuit.value,
+                            // 🟢 CAMBIO: Captura la dirección
+                            direccion: form.direccion.value, 
+                            email_contacto: email
+                        }
+                    ]);
+                
+                if (dbError) {
                 console.error("Error al insertar datos de proveedor:", dbError);
                 alert(`Error al guardar datos de empresa: ${dbError.message}. Perfil incompleto.`);
             }
@@ -258,7 +259,18 @@ async function handleRegister(event) {
         console.error('Error en Supabase SignUp/Insert:', error);
     }
 }
+function handleProfileUpdate(event) {
+    event.preventDefault();
+    if (!currentUser) return alert("Debes iniciar sesión.");
 
+    // En una aplicación real, aquí:
+    // 1. Obtendrías los datos del formulario (nombre_update, direccion_update)
+    // 2. Llamarías a supabaseClient.from('proveedores' o 'productores').update(...)
+    // 3. Usarías un WHERE para actualizar solo la fila donde user_id = currentUser.id
+    
+    alert("Lógica de actualización de perfil no implementada. Datos listos para ser guardados.");
+    setView('home'); 
+}
 // Función AGREGAR OFERTA (handleAddOffer)
 async function handleAddOffer(event) {
     event.preventDefault();
@@ -328,6 +340,7 @@ function renderView(viewName, data) {
         case 'provider_details': return renderProviderDetailsView(data);
         case 'info': return renderInfoView(data);
         case 'add_offer': return renderAddOfferView();
+            case 'profile_edit': return renderProfileEditView();
         default: return renderHomeView();
     }
 }
@@ -338,8 +351,11 @@ function renderHeader() {
 
     const authButtons = currentUser 
         ? // Estado: CONECTADO
-          `<button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>` 
-        : // Estado: DESCONECTADO
+          `<div class="flex space-x-3">
+               <button onclick="setView('profile_edit')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Mi Perfil</button>
+               <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>
+           </div>`
+        : // Estado: DESCONECTADO (Sin cambios)
           `<div class="flex space-x-3">
                <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
                <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
@@ -356,7 +372,7 @@ function renderHeader() {
                 ${authButtons}
             </div>
         </div>`;
-}
+}renderView
 
 function renderHomeView() { 
     return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);"><div class="text-center max-w-4xl"><h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1><div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8"><input type="text" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark"><button onclick="setView('dashboard_productor')" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button></div></div></section><section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark"><h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy productor</h3><p class="text-gray-600 mb-6">Buscá equipos y servicios.</p><button onclick="setView('dashboard_productor')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button></div><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy proveedor</h3><p class="text-gray-600 mb-6">Publicá tu inventario.</p><button onclick="setView('register')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button></div></div></section>`; 
@@ -365,7 +381,39 @@ function renderHomeView() {
 function renderLoginView() { 
     return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`; 
 }
+function renderProfileEditView() {
+    if (!currentUser) return renderLoginView(); // Redirigir si no está conectado
 
+    const isProvider = currentUser.user_metadata.user_role === 'proveedor';
+    
+    // NOTA: Para una aplicación real, se deben cargar los datos actuales 
+    // del proveedor/productor desde Supabase antes de renderizar.
+    // Aquí solo creamos el formulario de edición base.
+
+    return `
+        <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+            <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Mi Perfil</h2>
+            
+            <p class="text-gray-600 mb-6 text-center">
+                Estás conectado como: <strong>${isProvider ? 'Proveedor' : 'Productor'}</strong> (${currentUser.email})
+            </p>
+
+            <form onsubmit="handleProfileUpdate(event)" class="space-y-4">
+                <h3 class="text-xl font-bold mb-3 border-b pb-2">Información de ${isProvider ? 'Empresa' : 'Usuario'}</h3>
+                
+                <input type="text" name="nombre_update" placeholder="${isProvider ? 'Nombre de la Empresa' : 'Nombre Completo'}" 
+                       value="[Cargar Nombre Actual]" required class="w-full p-3 border rounded-lg">
+                
+                <input type="text" name="direccion_update" placeholder="Nueva Dirección" 
+                       value="[Cargar Dirección Actual]" required class="w-full p-3 border rounded-lg">
+                
+                <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+                <button type="button" onclick="setView('home')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar</button>
+            </form>
+        </div>
+    `;
+}
+        
 function renderRegisterView() {
     const productorActive = selectedRole === 'productor' ? 'active' : '';
     const proveedorActive = selectedRole === 'proveedor' ? 'active' : '';
@@ -398,8 +446,29 @@ function renderRegisterView() {
     `;
 }
 
-function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
-function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4">
+        <input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark">
+        <input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark">
+        <input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark">
+        <input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark">
+        
+        <input type="text" name="direccion" placeholder="Dirección Principal (Ej: Calle Falsa 123)" required class="w-full p-3 border rounded-lg text-primary-dark">
+
+        <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button>
+    </form>`; 
+}
+function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4">
+        <input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark">
+        <input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark">
+        <input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark">
+        <input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark">
+        
+        <input type="text" name="direccion" placeholder="Dirección Fiscal de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark">
+        
+        <div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div>
+        <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button>
+    </form>`; 
+}
 
 function renderProducerDashboard() { 
     let providersListHtml = proveedores.map(provider => `
@@ -498,6 +567,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
