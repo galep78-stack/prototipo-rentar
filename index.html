@@ -110,15 +110,15 @@
 
         function setupAuthListener() {
             if (!supabaseClient) return;
-
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
                 currentUser = session ? session.user : null;
                 renderHeader(); 
+                if (currentUser) goToDashboard();
             });
-
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 currentUser = session ? session.user : null;
                 renderHeader(); 
+                if (currentUser) goToDashboard();
             });
         }
         
@@ -873,6 +873,7 @@
     </script>
 </body>
 </html>
+
 
 
 
