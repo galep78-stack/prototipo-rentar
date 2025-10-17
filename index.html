@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rent.Ar - Prototipo Funcional Completo (Estable)</title>
+    <title>Rent.Ar - Prototipo Funcional Completo (Final Estable)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -44,7 +44,7 @@
         <div class="container mx-auto px-4 pt-10 pb-6">
              <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
                  <div>
-                     <a href="#" onclick="setView('home')" class="flex items-center">
+                     <a href="#" onclick="goToDashboard()" class="flex items-center">
                          <img src="logo-rentar.png" alt="Rent.Ar Logo" class="h-6 mr-2"> 
                          <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
                      </a>
@@ -122,6 +122,20 @@
             });
         }
         
+        // 🟢 FUNCIÓN DE REDIRECCIÓN INTELIGENTE (Logo y Botón Home)
+        function goToDashboard() {
+            if (currentUser) {
+                const userRole = currentUser.user_metadata.user_role;
+                if (userRole === 'proveedor') {
+                    setView('dashboard_proveedor');
+                } else {
+                    setView('dashboard_productor');
+                }
+            } else {
+                setView('home');
+            }
+        }
+
         async function handleLogout() {
             try {
                 const { error } = await supabaseClient.auth.signOut(); 
@@ -181,15 +195,21 @@
             const email = form.email.value;
             const password = form.password.value;
             const roleToRegister = selectedRole || 'productor'; 
+            const nombreEmpresa = form.empresa ? form.empresa.value : form.nombre.value; // Para metadatos
 
             try {
                 const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
-                    options: { data: { user_role: roleToRegister } }
+                    options: { 
+                        data: { 
+                            user_role: roleToRegister,
+                            display_name: nombreEmpresa
+                        } 
+                    }
                 });
 
-                if (authError) throw error;
+                if (authError) throw authError;
                 
                 const user = authData.user || authData.session?.user; 
 
@@ -221,7 +241,6 @@
             }
         }
         
-        // Función AGREGAR OFERTA (handleAddOffer)
         async function handleAddOffer(event) {
             event.preventDefault();
             if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
