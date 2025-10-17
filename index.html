@@ -344,8 +344,12 @@ async function renderEditOfferView(offerId) {
         
         // 3. Éxito
         alert("¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta y poder iniciar sesión. 📧");
-        setView('login'); 
+        setView('home'); 
 
+    } catch (error) {
+        // ...
+    }
+}
     } catch (error) {
         // El bloque catch captura CUALQUIER error (auth o db) y lo muestra
         alert(`Error en el registro: ${error.message}`);
@@ -812,6 +816,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
