@@ -284,7 +284,33 @@ function renderAddOfferView() {
                 console.error('Error en handleAddOffer:', error);
             }
         }
+async function handleRemoveOffer(offerId) {
+    if (!supabaseClient || !currentUser) return alert("Error: Debes iniciar sesión.");
 
+    if (!confirm("¿Estás seguro de que deseas eliminar esta oferta?")) {
+        return; // El usuario canceló la eliminación
+    }
+
+    try {
+        // Utilizamos el método DELETE de Supabase:
+        const { error } = await supabaseClient
+            .from('ofertas')
+            .delete()
+            .eq('id', offerId) // Filtra por el ID de la oferta
+            .eq('user_id', currentUser.id); // 🟢 CRUCIAL: Asegura que solo el dueño puede eliminarla
+
+        if (error) throw error;
+        
+        alert("Oferta eliminada con éxito.");
+        
+        // Refrescar la vista de Mis Productos (llamando al router de nuevo)
+        setView('my_products'); 
+
+    } catch (error) {
+        alert(`Error al eliminar la oferta: ${error.message}.`);
+        console.error('Error en handleRemoveOffer:', error);
+    }
+}
         // ===================================================================
         // 🟢 FUNCIONES DE CARGA DE DATOS Y PERFIL
         // ===================================================================
@@ -677,6 +703,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
