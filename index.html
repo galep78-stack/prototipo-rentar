@@ -298,13 +298,19 @@ async function renderEditOfferView(offerId) {
             const email = form.email.value;
             const password = form.password.value;
             const roleToRegister = selectedRole || 'productor'; 
-
+const nombreEmpresa = form.empresa.value;
             try {
-                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: { data: { user_role: roleToRegister } }
-                });
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+            email: email,
+            password: password,
+            options: { 
+                data: { 
+                    user_role: roleToRegister,
+                    // 🟢 CORRECCIÓN CLAVE: Guarda el nombre de la empresa en los metadatos
+                    display_name: nombreEmpresa 
+                } 
+            }
+        });
 
                 if (authError) throw error;
                 
@@ -344,7 +350,6 @@ async function renderEditOfferView(offerId) {
             if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
 
             const form = event.target;
-            
             const offerData = {
                 user_id: currentUser.id, 
                 titulo: form.titulo.value,
@@ -651,15 +656,13 @@ function goToOfferPost() {
                 </div>`;
         }
 
-        function renderHeader() {
+   function renderHeader() {
     const header = document.getElementById('main-header');
     if (!header) return;
 
-    // 🟢 Determina el nombre a mostrar (por defecto, usa el email)
+    // 🟢 NUEVA LÓGICA: Prioriza el nombre guardado en metadata o el email
     const displayName = currentUser 
-        ? currentUser.user_metadata.user_role === 'proveedor' 
-            ? (currentUser.user_metadata.nombre_empresa || currentUser.email)
-            : currentUser.email
+        ? (currentUser.user_metadata.display_name || currentUser.email)
         : null;
 
     const authButtons = currentUser 
@@ -798,6 +801,7 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
 
