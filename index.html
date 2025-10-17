@@ -124,7 +124,35 @@
                 renderHeader(); 
             });
         }
-        
+function renderAddOfferView() {
+    return `
+        <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+            <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+            <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
+            <form onsubmit="handleAddOffer(event)" class="space-y-6">
+                
+                <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Blackmagic 6K)" required class="w-full p-3 border rounded-lg">
+                
+                <textarea name="descripcion" placeholder="Descripción detallada del equipo o servicio" rows="4" required class="w-full p-3 border rounded-lg"></textarea>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select name="categoria" required class="w-full p-3 border rounded-lg">
+                        <option value="">Seleccionar Categoría</option>
+                        <option value="Equipos">Equipos (Cámaras, Luces, Audio)</option>
+                        <option value="Locacion">Locación (Estudios, Casas)</option>
+                        <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
+                    </select>
+                    
+                    <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
+                </div>
+
+                <input type="text" name="ubicacion" placeholder="Ubicación de la Oferta (Ej: CABA, Córdoba)" required class="w-full p-3 border rounded-lg">
+
+                <button type="submit" class="w-full bg-secondary-dark text-white p-3 rounded-lg font-semibold hover:bg-secondary-dark/90">Publicar Oferta Ahora</button>
+            </form>
+        </div>
+    `;
+}        
         // Función CERRAR SESIÓN (handleLogout)
         async function handleLogout() {
             try {
@@ -632,5 +660,6 @@ window.onload = () => {
 </script>
 </body>
 </html>
+
 
 
