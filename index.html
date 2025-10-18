@@ -208,50 +208,42 @@
             const nombreEmpresa = form.empresa ? form.empresa.value : form.nombre.value; // Para metadatos
 
             try {
-                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                // 1. Intentar el registro
+                const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
-                    options: { 
-                        data: { 
-                            user_role: roleToRegister,
-                            display_name: nombreEmpresa
-                        } 
+                    options: {
+                        data: { user_role: role } // Metadata del rol
                     }
                 });
-
-                if (authError) throw authError;
                 
-                const user = authData.user || authData.session?.user; 
+                if (error) throw error;
 
-                // Lógica de inserción en tabla de perfil (Proveedores)
-                if (roleToRegister === 'proveedor' && user && user.id) {
-                    const { error: dbError } = await supabaseClient
-                        .from('proveedores')
-                        .insert([
-                            { 
-                                user_id: user.id,
-                                nombre_empresa: form.empresa.value,
-                                cuit: form.cuit.value,
-                                direccion: form.direccion.value,
-                                email_contacto: email
-                            }
-                        ]);
-                    
-                    if (dbError) {
-                        console.error("Error al insertar datos de proveedor:", dbError);
-                        alert(`Error al guardar datos de empresa: ${dbError.message}. Perfil incompleto.`);
-                    }
+                // 2. Iniciar sesión automáticamente después del registro (para obtener la sesión activa)
+                //    Esto solo funciona si has desactivado la 'Email Confirmation' en Supabase.
+                const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (loginError) throw loginError;
+                
+                currentUser = loginData.user;
+                renderHeader(); // Actualiza el encabezado con el usuario logueado
+                
+                alert(`¡Registro exitoso! Bienvenido, ${currentUser.email}.`);
+                
+                // 3. Redirigir al dashboard correcto
+                if (role === 'proveedor') {
+                    setView('dashboard_proveedor');
+                } else {
+                    setView('dashboard_productor');
                 }
                 
-                alert("¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta y poder iniciar sesión. 📧");
-                setView('login'); 
-
             } catch (error) {
-                alert(`Error en el registro: ${error.message}`);
-                console.error('Error en Supabase SignUp/Insert:', error);
+                alert('Error al registrar: ' + error.message);
             }
         }
-        
         async function handleAddOffer(event) {
             event.preventDefault();
             if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
@@ -873,6 +865,7 @@
     </script>
 </body>
 </html>
+
 
 
 
