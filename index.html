@@ -88,6 +88,7 @@
         let currentUser = null; 
         let selectedRole = null;
         const contentView = document.getElementById('content-view');
+        let isNavigating = false;
 
         // ⚠️ CLAVES (DEBES USAR TUS CLAVES REALES AQUÍ)
         const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co'; 
@@ -461,31 +462,38 @@
         // ===================================================================
 
         function setView(viewName, data = null) {
+            // 🟢 Si ya estamos navegando (por la llamada original),
+            // ignoramos la llamada duplicada del hashchange.
+            if (isNavigating) return; 
+            
+            isNavigating = true; // 🟢 Bloqueamos la navegación
+
             window.location.hash = viewName;
             
             const isAsyncView = viewName === 'profile_edit' || viewName === 'my_products' || viewName === 'edit_offer';
             
             if (isAsyncView) {
-                // Muestra un mensaje de carga
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
                 
                 const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() : 
                                       viewName === 'my_products' ? renderMyProductsView() : 
                                       renderEditOfferView(data);
-                
 
                 renderPromise.then(html => {
-                    // Solo actualiza si la vista no ha cambiado durante la carga
+                    // Solo actualiza si el hash no cambió mientras cargaba
                     if (window.location.hash === `#${viewName}`) { 
-                         contentView.innerHTML = html;
+                        contentView.innerHTML = html;
                     }
+                    isNavigating = false; // 🟢 Desbloqueamos al terminar
                 }).catch(error => {
                     contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
+                    isNavigating = false; // 🟢 Desbloqueamos si hay error
                 });
                 return;
             }
             
             contentView.innerHTML = renderView(viewName, data);
+            isNavigating = false; // 🟢 Desbloqueamos para vistas normales
         }
 
         function renderView(viewName, data) {
@@ -918,14 +926,22 @@
             }
             
             // Listener para la navegación por hash (Ej: botón atrás del navegador)
-            window.addEventListener('hashchange', () => {
+        window.addEventListener('hashchange', () => {
+            
+            // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
+            // en medio de una navegación programada por setView.
+            if (!isNavigating) {
                 const newHash = window.location.hash.replace('#', '');
                 if (newHash) {
+                    // Esto es para el botón "atrás". 
+                    // (Nota: si vas a #edit_offer con "atrás", fallará porque no tiene 'data',
+                    // pero soluciona el bug de "Editar")
                     setView(newHash);
                 } else {
                     setView('home');
                 }
-            });
+            }
+        });
 
             // Renderiza el header al inicio (llamado también desde setupAuthListener)
             renderHeader();
@@ -934,6 +950,7 @@
     </script>
 </body>
 </html>
+
 
 
 
