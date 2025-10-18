@@ -91,12 +91,11 @@
         
         // ⚠️ CLAVES (DEBES USAR TUS CLAVES REALES AQUÍ)
         const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI_NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
         let supabaseClient = null; 
         
-        // 🟢 Variables para Búsqueda y Mapa
-        let proveedores = []; // La seguimos usando para los detalles de proveedor
-        let searchOffers = []; // Aquí guardaremos los resultados de búsqueda
+        // 🟢 NUEVA: Variable para resultados de búsqueda de proveedores
+        let providerResults = [];
 
         // ===================================================================
         // 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
@@ -423,53 +422,53 @@
         // ===================================================================
 
         // ==================================================================
-        // ✅ FUNCIÓN `loadOffersAndProviders` (Corregida para Búsqueda/JOIN)
+        // ✅ FUNCIÓN `loadOffersAndProviders` (REESCRITA PARA BUSCAR PROVEEDORES)
         // ==================================================================
         async function loadOffersAndProviders(searchTerm = '') {
             if (!supabaseClient) return; 
             
             try {
-                // 1. Carga la lista de TODOS los proveedores (la seguimos necesitando para la vista de "Detalles")
-                const { data: allProviders, error: providerError } = await supabaseClient
-                    .from('proveedores') 
-                    .select('id, nombre_empresa, direccion');
-                if (providerError) throw providerError;
-                
-                proveedores = allProviders.map(p => ({
-                    id: p.id,
-                    nombre: p.nombre_empresa || 'Nombre no definido',
-                    address: p.direccion || 'Dirección no definida',
-                    tipo: 'Empresa', ubicacion: 'BDD', opiniones: []
-                }));
+                let providerUserIds = [];
 
-                // 2. Construye la consulta de BÚSQUEDA de ofertas
-                let query = supabaseClient
-                    .from('ofertas')
-                    // 🟢 CORRECCIÓN: Esta es la sintaxis correcta del JOIN
-                    // Le decimos: "Trae todo (*), y también trae 'proveedores'
-                    // UNIENDO donde 'ofertas.user_id' sea igual a 'proveedores.user_id'.
-                    // El '!inner' asegura que solo vengan ofertas que SÍ tienen un proveedor.
-                    .select(`
-                        *, 
-                        proveedores!user_id=user_id!inner(id, nombre_empresa, direccion)
-                    `);
-
-                // Si hay un término de búsqueda, filtramos por título o descripción
-                // .ilike es "case-insensitive LIKE"
+                // 1. Si hay término de búsqueda, buscamos en OFERTAS primero
                 if (searchTerm) {
-                    query = query.or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
+                    let { data: offers, error: offersError } = await supabaseClient
+                        .from('ofertas')
+                        .select('user_id') // Solo necesitamos los user_id
+                        .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
+                    
+                    if (offersError) throw offersError;
+
+                    // Obtenemos una lista única de IDs de proveedores que tienen esas ofertas
+                    providerUserIds = [...new Set(offers.map(o => o.user_id))];
+
+                    // Si la búsqueda no da resultados, vaciamos la lista y terminamos
+                    if (providerUserIds.length === 0) {
+                        providerResults = [];
+                        if (window.location.hash.includes('dashboard_productor')) {
+                            contentView.innerHTML = renderProducerDashboard();
+                        }
+                        return;
+                    }
                 }
 
-                // 3. Ejecuta la consulta y guarda los resultados
-                const { data: offersData, error: offersError } = await query;
-
-                if (offersError) {
-                    console.error("Error en el JOIN:", offersError);
-                    throw offersError;
+                // 2. Buscamos en PROVEEDORES
+                let query = supabaseClient
+                    .from('proveedores')
+                    .select('id, nombre_empresa, direccion, user_id'); // Traemos todos los datos necesarios
+                
+                // Si la búsqueda SÍ dio resultados, filtramos proveedores por esos IDs
+                if (providerUserIds.length > 0) {
+                    query = query.in('user_id', providerUserIds);
                 }
+                
+                // Si no hubo búsqueda, el query.in() no se aplica y traemos TODOS los proveedores
 
-                // El JOIN devuelve 'proveedores' como un objeto, no un array.
-                searchOffers = offersData.filter(offer => offer.proveedores);
+                const { data: providers, error: providersError } = await query;
+                
+                if (providersError) throw providersError;
+
+                providerResults = providers; // Guardamos los proveedores encontrados
 
                 // 4. Si ya estamos en el dashboard, lo re-renderizamos
                 if (window.location.hash.includes('dashboard_productor')) {
@@ -478,7 +477,7 @@
 
             } catch (error) {
                 console.error('Error cargando ofertas y proveedores:', error.message);
-                searchOffers = []; // Resetea en caso de error
+                providerResults = []; // Resetea en caso de error
             }
         }
 
@@ -549,7 +548,7 @@
             if (iframe) {
                 const encodedAddress = encodeURIComponent(address);
                 // 🟢 CORRECCIÓN: URL de Google Maps Embed estándar (sin API Key)
-                const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
+                const mapUrl = `https://www.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
                 iframe.src = mapUrl;
             } else {
                 console.error("Error: No se encontró el iframe con id='map-iframe'.");
@@ -784,7 +783,7 @@
                     .eq('id', offerId)
                     .single();
 
-                if (error || !data) throw new Error("Oferta no encontrada o acceso denagegado.");
+                if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
                 
                 offer = data;
             } catch (error) {
@@ -963,31 +962,35 @@
         function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
 
         // ==================================================================
-        // ✅ FUNCIÓN `renderProducerDashboard` (Actualizada para Búsqueda y Mapa)
+        // 🟢 NUEVA: Función auxiliar para simular ratings
+        // ==================================================================
+        function renderRating(rating) {
+            // Genera un rating simulado de 3 a 5 "plays"
+            const simulatedRating = Math.floor(Math.random() * 3) + 3;
+            return Array.from({length: 5}, (_, i) => 
+                `<span class="text-2xl ${i < simulatedRating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`
+            ).join('');
+        }
+
+        // ==================================================================
+        // ✅ FUNCIÓN `renderProducerDashboard` (REESCRITA para mostrar Proveedores)
         // ==================================================================
         function renderProducerDashboard() { 
             let resultsHtml = '';
             
-            if (searchOffers.length > 0) {
-                // 🟢 CAMBIO: Iteramos sobre 'searchOffers' (productos)
-                resultsHtml = searchOffers.map(offer => {
-                    // offer.proveedores tiene los datos del JOIN
-                    const provider = offer.proveedores; 
-                    
-                    // Verificación por si acaso el JOIN falla
-                    if (!provider) {
-                        console.warn("Se encontró una oferta sin proveedor:", offer);
-                        return ''; // Omite esta tarjeta
-                    }
+            if (providerResults.length > 0) {
+                // 🟢 CAMBIO: Iteramos sobre 'providerResults' (proveedores)
+                resultsHtml = providerResults.map(provider => {
                     
                     return `
                     <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            <h4 class="font-bold text-lg font-heading text-accent-cyan">${offer.titulo}</h4>
-                            <p class="text-lg text-white font-bold">$${offer.precio} / día</p>
+                            <h4 class="font-bold text-lg font-heading text-accent-cyan">${provider.nombre_empresa}</h4>
                             
+                            <div class="my-2">${renderRating()}</div>
+
                             <p class="text-sm text-gray-400 font-sans mt-1">
-                                Proveedor: <strong>${provider.nombre_empresa}</strong>
+                                Ubicación: ${provider.direccion}
                             </p>
                         </div>
                         <div class="flex-shrink-0 flex w-full sm:w-auto gap-2">
@@ -998,14 +1001,14 @@
                     </div>`;
                 }).join('');
             } else {
-                resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron productos. Intenta con otra búsqueda o explora el mapa.</p>';
+                resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores. Intenta con otra búsqueda o explora el mapa.</p>';
             }
             
             return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
                     <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
-                        <iframe id="map-iframe" src="https://www.google.com/maps?q=$..." width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                        <iframe id="map-iframe" src="https://www.google.com/maps?q=Argentina&output=embed&z=5" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                     </div>
                     
                     <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Resultados de la Búsqueda</h2>
@@ -1105,7 +1108,7 @@
         window.onload = () => { 
             if (initializeSupabase()) {
                 setupAuthListener();
-                // 🟢 CAMBIO: Carga las ofertas/proveedores al iniciar
+                // 🟢 CAMBIO: Carga los proveedores al iniciar
                 loadOffersAndProviders();
             }
             
@@ -1141,6 +1144,7 @@
     </script>
 </body>
 </html>
+
 
 
 
