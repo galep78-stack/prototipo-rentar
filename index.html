@@ -420,6 +420,22 @@ async function loadOffers() {
                         direccion: data.direccion
                     };
                 }
+else if (tableName === 'productores') {
+                    const { data, error } = await supabaseClient
+                        .from(tableName)
+                        .select('nombre_completo, dni, direccion, email') // <--- Campos de la tabla 'productores'
+                        .eq('user_id', userId)
+                        .single();
+                    if (error || !data) return {};
+                    
+                    return {
+                        nombre: data.nombre_completo,
+                        dni: data.dni,
+                        direccion: data.direccion,
+                        email: data.email,
+                        cuit: 'N/A' // CUIT no aplica a productores
+                    };
+                }
             } catch (e) {
                 console.error("Error al obtener datos de perfil:", e);
                 // Fallback para productores o error de BDD
@@ -948,6 +964,7 @@ text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mi
     </script>
 </body>
 </html>
+
 
 
 
