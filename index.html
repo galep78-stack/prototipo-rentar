@@ -112,36 +112,34 @@
             // 2. Manejo de la sesión inicial (al cargar o volver a la pestaña)
 supabaseClient.auth.getSession().then(({ data: { session } }) => {
     currentUser = session ? session.user : null;
-    renderHeader();
-    // NO NAVEGAMOS AQUÍ. Dejamos que onAuthStateChange se encargue.
+    renderHeader()
+    
+    // 💡 Obtenemos el hash FRESCO aquí dentro
+    const freshHash = window.location.hash.replace('#', '');
+
+    // ❗ Usamos la variable "fresca"
+    if (currentUser && !freshHash) { 
+        goToDashboard();
+    }
 });
-            // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
+          // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
 supabaseClient.auth.onAuthStateChange((event, session) => {
     currentUser = session ? session.user : null;
     renderHeader(); 
     
-    // Obtenemos el hash FRESCO cada vez que hay un evento
-    const currentHash = window.location.hash.replace('#', '');
-
-    if (event === 'SIGNED_IN') {
-        // 1. El usuario acaba de iniciar sesión.
-        goToDashboard();
-
-    } else if (event === 'INITIAL_SESSION' && currentUser && !currentHash) {
-        // 2. La página cargó, el usuario YA estaba logueado
-        //    y estaba en la home (sin hash). Lo mandamos al dashboard.
-        goToDashboard();
-
+    if (currentUser) {
+        // Si el evento es un inicio de sesión explícito...
+        if (event === 'SIGNED_IN') { 
+            goToDashboard();
+        }
+        // Para otros eventos (como 'TOKEN_REFRESHED'...)
+        // no hacemos nada...
     } else if (event === 'SIGNED_OUT') {
-        // 3. El usuario acaba de cerrar sesión.
-        setView('home');
-    
+        // Si el evento es LOGOUT, ir a Home
+        setView('home'); 
     }
-    // 4. Para 'TOKEN_REFRESHED' (volver a la pestaña) o
-    //    'INITIAL_SESSION' (con un hash), no hacemos NADA.
-    //    Esto evita la recarga y te mantiene en la vista actual.
 });
-        async function handleLogout() {
+            async function handleLogout() {
             try {
                 const { error } = await supabaseClient.auth.signOut(); 
                 if (error) throw error;
@@ -890,6 +888,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     </script>
 </body>
 </html>
+
 
 
 
