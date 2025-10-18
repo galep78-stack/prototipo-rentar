@@ -91,7 +91,7 @@
         
         // ⚠️ CLAVES (DEBES USAR TUS CLAVES REALES AQUÍ)
         const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI_NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
         let supabaseClient = null; 
         
         // 🟢 Variables para Búsqueda y Mapa
@@ -447,11 +447,11 @@
                     .from('ofertas')
                     // 🟢 CORRECCIÓN: Esta es la sintaxis correcta del JOIN
                     // Le decimos: "Trae todo (*), y también trae 'proveedores'
-                    // UNIENDO donde 'proveedores.user_id' sea igual a 'ofertas.user_id'.
+                    // UNIENDO donde 'ofertas.user_id' sea igual a 'proveedores.user_id'.
                     // El '!inner' asegura que solo vengan ofertas que SÍ tienen un proveedor.
                     .select(`
                         *, 
-                        proveedores!inner!user_id(id, nombre_empresa, direccion)
+                        proveedores!user_id=user_id!inner(id, nombre_empresa, direccion)
                     `);
 
                 // Si hay un término de búsqueda, filtramos por título o descripción
@@ -468,8 +468,7 @@
                     throw offersError;
                 }
 
-                // El filtro '.filter(offer => offer.proveedores)' ya no es necesario
-                // gracias al '!inner' join, ¡pero no hace daño dejarlo por seguridad!
+                // El JOIN devuelve 'proveedores' como un objeto, no un array.
                 searchOffers = offersData.filter(offer => offer.proveedores);
 
                 // 4. Si ya estamos en el dashboard, lo re-renderizamos
@@ -785,7 +784,7 @@
                     .eq('id', offerId)
                     .single();
 
-                if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
+                if (error || !data) throw new Error("Oferta no encontrada o acceso denagegado.");
                 
                 offer = data;
             } catch (error) {
@@ -975,6 +974,12 @@
                     // offer.proveedores tiene los datos del JOIN
                     const provider = offer.proveedores; 
                     
+                    // Verificación por si acaso el JOIN falla
+                    if (!provider) {
+                        console.warn("Se encontró una oferta sin proveedor:", offer);
+                        return ''; // Omite esta tarjeta
+                    }
+                    
                     return `
                     <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
@@ -1000,7 +1005,7 @@
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
                     <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
-                        <iframe id="map-iframe" src="https://maps.google.com/maps?q=Argentina&output=embed&z=4" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                        <iframe id="map-iframe" src="https://www.google.com/maps?q=$..." width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                     </div>
                     
                     <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Resultados de la Búsqueda</h2>
@@ -1136,6 +1141,7 @@
     </script>
 </body>
 </html>
+
 
 
 
