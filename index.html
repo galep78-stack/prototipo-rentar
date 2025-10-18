@@ -107,7 +107,35 @@
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             return true;
         }
+// ===================================================================
+        // 🟢 FUNCIONES DE UTILIDAD (Dropdown)
+        // ===================================================================
+        
+        function toggleDropdown(id) {
+            event.stopPropagation(); // Evita que el click se propague al 'window'
+            const dropdown = document.getElementById(id);
+            if (dropdown) {
+                // Cierra otros dropdowns si estuvieran abiertos
+                closeAllDropdowns(id);
+                dropdown.classList.toggle('hidden');
+            }
+        }
 
+        function closeAllDropdowns(exceptId = null) {
+            const dropdowns = document.querySelectorAll('.dropdown-menu');
+            dropdowns.forEach(dropdown => {
+                if (dropdown.id !== exceptId && !dropdown.classList.contains('hidden')) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        // Cierra los dropdowns si se hace click fuera
+        window.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-toggle')) {
+                closeAllDropdowns();
+            }
+        });
         function setupAuthListener() {
             if (!supabaseClient) return;
             // 💡 1. Obtener el hash actual de la URL al cargar
@@ -680,53 +708,68 @@
         
         // Función auxiliar para el header (Corregida)
       function renderHeader() {
-    const header = document.getElementById('main-header');
-    if (!header) return;
+            const header = document.getElementById('main-header');
+            if (!header) return;
 
-    const isLoggedIn = !!currentUser;
-    const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
-    const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
-    
-    // Botones de Autenticación (Mi Perfil/Cerrar Sesión o Iniciar Sesión/Registrar)
-    const authButtons = isLoggedIn 
-        ? // Estado: CONECTADO
-          `<div class="flex space-x-3 items-center">
-               <span class="text-sm font-sans text-gray-300 mr-3 hidden md:block">
-                   Hola, <strong class="text-accent-cyan">${displayName}</strong>
-               </span>
-               <button onclick="setView('profile_edit')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Mi Perfil</button>
-               <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>
-           </div>`
-        : // Estado: DESCONECTADO
-          `<div class="flex space-x-3">
-               <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
-               <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
-           </div>`;
+            const isLoggedIn = !!currentUser;
+            const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
+            const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
+            
+            // Botones de Autenticación (Mi Cuenta/Cerrar Sesión o Iniciar Sesión/Registrar)
+            const authButtons = isLoggedIn 
+                ? // Estado: CONECTADO (CON DROPDOWN)
+                `<div class="flex space-x-3 items-center">
+                    <span class="text-sm font-sans text-gray-300 mr-3 hidden md:block">
+                        Hola, <strong class="text-accent-cyan">${displayName}</strong>
+                    </span>
+                    
+                    <div class="relative">
+                        <button onclick="toggleDropdown('account-dropdown')" class="dropdown-toggle btn-secondary px-4 py-2 rounded-lg font-semibold flex items-center">
+                            Mi Cuenta
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        
+                        <div id="account-dropdown" class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                            <a href="#" onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+                                Mi Dashboard
+                            </a>
+                            <a href="#" onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+                                Editar Perfil
+                            </a>
+                        </div>
+                    </div>
+                    <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white px-4 py-2 rounded-lg font-semibold">Cerrar Sesión</button>
+                </div>`
+                : // Estado: DESCONECTADO
+                `<div class="flex space-x-3">
+                    <button onclick="setView('login')" class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">Iniciar Sesión</button>
+                    <button onclick="setView('register')" class="btn-secondary px-4 py-2 rounded-lg font-semibold">Registrar</button>
+                </div>`;
 
-    header.innerHTML = `
-        <div class="container mx-auto px-4">
-            <nav class="flex justify-between items-center py-4">
-                
-                <a href="#" onclick="goToDashboard()" class="flex items-center transition hover:opacity-80">
-                    <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
-                    <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
-                </a>
-                
-                <div class="hidden md:flex flex-grow justify-center">
-                    <button onclick="setView('como_funciona')" 
-        class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">
-    ¿Cómo funciona?
-</button>
+            header.innerHTML = `
+                <div class="container mx-auto px-4">
+                    <nav class="flex justify-between items-center py-4">
+                        
+                        <a href="#" onclick="goToDashboard()" class="flex items-center transition hover:opacity-80">
+                            <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
+                            <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
+                        </a>
+                        
+                        <div class="hidden md:flex flex-grow justify-center">
+                            <button onclick="setView('como_funciona')" 
+                                    class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">
+                                ¿Cómo funciona?
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center space-x-4">
+                            ${authButtons}
+                        </div>
+
+                    </nav>
                 </div>
-                
-                <div class="flex items-center space-x-4">
-                    ${authButtons}
-                </div>
-
-            </nav>
-        </div>
-    `;
-}
+            `;
+        }
         // Vistas HTML (Corregidas y Consolidadas)
         function renderHomeView() { 
             return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);"><div class="text-center max-w-4xl"><h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1><div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8"><input type="text" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark"><button onclick="setView('dashboard_productor')" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button></div></div></section><section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark"><h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy productor</h3><p class="text-gray-600 mb-6">Buscá equipos y servicios.</p><button onclick="setView('dashboard_productor')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button></div><div class="bg-white p-8 rounded-xl shadow-lg"><h3 class="text-2xl font-bold mb-3">Soy proveedor</h3><p class="text-gray-600 mb-6">Publicá tu inventario.</p><button onclick="handlePublishOfferClick()" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button></div></div></section>`; 
@@ -892,6 +935,7 @@
     </script>
 </body>
 </html>
+
 
 
 
