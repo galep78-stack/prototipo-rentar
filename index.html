@@ -560,7 +560,7 @@
                 // Obtener las ofertas del usuario actual
                 const { data: offers, error } = await supabaseClient
                     .from('ofertas')
-                    .select('*')
+                    .select('id, titulo, categoria, ubicacion, precio, descripcion')
                     .eq('user_id', currentUser.id); 
 
                 if (error) throw error;
@@ -934,6 +934,7 @@
     </script>
 </body>
 </html>
+
 
 
 
