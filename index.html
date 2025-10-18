@@ -113,12 +113,20 @@
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
                 currentUser = session ? session.user : null;
                 renderHeader(); 
+                // ❗ Agregar la redirección aquí para la carga inicial
                 if (currentUser) goToDashboard();
             });
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 currentUser = session ? session.user : null;
                 renderHeader(); 
-                if (currentUser) goToDashboard();
+                
+                // ❗ Redirección SIEMPRE que haya un cambio de estado a conectado
+                if (currentUser) {
+                    goToDashboard(); // Llama a la función que redirige por rol
+                } else {
+                    // Si el evento es LOGOUT, ir a Home
+                    setView('home');
+                }
             });
         }
         
@@ -178,15 +186,7 @@
                 currentUser = data.user; 
                 alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
 
-                const userRole = currentUser.user_metadata.user_role;
-
-                if (userRole === 'proveedor') {
-                    setView('dashboard_proveedor');
-                } else {
-                    setView('dashboard_productor'); 
-                }
-                
-            } catch (error) {
+                } catch (error) {
                 alert(`Error al iniciar sesión: ${error.message}`);
                 console.error('Error en Supabase SignIn:', error);
             }
@@ -873,6 +873,7 @@
     </script>
 </body>
 </html>
+
 
 
 
