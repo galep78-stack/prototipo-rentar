@@ -240,7 +240,24 @@
                         alert(`Error al guardar datos de empresa: ${dbError.message}. Perfil incompleto.`);
                     }
                 }
-                
+                // 💡 INICIO: LÓGICA DE INSERCIÓN EN TABLA DE PERFIL (PRODUCTORES)
+                else if (roleToRegister === 'productor' && user && user.id) {
+                    const { error: dbError } = await supabaseClient
+                        .from('productores') // Apunta a tu nueva tabla
+                        .insert([
+                            { 
+                                user_id: user.id,
+                                nombre_completo: form.nombre.value,
+                                dni: form.dni.value,
+                                direccion: form.direccion.value,
+                                email: email // El email del formulario
+                            }
+                        ]);
+                    if (dbError) {
+                        console.error("Error al insertar datos de productor:", dbError);
+                        alert(`Error al guardar datos de productor: ${dbError.message}. Perfil incompleto.`);
+                    }
+                }
                 alert("¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta y poder iniciar sesión. 📧");
                 setView('login'); 
 
@@ -931,6 +948,7 @@ text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mi
     </script>
 </body>
 </html>
+
 
 
 
