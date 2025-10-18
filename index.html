@@ -422,61 +422,49 @@
         // ===================================================================
 
         // ==================================================================
-        // ✅ FUNCIÓN `loadOffersAndProviders` (REESCRITA PARA BUSCAR PROVEEDORES)
+        // ✅ FUNCIÓN `loadOffersAndProviders` (REESCRITA v2 - Búsqueda Correcta)
         // ==================================================================
         async function loadOffersAndProviders(searchTerm = '') {
             if (!supabaseClient) return; 
             
             try {
-                let providerUserIds = [];
-
-                // 1. Si hay término de búsqueda, buscamos en OFERTAS primero
-                if (searchTerm) {
-                    let { data: offers, error: offersError } = await supabaseClient
-                        .from('ofertas')
-                        .select('user_id') // Solo necesitamos los user_id
-                        .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
-                    
-                    if (offersError) throw offersError;
-
-                    // Obtenemos una lista única de IDs de proveedores que tienen esas ofertas
-                    providerUserIds = [...new Set(offers.map(o => o.user_id))];
-
-                    // Si la búsqueda no da resultados, vaciamos la lista y terminamos
-                    if (providerUserIds.length === 0) {
-                        providerResults = [];
-                        if (window.location.hash.includes('dashboard_productor')) {
-                            contentView.innerHTML = renderProducerDashboard();
-                        }
-                        return;
-                    }
-                }
-
-                // 2. Buscamos en PROVEEDORES
+                // Empezamos la consulta sobre la tabla 'proveedores'
                 let query = supabaseClient
                     .from('proveedores')
-                    .select('id, nombre_empresa, direccion, user_id'); // Traemos todos los datos necesarios
-                
-                // Si la búsqueda SÍ dio resultados, filtramos proveedores por esos IDs
-                if (providerUserIds.length > 0) {
-                    query = query.in('user_id', providerUserIds);
+                    .select('id, nombre_empresa, direccion, user_id'); // Seleccionamos los campos que necesitamos del proveedor
+
+                // Si hay un término de búsqueda...
+                if (searchTerm) {
+                    // ...filtramos los proveedores que tengan AL MENOS UNA oferta relacionada
+                    // que coincida con el término en 'titulo' O 'descripcion'.
+                    // 'ofertas!inner' asegura que solo vengan proveedores CON ofertas.
+                    // La sintaxis 'tabla_relacionada(columna_relacionada)' se usa dentro del .or()
+                    query = query.or(
+                        `ofertas.titulo.ilike.%${searchTerm}%,ofertas.descripcion.ilike.%${searchTerm}%`,
+                        { foreignTable: 'ofertas', count: 'exact' } // ¡Importante! Especificar la tabla relacionada
+                    );
                 }
+                // Si no hay término de búsqueda, el query trae todos los proveedores.
                 
-                // Si no hubo búsqueda, el query.in() no se aplica y traemos TODOS los proveedores
-
+                // Ejecutamos la consulta
                 const { data: providers, error: providersError } = await query;
-                
-                if (providersError) throw providersError;
 
-                providerResults = providers; // Guardamos los proveedores encontrados
+                if (providersError) {
+                    // Si hay un error aquí, puede ser un problema de RLS o de sintaxis
+                    console.error("Error al buscar proveedores:", providersError);
+                    throw providersError;
+                }
 
-                // 4. Si ya estamos en el dashboard, lo re-renderizamos
+                // Guardamos los resultados (asegurándonos de que sea un array)
+                providerResults = providers || []; 
+
+                // Si ya estamos en el dashboard, lo re-renderizamos
                 if (window.location.hash.includes('dashboard_productor')) {
                     contentView.innerHTML = renderProducerDashboard();
                 }
 
             } catch (error) {
-                console.error('Error cargando ofertas y proveedores:', error.message);
+                console.error('Error en loadOffersAndProviders:', error.message);
                 providerResults = []; // Resetea en caso de error
             }
         }
@@ -1144,6 +1132,7 @@
     </script>
 </body>
 </html>
+
 
 
 
