@@ -155,6 +155,27 @@
                 alert('Ocurrió un error al intentar cerrar la sesión.');
             }
         }
+          // ❗ AÑADIR ESTA FUNCIÓN AQUÍ ❗
+      function goToDashboard() {
+          if (currentUser) {
+              // Revisa el rol del usuario guardado en los metadatos
+              const userRole = currentUser.user_metadata.user_role;
+            
+              if (userRole === 'proveedor') {
+                  setView('dashboard_proveedor');
+              } else if (userRole === 'productor') {
+                  setView('dashboard_productor');
+              } else {
+                  // Fallback si el usuario no tiene rol (no debería pasar)
+                  console.warn("Usuario conectado pero sin rol. Yendo a home.");
+                  setView('home');
+              }
+          } else {
+              // Si no hay usuario, va a la home
+              setView('home');
+          }
+      }
+
 // 🟢 NUEVA FUNCIÓN PARA EL BOTÓN 'PUBLICAR OFERTA' EN HOME
         function handlePublishOfferClick() {
             if (currentUser) {
@@ -871,6 +892,7 @@
     </script>
 </body>
 </html>
+
 
 
 
