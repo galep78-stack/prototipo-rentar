@@ -308,14 +308,16 @@
             const nuevoCuit = form.cuit_update ? form.cuit_update.value : null;
 
             const userRole = currentUser.user_metadata.user_role;
-            const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores'; 
-
-            const updateData = {
-                nombre_empresa: nuevoNombre, 
-                direccion: nuevaDireccion,
-                ...(nuevoCuit && { cuit: nuevoCuit }) // Solo agrega CUIT si es proveedor
-            };
+            const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores';
             
+            // 💡 Lógica Condicional para el nombre de la columna
+            const nombreKey = userRole === 'proveedor' ? 'nombre_empresa' : 'nombre_completo';
+            
+            const updateData = {
+                [nombreKey]: nuevoNombre, // Utiliza 'nombre_empresa' o 'nombre_completo'
+                direccion: nuevaDireccion,
+                ...(nuevoCuit && { cuit: nuevoCuit }) 
+            };
             try {
                 // Actualiza la tabla de perfil (proveedores o productores)
                 const { error: dbError } = await supabaseClient
@@ -964,6 +966,7 @@ text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mi
     </script>
 </body>
 </html>
+
 
 
 
