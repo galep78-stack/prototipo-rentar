@@ -897,7 +897,17 @@ text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mi
             </div>
         </div>`;
 }
-
+// 🟢 FUNCIÓN PARA MANEJAR LA BÚSQUEDA DESDE LA HOME O DASHBOARD
+        function handleSearch(event) {
+            event.preventDefault(); // Evita que el formulario recargue la página
+            
+            const form = event.target;
+            const searchTerm = form.search_input.value;
+            
+            // Llama a setView para recargar el dashboard de productor,
+            // pasando el término de búsqueda como 'data'.
+            setView('dashboard_productor', searchTerm); 
+        }
         function renderProviderDetailsView(providerId) { 
             const provider = proveedores.find(p => p.id === providerId); 
             if (!provider) return `<p>Proveedor no encontrado.</p>`; 
@@ -988,6 +998,7 @@ text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mi
     </script>
 </body>
 </html>
+
 
 
 
