@@ -391,17 +391,23 @@
                 ]; 
             }
         }
-async function loadOffers() { 
+async function loadOffers(searchTerm = '') { // 💡 Aceptar un término de búsqueda
             if (!supabaseClient) return [];
             try {
-                // Obtener todas las ofertas publicadas
-                const { data: offers, error } = await supabaseClient
+                let query = supabaseClient
                     .from('ofertas') 
                     .select('id, titulo, descripcion, categoria, precio, ubicacion, user_id, proveedores(nombre_empresa)');
 
+                // 💡 Aplicar filtro si existe un término de búsqueda
+                if (searchTerm) {
+                    // Busca el término en título, descripción y ubicación
+                    query = query.or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%,ubicacion.ilike.%${searchTerm}%`);
+                }
+
+                const { data: offers, error } = await query;
                 if (error) throw error;
 
-                // Mapear los datos, anidando el nombre del proveedor
+                // Mapear y devolver los datos...
                 return offers.map(offer => ({
                     id: offer.id,
                     titulo: offer.titulo,
@@ -414,7 +420,6 @@ async function loadOffers() {
 
             } catch (error) {
                 console.error('Error cargando ofertas (revisa RLS/claves):', error.message);
-                // Retorna una lista vacía en caso de error
                 return []; 
             }
         }
@@ -983,6 +988,7 @@ text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mi
     </script>
 </body>
 </html>
+
 
 
 
