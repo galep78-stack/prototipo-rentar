@@ -78,7 +78,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script>
         // ==================================================================
         // == CÓDIGO FINAL Y ESTABLE (TODOS LOS CAMBIOS CONSOLIDADOS) ==
@@ -88,10 +87,10 @@
         let currentUser = null; 
         let selectedRole = null;
         const contentView = document.getElementById('content-view');
-        let isNavigating = false;
-
+        let isNavigating = false; // 🟢 FIX: Para evitar "pantallazos"
+        
         // ⚠️ CLAVES (DEBES USAR TUS CLAVES REALES AQUÍ)
-        const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co'; 
+        const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
         let supabaseClient = null; 
         let proveedores = []; // Lista para el Dashboard de Productor
@@ -108,7 +107,8 @@
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             return true;
         }
-// ===================================================================
+        
+        // ===================================================================
         // 🟢 FUNCIONES DE UTILIDAD (Dropdown)
         // ===================================================================
         
@@ -137,6 +137,7 @@
                 closeAllDropdowns();
             }
         });
+        
         function setupAuthListener() {
             if (!supabaseClient) return;
             // 💡 1. Obtener el hash actual de la URL al cargar
@@ -160,12 +161,9 @@
                 
                 if (currentUser) {
                     // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
-                    // Esto evita el conflicto de timing que tenías antes.
                     if (event === 'SIGNED_IN') { 
-                        goToDashboard();
+                         goToDashboard();
                     }
-                    // Para otros eventos (como 'TOKEN_REFRESHED' al volver a la pestaña),
-                    // no hacemos nada, dejando al usuario en la vista actual (#hash).
                 } else if (event === 'SIGNED_OUT') {
                     // Si el evento es LOGOUT, ir a Home
                     setView('home'); 
@@ -245,6 +243,9 @@
             setView('register'); 
         }
 
+        // ==================================================================
+        // ✅ FUNCIÓN `handleRegister` CORREGIDA (1/4)
+        // ==================================================================
         async function handleRegister(event) {
             event.preventDefault();
             if (!supabaseClient) return alert("Error de conexión a la BDD.");
@@ -276,7 +277,7 @@
                 if (!user) throw new Error("No se pudo crear el usuario.");
 
                 if (roleToRegister === 'proveedor') {
-                    // Lógica de Proveedor (esta estaba bien)
+                    // Lógica de Proveedor
                     const { error: dbError } = await supabaseClient
                         .from('proveedores')
                         .insert([
@@ -285,7 +286,7 @@
                                 nombre_empresa: nombreEmpresa,
                                 cuit: form.cuit.value,
                                 direccion: form.direccion.value,
-                                email_contacto: email // ✅ Columna correcta para proveedor
+                                email_contacto: email // Columna correcta para proveedor
                             }
                         ]);
                     if (dbError) throw dbError;
@@ -297,10 +298,10 @@
                         .insert([
                             { 
                                 user_id: user.id,
-                                nombre_completo: nombreCompleto, 
+                                nombre_completo: nombreCompleto, // Columna correcta
                                 direccion: form.direccion.value,
                                 dni: form.dni.value,
-                                email: email // 🟢 CORRECCIÓN AQUÍ: Columna correcta para productor
+                                email: email // Columna correcta
                             }
                         ]);
                     if (dbError) throw dbError;
@@ -314,6 +315,41 @@
                 console.error('Error en Supabase SignUp/Insert:', error);
             }
         }
+        
+        async function handleAddOffer(event) {
+            event.preventDefault();
+            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
+
+            const form = event.target;
+            
+            const offerData = {
+                user_id: currentUser.id, 
+                titulo: form.titulo.value,
+                descripcion: form.descripcion.value,
+                categoria: form.categoria.value,
+                precio: parseFloat(form.precio.value),
+                ubicacion: form.ubicacion.value
+            };
+
+            try {
+                const { error } = await supabaseClient
+                    .from('ofertas') 
+                    .insert([offerData]);
+
+                if (error) throw error;
+                
+                alert("¡Oferta publicada con éxito!");
+                setView('dashboard_proveedor'); 
+
+            } catch (error) {
+                alert(`Error al publicar la oferta: ${error.message}.`);
+                console.error('Error en handleAddOffer:', error);
+            }
+        }
+
+        // ==================================================================
+        // ✅ FUNCIÓN `handleProfileUpdate` CORREGIDA (2/4)
+        // ==================================================================
         async function handleProfileUpdate(event) {
             event.preventDefault();
             if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
@@ -322,7 +358,6 @@
             const userRole = currentUser.user_metadata.user_role;
             const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores'; 
             
-            // 🟢 CORRECCIÓN AQUÍ 🟢
             let updateData = {};
             const nuevoNombre = form.nombre_update.value;
             const nuevaDireccion = form.direccion_update.value;
@@ -335,12 +370,11 @@
                 };
             } else if (userRole === 'productor') {
                 updateData = {
-                    nombre_completo: nuevoNombre, // <-- Columna correcta
+                    nombre_completo: nuevoNombre, // Columna correcta
                     direccion: nuevaDireccion,
-                    dni: form.dni_update.value // <-- Columna correcta
+                    dni: form.dni_update.value // Columna correcta
                 };
             }
-            // 🟢 FIN CORRECCIÓN 🟢
 
             try {
                 const { error: dbError } = await supabaseClient
@@ -354,8 +388,9 @@
                 await supabaseClient.auth.updateUser({
                     data: { display_name: nuevoNombre }
                 });
-                currentUser.user_metadata.display_name = nuevoNombre;
-                renderHeader();
+                // Actualiza el objeto 'currentUser' localmente
+                currentUser.user_metadata.display_name = nuevoNombre; 
+                renderHeader(); // Re-renderiza el header con el nuevo nombre
                 
                 alert(`¡Perfil de ${userRole} actualizado con éxito!`);
                 setView(userRole === 'proveedor' ? 'dashboard_proveedor' : 'dashboard_productor'); 
@@ -365,6 +400,8 @@
                 console.error('Error en handleProfileUpdate:', error);
             }
         }
+
+
         // ===================================================================
         // 🟢 FUNCIONES DE CARGA DE DATOS Y PERFIL (GETTERS)
         // ===================================================================
@@ -404,13 +441,15 @@
             }
         }
 
-        aasync function getProfileData(userId, role) {
+        // ==================================================================
+        // ✅ FUNCIÓN `getProfileData` CORREGIDA (3/4)
+        // ==================================================================
+        async function getProfileData(userId, role) {
             if (!supabaseClient || !userId) return null;
             
             try {
                 let profileData = {};
 
-                // 🟢 LÓGICA CORREGIDA AQUÍ 🟢
                 if (role === 'proveedor') {
                     const { data, error } = await supabaseClient
                         .from('proveedores')
@@ -459,13 +498,7 @@
                 };
             }
         }
-            // Fallback general
-             return { 
-                nombre: currentUser.user_metadata.display_name || 'Usuario', 
-                direccion: 'N/A',
-                cuit: 'N/A'
-            };
-        }
+
 
         // LÓGICA DE MAPAS
         function showProviderOnMap(address) {
@@ -481,9 +514,12 @@
         }
 
         // ===================================================================
-        // FUNCIONES DE VISTA (RENDERIZADO)
+        // 🟢 FUNCIONES DE VISTA (RENDERIZADO)
         // ===================================================================
 
+        // ==================================================================
+        // ✅ FUNCIÓN `setView` CORREGIDA (FIX "PANTALLAZO")
+        // ==================================================================
         function setView(viewName, data = null) {
             // 🟢 Si ya estamos navegando (por la llamada original),
             // ignoramos la llamada duplicada del hashchange.
@@ -519,6 +555,7 @@
             isNavigating = false; // 🟢 Desbloqueamos para vistas normales
         }
 
+
         function renderView(viewName, data) {
             switch (viewName) {
                 case 'home': return renderHomeView();
@@ -534,6 +571,9 @@
             }
         }
 
+        // ==================================================================
+        // ✅ FUNCIÓN `renderProfileEditView` CORREGIDA (4/4)
+        // ==================================================================
         async function renderProfileEditView() {
             if (!currentUser) return renderLoginView();
 
@@ -544,10 +584,9 @@
             // getProfileData ya está corregido y devuelve el objeto correcto
             const profileData = await getProfileData(currentUser.id, userRole);
             
-            // 🟢 CORRECCIÓN AQUÍ 🟢
             const currentNombre = profileData.nombre || (isProvider ? 'Nombre de la Empresa' : 'Nombre Completo');
             const currentCuit = profileData.cuit || '';
-            const currentDni = profileData.dni || ''; // <-- Leemos el DNI
+            const currentDni = profileData.dni || ''; // Leemos el DNI
             const currentDireccion = profileData.direccion || '';
 
             // Genera el campo dinámico (CUIT o DNI)
@@ -559,7 +598,7 @@
                 <label class="block text-sm font-medium text-gray-700">DNI</label>
                 <input type="text" name="dni_update" 
                         value="${currentDni}" required class="w-full p-3 border rounded-lg">
-            `; // <-- Campo DNI para productor
+            `; // Campo DNI para productor
 
             return `
                 <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
@@ -585,6 +624,8 @@
                 </div>
             `;
         }
+
+
         async function renderMyProductsView() {
             if (!currentUser) return renderLoginView();
 
@@ -594,7 +635,7 @@
                 // Obtener las ofertas del usuario actual
                 const { data: offers, error } = await supabaseClient
                     .from('ofertas')
-                    .select('id, titulo, categoria, ubicacion, precio, descripcion')
+                    .select('id, titulo, categoria, ubicacion, precio, descripcion') // ✅ Pide ID explícito
                     .eq('user_id', currentUser.id); 
 
                 if (error) throw error;
@@ -646,7 +687,6 @@
                 alert("Oferta eliminada con éxito.");
                 // Recarga la vista para actualizar la lista
                 setView('my_products'); 
-
             } catch (error) {
                 alert(`Error al eliminar la oferta: ${error.message}.`);
                 console.error('Error en handleRemoveOffer:', error);
@@ -702,7 +742,6 @@
                 if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
                 
                 offer = data;
-
             } catch (error) {
                 return `<div class="p-8 text-red-500 font-sans">Error al cargar la oferta: ${error.message}</div>`;
             }
@@ -749,6 +788,7 @@
             const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
             const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
             
+            // Botones de Autenticación (Mi Cuenta/Cerrar Sesión o Iniciar Sesión/Registrar)
             const authButtons = isLoggedIn 
                 ? // Estado: CONECTADO (CON DROPDOWN)
                 `<div class="flex space-x-3 items-center">
@@ -951,23 +991,21 @@
                 setView('home'); // Muestra el inicio por defecto
             }
             
-            // Listener para la navegación por hash (Ej: botón atrás del navegador)
-        window.addEventListener('hashchange', () => {
-            
-            // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
-            // en medio de una navegación programada por setView.
-            if (!isNavigating) {
-                const newHash = window.location.hash.replace('#', '');
-                if (newHash) {
-                    // Esto es para el botón "atrás". 
-                    // (Nota: si vas a #edit_offer con "atrás", fallará porque no tiene 'data',
-                    // pero soluciona el bug de "Editar")
-                    setView(newHash);
-                } else {
-                    setView('home');
+            // ==================================================================
+            // ✅ LISTENER `hashchange` CORREGIDO (FIX "PANTALLAZO")
+            // ==================================================================
+            window.addEventListener('hashchange', () => {
+                // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
+                // en medio de una navegación programada por setView.
+                if (!isNavigating) {
+                    const newHash = window.location.hash.replace('#', '');
+                    if (newHash) {
+                        setView(newHash);
+                    } else {
+                        setView('home');
+                    }
                 }
-            }
-        });
+            });
 
             // Renderiza el header al inicio (llamado también desde setupAuthListener)
             renderHeader();
@@ -976,6 +1014,7 @@
     </script>
 </body>
 </html>
+
 
 
 
