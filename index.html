@@ -504,9 +504,8 @@ else if (tableName === 'productores') {
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
                 
                 const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() : 
-                                  viewName === 'my_products' ? renderMyProductsView() : 
-                                  viewName === 'dashboard_productor' ? renderProducerDashboard() : // <--- AGREGAR ESTA LÍNEA
-                                  renderEditOfferView(data);
+                      viewName === 'my_products' ? renderMyProductsView() : 
+                      renderEditOfferView(data); // Solo las 3 vistas originales
 
                 renderPromise.then(html => {
                     // Solo actualiza si la vista no ha cambiado durante la carga
@@ -527,12 +526,12 @@ else if (tableName === 'productores') {
                 case 'home': return renderHomeView();
                 case 'login': return renderLoginView();
                 case 'register': return renderRegisterView(); 
-                case 'dashboard_productor': return renderProducerDashboard();
+                case 'dashboard_productor': return renderProducerDashboard(data);
                 case 'dashboard_proveedor': return renderProviderDashboard();
                 case 'provider_details': return renderProviderDetailsView(data);
                 case 'info': return renderInfoView(data);
                 case 'add_offer': return renderAddOfferView();
-                    case 'como_funciona': return renderComoFuncionaView();
+                case 'como_funciona': return renderComoFuncionaView();
                 default: return renderHomeView();
             }
         }
@@ -998,6 +997,7 @@ text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mi
     </script>
 </body>
 </html>
+
 
 
 
