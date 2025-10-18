@@ -95,6 +95,21 @@
         let supabaseClient = null; 
         let proveedores = []; // Lista para el Dashboard de Productor
 
+        // 🟢 FUNCIÓN DE REDIRECCIÓN INTELIGENTE (Logo y Botón Home)
+        function goToDashboard() {
+            if (currentUser) {
+                // Asegura que currentUser tiene metadatos antes de acceder
+                const userRole = currentUser.user_metadata ?
+                    currentUser.user_metadata.user_role : 'productor';
+                if (userRole === 'proveedor') {
+                    setView('dashboard_proveedor');
+                } else {
+                    setView('dashboard_productor');
+                }
+            } else {
+                setView('home');
+            }
+        }
         // ===================================================================
         // 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
         // ===================================================================
@@ -174,17 +189,19 @@
             const password = form.password.value;
             
             try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
-
                 if (error) throw error;
                 
                 currentUser = data.user; 
                 alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
 
-                } catch (error) {
+                // 💡 Redirige llamando a goToDashboard, que usa el rol
+                goToDashboard(); // Llama a la función que acabas de restablecer
+                
+            } catch (error) {
                 alert(`Error al iniciar sesión: ${error.message}`);
                 console.error('Error en Supabase SignIn:', error);
             }
@@ -966,6 +983,7 @@ text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mi
     </script>
 </body>
 </html>
+
 
 
 
