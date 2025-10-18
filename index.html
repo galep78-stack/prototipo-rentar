@@ -222,8 +222,8 @@
         async function handleSearch() {
             const inputElement = document.getElementById('search-input');
             const searchTerm = inputElement ? inputElement.value : '';
-            // Carga las ofertas (con el término de búsqueda)
-            await loadOffersAndProviders(searchTerm); 
+            // Carga los proveedores (filtrados por el término de búsqueda en sus ofertas)
+            await loadProvidersByOfferSearch(searchTerm); 
             // Muestra el dashboard con los resultados
             setView('dashboard_productor');
         }
@@ -422,9 +422,9 @@
         // ===================================================================
 
         // ==================================================================
-        // ✅ FUNCIÓN `loadOffersAndProviders` (REESCRITA v2 - Búsqueda Correcta)
+        // ✅ FUNCIÓN `loadProvidersByOfferSearch` (Búsqueda Correcta v3)
         // ==================================================================
-        async function loadOffersAndProviders(searchTerm = '') {
+        async function loadProvidersByOfferSearch(searchTerm = '') {
             if (!supabaseClient) return; 
             
             try {
@@ -435,13 +435,14 @@
 
                 // Si hay un término de búsqueda...
                 if (searchTerm) {
-                    // ...filtramos los proveedores que tengan AL MENOS UNA oferta relacionada
-                    // que coincida con el término en 'titulo' O 'descripcion'.
+                    // ...filtramos los proveedores usando una subconsulta a 'ofertas'.
+                    // Buscamos proveedores cuyo 'user_id' exista en la tabla 'ofertas'
+                    // donde el 'titulo' o 'descripcion' coincida con el término.
                     // 'ofertas!inner' asegura que solo vengan proveedores CON ofertas.
-                    // La sintaxis 'tabla_relacionada(columna_relacionada)' se usa dentro del .or()
+                    // La sintaxis del .or() ahora se aplica a la tabla relacionada.
                     query = query.or(
-                        `ofertas.titulo.ilike.%${searchTerm}%,ofertas.descripcion.ilike.%${searchTerm}%`,
-                        { foreignTable: 'ofertas', count: 'exact' } // ¡Importante! Especificar la tabla relacionada
+                        `titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`,
+                        { foreignTable: 'ofertas' } // Referencia correcta a la tabla externa
                     );
                 }
                 // Si no hay término de búsqueda, el query trae todos los proveedores.
@@ -464,10 +465,11 @@
                 }
 
             } catch (error) {
-                console.error('Error en loadOffersAndProviders:', error.message);
+                console.error('Error en loadProvidersByOfferSearch:', error.message);
                 providerResults = []; // Resetea en caso de error
             }
         }
+
 
         // ==================================================================
         // ✅ FUNCIÓN `getProfileData` (Corregida para Perfiles)
@@ -536,7 +538,7 @@
             if (iframe) {
                 const encodedAddress = encodeURIComponent(address);
                 // 🟢 CORRECCIÓN: URL de Google Maps Embed estándar (sin API Key)
-                const mapUrl = `https://www.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
+                const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
                 iframe.src = mapUrl;
             } else {
                 console.error("Error: No se encontró el iframe con id='map-iframe'.");
@@ -880,8 +882,8 @@
         // ✅ FUNCIÓN `renderHomeView` (Actualizada para Búsqueda)
         // ==================================================================
         function renderHomeView() { 
-            // Carga las ofertas sin filtro por si el usuario vuelve a la home y luego al dashboard
-            loadOffersAndProviders(); 
+            // Carga los proveedores sin filtro por si el usuario vuelve a la home y luego al dashboard
+            loadProvidersByOfferSearch(); 
             
             return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);">
                         <div class="text-center max-w-4xl">
@@ -952,7 +954,7 @@
         // ==================================================================
         // 🟢 NUEVA: Función auxiliar para simular ratings
         // ==================================================================
-        function renderRating(rating) {
+        function renderRating() {
             // Genera un rating simulado de 3 a 5 "plays"
             const simulatedRating = Math.floor(Math.random() * 3) + 3;
             return Array.from({length: 5}, (_, i) => 
@@ -978,18 +980,18 @@
                             <div class="my-2">${renderRating()}</div>
 
                             <p class="text-sm text-gray-400 font-sans mt-1">
-                                Ubicación: ${provider.direccion}
+                                Ubicación: ${provider.direccion || 'No especificada'}
                             </p>
                         </div>
                         <div class="flex-shrink-0 flex w-full sm:w-auto gap-2">
-                            <button onclick="showProviderOnMap('${provider.direccion}')" class="flex-1 sm:flex-auto bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
+                            <button onclick="showProviderOnMap('${provider.direccion || ''}')" class="flex-1 sm:flex-auto bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
                             
                             <button onclick="setView('provider_details', ${provider.id})" class="flex-1 sm:flex-auto bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>
                         </div>
                     </div>`;
                 }).join('');
             } else {
-                resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores. Intenta con otra búsqueda o explora el mapa.</p>';
+                resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda. Intenta con otro término.</p>';
             }
             
             return `
@@ -999,7 +1001,7 @@
                         <iframe id="map-iframe" src="https://www.google.com/maps?q=Argentina&output=embed&z=5" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                     </div>
                     
-                    <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Resultados de la Búsqueda</h2>
+                    <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Proveedores Encontrados</h2>
                     <div class="space-y-4">${resultsHtml}</div>
                 </div>`; 
         }
@@ -1097,7 +1099,7 @@
             if (initializeSupabase()) {
                 setupAuthListener();
                 // 🟢 CAMBIO: Carga los proveedores al iniciar
-                loadOffersAndProviders();
+                loadProvidersByOfferSearch();
             }
             
             // Revisa el hash de la URL para cargar la vista correcta al inicio
@@ -1132,6 +1134,7 @@
     </script>
 </body>
 </html>
+
 
 
 
