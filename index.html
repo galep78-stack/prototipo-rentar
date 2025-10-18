@@ -110,41 +110,39 @@
 
         function setupAuthListener() {
             if (!supabaseClient) return;
+            // 💡 1. Obtener el hash actual de la URL al cargar
+            const currentHash = window.location.hash.replace('#', ''); 
+            
+            // 2. Manejo de la sesión inicial (al cargar o volver a la pestaña)
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
                 currentUser = session ? session.user : null;
-                renderHeader(); 
-                // ❗ Agregar la redirección aquí para la carga inicial
-                if (currentUser) goToDashboard();
+                renderHeader()
+                
+                // ❗ Redirección SIEMPRE que haya un cambio de estado a conectado
+                if (currentUser && !currentHash) { 
+                    goToDashboard();
+                }
             });
+
+            // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 currentUser = session ? session.user : null;
                 renderHeader(); 
                 
-                // ❗ Redirección SIEMPRE que haya un cambio de estado a conectado
                 if (currentUser) {
-                    goToDashboard(); // Llama a la función que redirige por rol
-                } else {
+                    // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
+                    // Esto evita el conflicto de timing que tenías antes.
+                    if (event === 'SIGNED_IN') { 
+                        goToDashboard();
+                    }
+                    // Para otros eventos (como 'TOKEN_REFRESHED' al volver a la pestaña),
+                    // no hacemos nada, dejando al usuario en la vista actual (#hash).
+                } else if (event === 'SIGNED_OUT') {
                     // Si el evento es LOGOUT, ir a Home
-                    setView('home');
+                    setView('home'); 
                 }
             });
         }
-        
-        // 🟢 FUNCIÓN DE REDIRECCIÓN INTELIGENTE (Logo y Botón Home)
-        function goToDashboard() {
-            if (currentUser) {
-                // Asegura que currentUser tiene metadatos antes de acceder
-                const userRole = currentUser.user_metadata ? currentUser.user_metadata.user_role : 'productor';
-                if (userRole === 'proveedor') {
-                    setView('dashboard_proveedor');
-                } else {
-                    setView('dashboard_productor');
-                }
-            } else {
-                setView('home');
-            }
-        }
-
         async function handleLogout() {
             try {
                 const { error } = await supabaseClient.auth.signOut(); 
@@ -873,6 +871,7 @@
     </script>
 </body>
 </html>
+
 
 
 
