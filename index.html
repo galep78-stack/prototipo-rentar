@@ -111,18 +111,19 @@
         function setupAuthListener() {
             if (!supabaseClient) return;
             // 💡 1. Obtener el hash actual de la URL al cargar
-            const currentHash = window.location.hash.replace('#', ''); 
-            
             // 2. Manejo de la sesión inicial (al cargar o volver a la pestaña)
-            supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                currentUser = session ? session.user : null;
-                renderHeader()
-                
-                // ❗ Redirección SIEMPRE que haya un cambio de estado a conectado
-                if (currentUser && !currentHash) { 
-                    goToDashboard();
-                }
-            });
+supabaseClient.auth.getSession().then(({ data: { session } }) => {
+    currentUser = session ? session.user : null;
+    renderHeader()
+    
+    // 💡 Obtenemos el hash FRESCO aquí dentro
+    const freshHash = window.location.hash.replace('#', '');
+
+    // ❗ Usamos la variable "fresca"
+    if (currentUser && !freshHash) { 
+        goToDashboard();
+    }
+});
 
             // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
             supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -892,6 +893,7 @@
     </script>
 </body>
 </html>
+
 
 
 
