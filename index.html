@@ -715,7 +715,6 @@
             const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
             const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
             
-            // Botones de Autenticación (Mi Cuenta/Cerrar Sesión o Iniciar Sesión/Registrar)
             const authButtons = isLoggedIn 
                 ? // Estado: CONECTADO (CON DROPDOWN)
                 `<div class="flex space-x-3 items-center">
@@ -730,10 +729,10 @@
                         </button>
                         
                         <div id="account-dropdown" class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                            <a href="#" onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+                            <a href="javascript:void(0);" onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
                                 Mi Dashboard
                             </a>
-                            <a href="#" onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+                            <a href="javascript:void(0);" onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
                                 Editar Perfil
                             </a>
                         </div>
@@ -935,6 +934,7 @@
     </script>
 </body>
 </html>
+
 
 
 
