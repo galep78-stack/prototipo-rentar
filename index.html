@@ -78,7 +78,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <<script>
+    <script>
         // ==================================================================
         // == CÓDIGO FINAL Y ESTABLE (TODOS LOS CAMBIOS CONSOLIDADOS) ==
         // ==================================================================
@@ -94,7 +94,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk'; 
         let supabaseClient = null; 
         
-        // 🟢 NUEVO: Variables para Búsqueda y Mapa
+        // 🟢 Variables para Búsqueda y Mapa
         let proveedores = []; // La seguimos usando para los detalles de proveedor
         let searchOffers = []; // Aquí guardaremos los resultados de búsqueda
 
@@ -218,7 +218,7 @@
         }
         
 // ===================================================================
-// 🟢 NUEVA FUNCIÓN: Manejador de Búsqueda
+// 🟢 FUNCIÓN: Manejador de Búsqueda
 // ===================================================================
         async function handleSearch() {
             const inputElement = document.getElementById('search-input');
@@ -422,7 +422,9 @@
         // 🟢 FUNCIONES DE CARGA DE DATOS (GETTERS)
         // ===================================================================
 
-        // 🟢 NUEVA FUNCIÓN: Carga ofertas Y proveedores (para Búsqueda)
+        // ==================================================================
+        // ✅ FUNCIÓN `loadOffersAndProviders` (Corregida para Búsqueda/JOIN)
+        // ==================================================================
         async function loadOffersAndProviders(searchTerm = '') {
             if (!supabaseClient) return; 
             
@@ -443,10 +445,13 @@
                 // 2. Construye la consulta de BÚSQUEDA de ofertas
                 let query = supabaseClient
                     .from('ofertas')
-                    // Hacemos un JOIN para traer los datos del proveedor CON la oferta
+                    // 🟢 CORRECCIÓN: Esta es la sintaxis correcta del JOIN
+                    // Le decimos: "Trae todo (*), y también trae 'proveedores'
+                    // UNIENDO donde 'proveedores.user_id' sea igual a 'ofertas.user_id'.
+                    // El '!inner' asegura que solo vengan ofertas que SÍ tienen un proveedor.
                     .select(`
                         *, 
-                        proveedores ( id, nombre_empresa, direccion )
+                        proveedores!inner!user_id(id, nombre_empresa, direccion)
                     `);
 
                 // Si hay un término de búsqueda, filtramos por título o descripción
@@ -457,9 +462,14 @@
 
                 // 3. Ejecuta la consulta y guarda los resultados
                 const { data: offersData, error: offersError } = await query;
-                if (offersError) throw offersError;
 
-                // Limpia los datos (filtra ofertas que no tengan un proveedor válido)
+                if (offersError) {
+                    console.error("Error en el JOIN:", offersError);
+                    throw offersError;
+                }
+
+                // El filtro '.filter(offer => offer.proveedores)' ya no es necesario
+                // gracias al '!inner' join, ¡pero no hace daño dejarlo por seguridad!
                 searchOffers = offersData.filter(offer => offer.proveedores);
 
                 // 4. Si ya estamos en el dashboard, lo re-renderizamos
@@ -539,8 +549,8 @@
             const iframe = document.getElementById('map-iframe');
             if (iframe) {
                 const encodedAddress = encodeURIComponent(address);
-                // 🟢 CORRECCIÓN: URL de Google Maps para incrustar, usando ?q=
-                const mapUrl = `https://www.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
+                // 🟢 CORRECCIÓN: URL de Google Maps Embed estándar (sin API Key)
+                const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
                 iframe.src = mapUrl;
             } else {
                 console.error("Error: No se encontró el iframe con id='map-iframe'.");
@@ -954,7 +964,7 @@
         function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
 
         // ==================================================================
-        // ✅ FUNCIÓN `renderProducerDashboard` (Actualizada para Búsqueda)
+        // ✅ FUNCIÓN `renderProducerDashboard` (Actualizada para Búsqueda y Mapa)
         // ==================================================================
         function renderProducerDashboard() { 
             let resultsHtml = '';
@@ -990,7 +1000,7 @@
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
                     <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
-                        <iframe id="map-iframe" src="http://googleusercontent.com/maps/google.com/4" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                        <iframe id="map-iframe" src="https://maps.google.com/maps?q=Argentina&output=embed&z=4" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                     </div>
                     
                     <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Resultados de la Búsqueda</h2>
@@ -1126,6 +1136,7 @@
     </script>
 </body>
 </html>
+
 
 
 
