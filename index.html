@@ -253,7 +253,10 @@
             const email = form.email.value;
             const password = form.password.value;
             const roleToRegister = selectedRole || 'productor'; 
-            const nombreEmpresa = form.empresa ? form.empresa.value : form.nombre.value; // Para metadatos
+            
+            const nombreCompleto = form.nombre ? form.nombre.value : null;
+            const nombreEmpresa = form.empresa ? form.empresa.value : null;
+            const displayName = nombreEmpresa || nombreCompleto; 
 
             try {
                 const { data: authData, error: authError } = await supabaseClient.auth.signUp({
@@ -262,7 +265,7 @@
                     options: { 
                         data: { 
                             user_role: roleToRegister,
-                            display_name: nombreEmpresa
+                            display_name: displayName
                         } 
                     }
                 });
@@ -270,27 +273,39 @@
                 if (authError) throw authError;
                 
                 const user = authData.user || authData.session?.user; 
+                if (!user) throw new Error("No se pudo crear el usuario.");
 
-                // Lógica de inserción en tabla de perfil (Proveedores)
-                if (roleToRegister === 'proveedor' && user && user.id) {
+                if (roleToRegister === 'proveedor') {
+                    // Lógica de Proveedor (esta estaba bien)
                     const { error: dbError } = await supabaseClient
                         .from('proveedores')
                         .insert([
                             { 
                                 user_id: user.id,
-                                nombre_empresa: form.empresa.value,
+                                nombre_empresa: nombreEmpresa,
                                 cuit: form.cuit.value,
                                 direccion: form.direccion.value,
-                                email_contacto: email
+                                email_contacto: email // ✅ Columna correcta para proveedor
                             }
                         ]);
-                    
-                    if (dbError) {
-                        console.error("Error al insertar datos de proveedor:", dbError);
-                        alert(`Error al guardar datos de empresa: ${dbError.message}. Perfil incompleto.`);
-                    }
+                    if (dbError) throw dbError;
+
+                } else if (roleToRegister === 'productor') {
+                    // Lógica corregida para Productor
+                    const { error: dbError } = await supabaseClient
+                        .from('productores') 
+                        .insert([
+                            { 
+                                user_id: user.id,
+                                nombre_completo: nombreCompleto, 
+                                direccion: form.direccion.value,
+                                dni: form.dni.value,
+                                email: email // 🟢 CORRECCIÓN AQUÍ: Columna correcta para productor
+                            }
+                        ]);
+                    if (dbError) throw dbError;
                 }
-                
+
                 alert("¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta y poder iniciar sesión. 📧");
                 setView('login'); 
 
@@ -299,64 +314,48 @@
                 console.error('Error en Supabase SignUp/Insert:', error);
             }
         }
-        
-        async function handleAddOffer(event) {
-            event.preventDefault();
-            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
-
-            const form = event.target;
-            
-            const offerData = {
-                user_id: currentUser.id, 
-                titulo: form.titulo.value,
-                descripcion: form.descripcion.value,
-                categoria: form.categoria.value,
-                precio: parseFloat(form.precio.value),
-                ubicacion: form.ubicacion.value
-            };
-
-            try {
-                const { error } = await supabaseClient
-                    .from('ofertas') 
-                    .insert([offerData]);
-
-                if (error) throw error;
-                
-                alert("¡Oferta publicada con éxito!");
-                setView('dashboard_proveedor'); 
-
-            } catch (error) {
-                alert(`Error al publicar la oferta: ${error.message}.`);
-                console.error('Error en handleAddOffer:', error);
-            }
-        }
-
         async function handleProfileUpdate(event) {
             event.preventDefault();
             if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
 
             const form = event.target;
-            const nuevoNombre = form.nombre_update.value;
-            const nuevaDireccion = form.direccion_update.value;
-            const nuevoCuit = form.cuit_update ? form.cuit_update.value : null;
-
             const userRole = currentUser.user_metadata.user_role;
             const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores'; 
-
-            const updateData = {
-                nombre_empresa: nuevoNombre, 
-                direccion: nuevaDireccion,
-                ...(nuevoCuit && { cuit: nuevoCuit }) // Solo agrega CUIT si es proveedor
-            };
             
+            // 🟢 CORRECCIÓN AQUÍ 🟢
+            let updateData = {};
+            const nuevoNombre = form.nombre_update.value;
+            const nuevaDireccion = form.direccion_update.value;
+
+            if (userRole === 'proveedor') {
+                updateData = {
+                    nombre_empresa: nuevoNombre,
+                    direccion: nuevaDireccion,
+                    cuit: form.cuit_update.value
+                };
+            } else if (userRole === 'productor') {
+                updateData = {
+                    nombre_completo: nuevoNombre, // <-- Columna correcta
+                    direccion: nuevaDireccion,
+                    dni: form.dni_update.value // <-- Columna correcta
+                };
+            }
+            // 🟢 FIN CORRECCIÓN 🟢
+
             try {
-                // Actualiza la tabla de perfil (proveedores o productores)
                 const { error: dbError } = await supabaseClient
                     .from(tableName)
                     .update(updateData)
                     .eq('user_id', currentUser.id); 
                 
                 if (dbError) throw dbError;
+                
+                // Actualizamos el nombre en 'auth' para que el header cambie
+                await supabaseClient.auth.updateUser({
+                    data: { display_name: nuevoNombre }
+                });
+                currentUser.user_metadata.display_name = nuevoNombre;
+                renderHeader();
                 
                 alert(`¡Perfil de ${userRole} actualizado con éxito!`);
                 setView(userRole === 'proveedor' ? 'dashboard_proveedor' : 'dashboard_productor'); 
@@ -366,7 +365,6 @@
                 console.error('Error en handleProfileUpdate:', error);
             }
         }
-
         // ===================================================================
         // 🟢 FUNCIONES DE CARGA DE DATOS Y PERFIL (GETTERS)
         // ===================================================================
@@ -406,36 +404,61 @@
             }
         }
 
-        async function getProfileData(userId, role) {
+        aasync function getProfileData(userId, role) {
             if (!supabaseClient || !userId) return null;
             
-            const tableName = role === 'proveedor' ? 'proveedores' : 'productores';
-            
             try {
-                if (tableName === 'proveedores') {
+                let profileData = {};
+
+                // 🟢 LÓGICA CORREGIDA AQUÍ 🟢
+                if (role === 'proveedor') {
                     const { data, error } = await supabaseClient
-                        .from(tableName)
-                        .select('nombre_empresa, cuit, direccion')
+                        .from('proveedores')
+                        .select('nombre_empresa, cuit, direccion') // Columnas de Proveedor
                         .eq('user_id', userId)
-                        .single(); 
-                        
-                    if (error || !data) return {};
+                        .single();
                     
-                    return {
+                    if (error) throw error;
+                    if (!data) throw new Error("Perfil de proveedor no encontrado.");
+
+                    profileData = {
                         nombre: data.nombre_empresa,
-                        cuit: data.cuit,
-                        direccion: data.direccion
+                        cuit: data.cuit || '',
+                        direccion: data.direccion || '',
+                        dni: '' // Proveedor no tiene DNI
+                    };
+
+                } else if (role === 'productor') {
+                    const { data, error } = await supabaseClient
+                        .from('productores')
+                        .select('nombre_completo, dni, direccion') // Columnas de Productor
+                        .eq('user_id', userId)
+                        .single();
+
+                    if (error) throw error;
+                    if (!data) throw new Error("Perfil de productor no encontrado.");
+
+                    profileData = {
+                        nombre: data.nombre_completo,
+                        dni: data.dni || '',
+                        direccion: data.direccion || '',
+                        cuit: '' // Productor no tiene CUIT
                     };
                 }
+
+                return profileData;
+
             } catch (e) {
-                console.error("Error al obtener datos de perfil:", e);
-                // Fallback para productores o error de BDD
+                console.warn(`Error al obtener datos de perfil: ${e.message}. Usando fallback.`);
+                // Fallback genérico si la consulta falla o no encuentra perfil
                 return { 
-                    nombre: currentUser.user_metadata.display_name || 'Productor', 
-                    direccion: 'N/A',
-                    cuit: 'N/A'
+                    nombre: currentUser.user_metadata.display_name || 'Usuario (sin perfil)', 
+                    direccion: '',
+                    cuit: '',
+                    dni: ''
                 };
             }
+        }
             // Fallback general
              return { 
                 nombre: currentUser.user_metadata.display_name || 'Usuario', 
@@ -514,51 +537,54 @@
         async function renderProfileEditView() {
             if (!currentUser) return renderLoginView();
 
-            const isProvider = currentUser.user_metadata.user_role === 'proveedor';
-            const userRole = isProvider ? 'Proveedor' : 'Productor';
+            const userRole = currentUser.user_metadata.user_role;
+            const isProvider = userRole === 'proveedor';
             const dashboardView = isProvider ? 'dashboard_proveedor' : 'dashboard_productor';
             
-            // Carga los datos específicos del perfil (asíncrono)
-            const profileData = await getProfileData(currentUser.id, userRole.toLowerCase());
+            // getProfileData ya está corregido y devuelve el objeto correcto
+            const profileData = await getProfileData(currentUser.id, userRole);
             
+            // 🟢 CORRECCIÓN AQUÍ 🟢
             const currentNombre = profileData.nombre || (isProvider ? 'Nombre de la Empresa' : 'Nombre Completo');
             const currentCuit = profileData.cuit || '';
+            const currentDni = profileData.dni || ''; // <-- Leemos el DNI
             const currentDireccion = profileData.direccion || '';
+
+            // Genera el campo dinámico (CUIT o DNI)
+            const extraFieldHtml = isProvider ? `
+                <label class="block text-sm font-medium text-gray-700">CUIT</label>
+                <input type="text" name="cuit_update" 
+                        value="${currentCuit}" required class="w-full p-3 border rounded-lg">
+            ` : `
+                <label class="block text-sm font-medium text-gray-700">DNI</label>
+                <input type="text" name="dni_update" 
+                        value="${currentDni}" required class="w-full p-3 border rounded-lg">
+            `; // <-- Campo DNI para productor
 
             return `
                 <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
                     <button onclick="setView('${dashboardView}')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
-
                     <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Perfil (${userRole})</h2>
-                    
                     <p class="text-gray-600 mb-6 text-center">
                         Estás conectado como: <strong>${currentUser.email}</strong>
                     </p>
-
                     <form onsubmit="handleProfileUpdate(event)" class="space-y-4">
                         <h3 class="text-xl font-bold mb-3 border-b pb-2">Información de ${isProvider ? 'Empresa' : 'Usuario'}</h3>
                         
                         <label class="block text-sm font-medium text-gray-700">Nombre / Empresa</label>
                         <input type="text" name="nombre_update" 
-                               value="${currentNombre}" required class="w-full p-3 border rounded-lg">
+                                value="${currentNombre}" required class="w-full p-3 border rounded-lg">
                         
                         <label class="block text-sm font-medium text-gray-700">Dirección</label>
                         <input type="text" name="direccion_update" 
-                               value="${currentDireccion}" required class="w-full p-3 border rounded-lg">
+                                value="${currentDireccion}" required class="w-full p-3 border rounded-lg">
                         
-                        ${isProvider ? `
-                            <label class="block text-sm font-medium text-gray-700">CUIT</label>
-                            <input type="text" name="cuit_update" 
-                                   value="${currentCuit}" required class="w-full p-3 border rounded-lg">
-                        ` : ''}
-
-                        <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+                        ${extraFieldHtml} <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
                         <button type="button" onclick="setView('${dashboardView}')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Volver al Dashboard</button>
                     </form>
                 </div>
             `;
         }
-
         async function renderMyProductsView() {
             if (!currentUser) return renderLoginView();
 
@@ -950,6 +976,7 @@
     </script>
 </body>
 </html>
+
 
 
 
