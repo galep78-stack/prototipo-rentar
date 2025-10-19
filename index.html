@@ -637,7 +637,7 @@
                 case 'dashboard_proveedor': return renderProviderDashboard();
                 case 'provider_details': return renderProviderDetailsView(data);
                 case 'info': return renderInfoView(data);
-                case 'add_offer': return ();
+                case 'add_offer': return renderAddOfferView();
                 case 'como_funciona': return renderComoFuncionaView();
                 case 'categories_selection': return renderCategoriesSelectionView();
                 default: return renderHomeView();
@@ -1015,6 +1015,7 @@ async function renderOfferListByCategoryView(categoryName) {
                         </div>
                     </section>`;
         }
+        
         function renderLoginView() {
             return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`;
         }
@@ -1194,6 +1195,7 @@ async function renderOfferListByCategoryView(categoryName) {
                 </div>
             `;
         }
+        
 // 🟢 NUEVA VISTA: Selector de categorías
 function renderCategoriesSelectionView() {
     const categories = [
@@ -1221,26 +1223,6 @@ function renderCategoriesSelectionView() {
         </div>
     `;
 }
-        // ===================================================================
-        // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
-        // ===================================================================
-
-        window.onload = () => {
-            if (initializeSupabase()) {
-                setupAuthListener();
-                // 🟢 CAMBIO: Carga los proveedores al iniciar
-                loadProvidersByOfferSearch();
-            }
-
-            // Revisa el hash de la URL para cargar la vista correcta al inicio
-            const currentHash = window.location.hash.replace('#', '');
-            if (currentHash) {
-                // No llamamos a setView aquí directamente para evitar doble carga
-                // setupAuthListener o el hashchange se encargarán
-            } else {
-                setView('home'); // Muestra el inicio por defecto
-            }
-
             // ==================================================================
             // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
             // ==================================================================
@@ -1260,8 +1242,27 @@ function renderCategoriesSelectionView() {
             // Renderiza el header al inicio (llamado también desde setupAuthListener)
             renderHeader();
         };
+// ===================================================================
+        // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
+        // ===================================================================
 
+        window.onload = () => {
+            if (initializeSupabase()) {
+                setupAuthListener();
+                // 🟢 CAMBIO: Carga los proveedores al iniciar
+                loadProvidersByOfferSearch();
+            }
+
+            // Revisa el hash de la URL para cargar la vista correcta al inicio
+            const currentHash = window.location.hash.replace('#', '');
+            if (currentHash) {
+                // No llamamos a setView aquí directamente para evitar doble carga
+                // setupAuthListener o el hashchange se encargarán
+            } else {
+                setView('home'); // Muestra el inicio por defecto
+            }
     </script>
 </body>
 </html>
+
 
