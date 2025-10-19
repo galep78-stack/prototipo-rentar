@@ -174,7 +174,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk';
         let supabaseClient = null;
 
-        // 🟢 NUEVA: Variable para resultados de búsqueda de proveedores
+        // 🟢 Variable para resultados de búsqueda de proveedores
         let providerResults = [];
 
         // ===================================================================
@@ -220,67 +220,97 @@
             }
         });
 
+        // ==================================================================
+        // ✅ FUNCIÓN `setupAuthListener` (CORREGIDA para persistencia de vista)
+        // ==================================================================
         function setupAuthListener() {
             if (!supabaseClient) return;
-            // 💡 1. Obtener el hash actual de la URL al cargar
-            const currentHash = window.location.hash.replace('#', '');
 
-            // 2. Manejo de la sesión inicial (al cargar o volver a la pestaña)
+            // 1. Manejo de la sesión INICIAL (al cargar la página o volver a la pestaña)
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
                 currentUser = session ? session.user : null;
-                renderHeader()
+                renderHeader(); // Renderiza el header con el estado actual
 
-                // ❗ Redirección SIEMPRE que haya un cambio de estado a conectado
-                if (currentUser && !currentHash) {
-                    goToDashboard();
-                }
-            });
-
-            // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                currentUser = session ? session.user : null;
-                renderHeader();
+                const currentHash = window.location.hash.replace('#', '');
+                console.log("Initial load check. User:", currentUser ? currentUser.email : 'none', "Hash:", currentHash);
 
                 if (currentUser) {
-                    // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
-                    if (event === 'SIGNED_IN') {
-                         goToDashboard();
+                    // Si está logueado Y HAY un hash, respeta el hash
+                    if (currentHash) {
+                        console.log("User logged in, hash found. Setting view to:", currentHash);
+                        setView(currentHash);
+                    } else {
+                        // Si está logueado y NO HAY hash, va a su dashboard por defecto
+                        console.log("User logged in, no hash. Going to default dashboard.");
+                        goToDashboard(); // Lo manda a categories_selection o dashboard_proveedor
                     }
+                } else {
+                    // Si NO está logueado Y HAY un hash (ej: #login, #register), respeta el hash
+                    if (currentHash && ['login', 'register', 'como_funciona', 'home'].includes(currentHash)) {
+                         console.log("User not logged in, hash found. Setting view to:", currentHash);
+                         setView(currentHash);
+                    } else {
+                         // Si NO está logueado y NO hay hash (o es inválido), va a home
+                         console.log("User not logged in, no hash or invalid. Going home.");
+                         setView('home');
+                    }
+                }
+            }).catch(error => {
+                 console.error("Error getting initial session:", error);
+                 setView('home'); // Fallback a home si hay error
+            });
+
+            // 2. Manejo de CAMBIOS de estado (cuando el usuario inicia o cierra sesión EXPLICITAMENTE)
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                console.log("Auth state changed:", event); // Debug log
+                const previousUser = currentUser; // Guardamos el estado anterior
+                currentUser = session ? session.user : null;
+
+                // Solo re-renderiza el header si el usuario cambió (evita re-renders innecesarios en TOKEN_REFRESHED)
+                if (currentUser?.id !== previousUser?.id) {
+                     renderHeader();
+                }
+
+                if (event === 'SIGNED_IN') {
+                    // Al iniciar sesión, SIEMPRE va al dashboard por defecto
+                    console.log("Event SIGNED_IN. Going to dashboard.");
+                    goToDashboard();
                 } else if (event === 'SIGNED_OUT') {
-                    // Si el evento es LOGOUT, ir a Home
+                    // Al cerrar sesión, SIEMPRE va a home
+                    console.log("Event SIGNED_OUT. Going home.");
+                    providerResults = []; // Limpia resultados
                     setView('home');
                 }
+                // IMPORTANTE: Para otros eventos como TOKEN_REFRESHED (al volver a la pestaña),
+                // NO hacemos nada aquí, dejando que la vista actual persista.
             });
         }
+
         async function handleLogout() {
             try {
                 const { error } = await supabaseClient.auth.signOut();
                 if (error) throw error;
-                currentUser = null;
+                // No necesitamos setear currentUser=null aquí, onAuthStateChange lo hará
                 alert("Sesión cerrada correctamente.");
-                setView('home');
+                // No necesitamos setView('home') aquí, onAuthStateChange lo hará
             } catch (error) {
                 console.error('Error al cerrar sesión:', error.message);
                 alert('Ocurrió un error al intentar cerrar la sesión.');
             }
         }
-          // ❗ AÑADIR ESTA FUNCIÓN AQUÍ ❗
+          // Función que determina el dashboard POR DEFECTO según rol
       function goToDashboard() {
           if (currentUser) {
-              // Revisa el rol del usuario guardado en los metadatos
               const userRole = currentUser.user_metadata.user_role;
-
               if (userRole === 'proveedor') {
                   setView('dashboard_proveedor');
               } else if (userRole === 'productor') {
-                  setView('dashboard_productor');
+                  setView('categories_selection');
               } else {
-                  // Fallback si el usuario no tiene rol (no debería pasar)
                   console.warn("Usuario conectado pero sin rol. Yendo a home.");
                   setView('home');
               }
           } else {
-              // Si no hay usuario, va a la home
               setView('home');
           }
       }
@@ -288,25 +318,30 @@
 // 🟢 FUNCIÓN PARA EL BOTÓN 'PUBLICAR OFERTA' EN HOME
         function handlePublishOfferClick() {
             if (currentUser) {
-                // Si el usuario está conectado, va directamente a la vista de agregar oferta.
                 setView('add_offer');
             } else {
-                // Si NO está conectado, va a la vista de inicio de sesión.
                 setView('login');
             }
         }
 
 // ===================================================================
-// 🟢 FUNCIÓN: Manejador de Búsqueda
+// 🟢 FUNCIÓN: Manejador de Búsqueda por Término (Desde Home)
 // ===================================================================
         async function handleSearch() {
             const inputElement = document.getElementById('search-input');
             const searchTerm = inputElement ? inputElement.value : '';
-            // Carga los proveedores (filtrados por el término de búsqueda en sus ofertas)
-            await loadProvidersByOfferSearch(searchTerm);
-            // Muestra el dashboard con los resultados
-            setView('dashboard_productor');
+            // Carga los proveedores y LUEGO navega (loadProviderResults ahora navega)
+            await loadProviderResults({ type: 'search', value: searchTerm });
         }
+
+// ===================================================================
+// 🟢 FUNCIÓN: Manejador de Clic en Categoría (CORREGIDA)
+// ===================================================================
+        async function handleCategoryClick(categoryName) {
+            // Carga los proveedores filtrados por categoría y LUEGO navega (loadProviderResults ahora navega)
+            await loadProviderResults({ type: 'category', value: categoryName });
+        }
+
 
         async function handleLogin(event) {
             event.preventDefault();
@@ -323,9 +358,9 @@
                 });
 
                 if (error) throw error;
-
-                currentUser = data.user;
-                alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
+                // No necesitamos setear currentUser aquí, onAuthStateChange lo hará
+                alert(`¡Inicio de sesión exitoso! Bienvenido, ${data.user.email}.`);
+                // No necesitamos navegar aquí, onAuthStateChange lo hará
 
                 } catch (error) {
                 alert(`Error al iniciar sesión: ${error.message}`);
@@ -483,12 +518,15 @@
                 await supabaseClient.auth.updateUser({
                     data: { display_name: nuevoNombre }
                 });
-                // Actualiza el objeto 'currentUser' localmente
-                currentUser.user_metadata.display_name = nuevoNombre;
+                // Actualiza el objeto 'currentUser' localmente (importante para que el header refleje el cambio)
+                if (currentUser && currentUser.user_metadata) {
+                     currentUser.user_metadata.display_name = nuevoNombre;
+                }
                 renderHeader(); // Re-renderiza el header con el nuevo nombre
 
                 alert(`¡Perfil de ${userRole} actualizado con éxito!`);
-                setView(userRole === 'proveedor' ? 'dashboard_proveedor' : 'dashboard_productor');
+                // Redirige al dashboard correspondiente
+                 goToDashboard(); // Usa la función centralizada
 
             } catch (error) {
                 alert(`Error al actualizar perfil: ${error.message}. Asegúrate de tener permiso de UPDATE RLS.`);
@@ -502,78 +540,91 @@
         // ===================================================================
 
         // ==================================================================
-        // ✅ FUNCIÓN `loadProvidersByOfferSearch` (Búsqueda Correcta v3)
+        // ✅ FUNCIÓN `loadProviderResults` (Unificada: Búsqueda y Categoría - CORREGIDA v4)
         // ==================================================================
-        async function loadProvidersByOfferSearch(searchTerm = '') {
+        async function loadProviderResults(filter = {}) {
             if (!supabaseClient) return;
 
-            providerResults = []; // Start fresh
+            providerResults = []; // Empezamos de cero
+            const { type, value } = filter;
+            let navigateAfterLoad = false; // Flag para navegar después de cargar
 
             try {
                 let providerUserIds = [];
 
-                // 1. Si hay término de búsqueda, buscamos en OFERTAS primero
-                if (searchTerm) {
-                    console.log(`Buscando ofertas con término: "${searchTerm}"`); // Debug log
-                    let { data: offers, error: offersError } = await supabaseClient
-                        .from('ofertas')
-                        .select('user_id') // Solo necesitamos los user_id
-                        .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
+                // 1. Si hay filtro, buscamos IDs en OFERTAS primero
+                if (type && value) {
+                    navigateAfterLoad = true; // Navegaremos si hay filtro
+                    let offersQuery = supabaseClient.from('ofertas').select('user_id');
 
-                    if (offersError){
+                    if (type === 'search') {
+                        console.log(`Buscando ofertas con término: "${value}"`);
+                        offersQuery = offersQuery.or(`titulo.ilike.%${value}%,descripcion.ilike.%${value}%`);
+                    } else if (type === 'category') {
+                        console.log(`Buscando ofertas por categoría: "${value}"`);
+                        offersQuery = offersQuery.eq('categoria', value);
+                    }
+
+                    const { data: offers, error: offersError } = await offersQuery;
+
+                    if (offersError) {
                         console.error("Error buscando en ofertas:", offersError);
                         throw offersError;
                     }
 
                     if (offers && offers.length > 0) {
-                        // Obtenemos una lista única de IDs de usuarios proveedores que tienen esas ofertas
                         providerUserIds = [...new Set(offers.map(o => o.user_id))];
-                        console.log("User IDs encontrados:", providerUserIds); // Debug log
+                        console.log("User IDs encontrados:", providerUserIds);
                     } else {
-                        console.log("No se encontraron ofertas para el término."); // Debug log
-                        // Si no hay ofertas, no habrá proveedores que mostrar.
-                        providerResults = [];
-                        // Re-render si ya estamos en el dashboard
-                        if (window.location.hash.includes('dashboard_productor')) {
-                             contentView.innerHTML = renderProducerDashboard();
-                        }
+                        console.log("No se encontraron ofertas para el filtro.");
+                        providerResults = []; // No hay resultados
+                        // Navega al dashboard para mostrar "No se encontraron..."
+                        setView('dashboard_productor');
                         return; // Salimos temprano
                     }
+                } else {
+                    console.log("Cargando todos los proveedores (sin filtro).");
+                    // Si no hay filtro, queremos mostrar todos, así que no necesitamos buscar en ofertas
+                    // Y no navegamos automáticamente, solo cargamos datos
                 }
 
                 // 2. Buscamos en PROVEEDORES
-                let query = supabaseClient
+                let providersQuery = supabaseClient
                     .from('proveedores')
-                    .select('id, nombre_empresa, direccion, user_id'); // Traemos todos los datos necesarios
+                    .select('id, nombre_empresa, direccion, user_id');
 
-                // Si se encontraron IDs de la búsqueda de ofertas, filtramos por esos IDs
-                if (searchTerm && providerUserIds.length > 0) {
-                    query = query.in('user_id', providerUserIds);
-                    console.log("Filtrando proveedores por User IDs."); // Debug log
+                // Si se encontraron IDs de la búsqueda/categoría, filtramos por esos IDs
+                if (providerUserIds.length > 0) {
+                    providersQuery = providersQuery.in('user_id', providerUserIds);
+                    console.log("Filtrando proveedores por User IDs.");
                 }
-                // Si searchTerm está vacío, no se aplica filtro .in() y trae todos.
+                // Si type y value están vacíos Y providerUserIds está vacío, trae todos.
 
-                 const { data: providers, error: providersError } = await query;
+                 const { data: providers, error: providersError } = await providersQuery;
 
                 if (providersError) {
                     console.error("Error al buscar proveedores:", providersError);
                     throw providersError;
                 }
                 providerResults = providers || [];
-                console.log("Proveedores encontrados:", providerResults); // Debug log
+                console.log("Proveedores encontrados:", providerResults);
 
 
-                // 3. Re-renderizamos el dashboard si es la vista actual
-                if (window.location.hash.includes('dashboard_productor')) {
-                    contentView.innerHTML = renderProducerDashboard();
+                // 3. Navegamos al dashboard SI aplicamos un filtro
+                if (navigateAfterLoad) {
+                    setView('dashboard_productor');
+                } else if (window.location.hash.includes('dashboard_productor')) {
+                    // Si ya estábamos en el dashboard (ej: carga inicial), re-renderizamos
+                     contentView.innerHTML = renderProducerDashboard();
                 }
 
+
             } catch (error) {
-                console.error('Error general en loadProvidersByOfferSearch:', error.message);
+                console.error('Error general en loadProviderResults:', error.message);
                 providerResults = []; // Resetea en caso de error
-                 // Re-renderizamos incluso en error para mostrar el mensaje "No se encontraron..."
-                if (window.location.hash.includes('dashboard_productor')) {
-                    contentView.innerHTML = renderProducerDashboard();
+                 // Navegamos o re-renderizamos para mostrar el mensaje de error/vacío
+                if (navigateAfterLoad || window.location.hash.includes('dashboard_productor')) {
+                    setView('dashboard_productor');
                 }
             }
         }
@@ -668,11 +719,23 @@
         function setView(viewName, data = null) {
             // 🟢 Si ya estamos navegando (por la llamada original),
             // ignoramos la llamada duplicada del hashchange.
-            if (isNavigating) return;
+            if (isNavigating && window.location.hash === `#${viewName}`) {
+                console.log("Navigation blocked by flag (already navigating to target):", viewName); // Debug log
+                return;
+             } else if (isNavigating) {
+                 console.log("Navigation blocked by flag (navigating elsewhere):", viewName); // Debug log
+                 return
+             }
 
+
+            console.log("Setting view:", viewName, "with data:", data); // Debug log
             isNavigating = true; // 🟢 Bloqueamos la navegación
 
-            window.location.hash = viewName;
+            // Actualiza el hash SOLO si es diferente
+            if (window.location.hash !== `#${viewName}`) {
+                 window.location.hash = viewName;
+            }
+
 
             // 🟢 CAMBIO: 'provider_details' ahora es asíncrona
             const isAsyncView = viewName === 'profile_edit' || viewName === 'my_products' || viewName === 'edit_offer' || viewName === 'provider_details';
@@ -686,47 +749,99 @@
                                       renderProviderDetailsView(data); // 🟢 CAMBIO
 
                 renderPromise.then(html => {
+                     console.log("Async render complete for:", viewName); // Debug log
                     // Solo actualiza si el hash no cambió mientras cargaba
                     if (window.location.hash === `#${viewName}`) {
                         contentView.innerHTML = html;
+                    } else {
+                         console.log("Hash changed during async load, aborting render for:", viewName); // Debug log
                     }
-                    isNavigating = false; // 🟢 Desbloqueamos al terminar
+                    // Retrasamos el desbloqueo ligeramente para asegurar que hashchange no interfiera
+                    setTimeout(() => { isNavigating = false; }, 50);
                 }).catch(error => {
+                    console.error("Error rendering async view:", viewName, error); // Debug log
                     contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
-                    isNavigating = false; // 🟢 Desbloqueamos si hay error
+                     setTimeout(() => { isNavigating = false; }, 50);
                 });
                 return;
             }
 
-            contentView.innerHTML = renderView(viewName, data);
-            isNavigating = false; // 🟢 Desbloqueamos para vistas normales
+            // Para vistas síncronas
+             try {
+                contentView.innerHTML = renderView(viewName, data);
+            } catch (error) {
+                 console.error("Error rendering sync view:", viewName, error); // Debug log
+                 contentView.innerHTML = `<p class="text-red-500 font-sans">Error al mostrar la vista: ${error.message}</p>`;
+            }
+             setTimeout(() => { isNavigating = false; }, 50); // Desbloqueamos para vistas normales
         }
 
 
         function renderView(viewName, data) {
+             console.log("Rendering view:", viewName); // Debug
             switch (viewName) {
                 case 'home': return renderHomeView();
                 case 'login': return renderLoginView();
                 case 'register': return renderRegisterView();
+                // 🟢 NUEVO CASO: Vista de selección de categorías
+                case 'categories_selection': return renderCategoriesSelectionView();
                 case 'dashboard_productor': return renderProducerDashboard();
                 case 'dashboard_proveedor': return renderProviderDashboard();
-                case 'provider_details': return renderProviderDetailsView(data);
+                case 'provider_details': return renderProviderDetailsView(data); // Data es el ID aquí
                 case 'info': return renderInfoView(data);
                 case 'add_offer': return renderAddOfferView();
                     case 'como_funciona': return renderComoFuncionaView();
-                default: return renderHomeView();
+                default:
+                    console.warn("Unknown view name, rendering home:", viewName); // Debug
+                    return renderHomeView(); // Fallback a home
             }
+        }
+
+        // ==================================================================
+        // 🟢 NUEVA VISTA: Selección de Categorías
+        // ==================================================================
+        function renderCategoriesSelectionView() {
+            // Limpiamos los resultados anteriores al mostrar categorías
+            providerResults = [];
+
+            return `
+                <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center">
+                    <h1 class="text-4xl font-bold mb-8 text-accent-cyan font-heading">Seleccioná una Categoría</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <button onclick="handleCategoryClick('Equipos')" class="p-6 bg-white text-primary-dark rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
+                            <h3 class="text-2xl font-bold font-heading mb-2">Equipos</h3>
+                            <p class="text-gray-600 font-sans">Cámaras, luces, sonido...</p>
+                        </button>
+                        <button onclick="handleCategoryClick('Locacion')" class="p-6 bg-white text-primary-dark rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
+                            <h3 class="text-2xl font-bold font-heading mb-2">Locación</h3>
+                            <p class="text-gray-600 font-sans">Estudios, casas, exteriores...</p>
+                        </button>
+                         <button onclick="handleCategoryClick('Servicio')" class="p-6 bg-white text-primary-dark rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
+                            <h3 class="text-2xl font-bold font-heading mb-2">Servicios</h3>
+                            <p class="text-gray-600 font-sans">Postpro, catering, FX...</p>
+                        </button>
+                         <button onclick="handleCategoryClick('Vestuario')" class="p-6 bg-white text-primary-dark rounded-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
+                            <h3 class="text-2xl font-bold font-heading mb-2">Vestuario</h3>
+                            <p class="text-gray-600 font-sans">Alquiler, diseño...</p>
+                        </button>
+                        </div>
+                     <button onclick="loadProviderResults(); setView('dashboard_productor');" class="mt-12 btn-secondary px-6 py-3 rounded-lg font-semibold">
+                        Ver Todos los Proveedores
+                     </button>
+                </div>
+            `;
         }
 
         // ==================================================================
         // ✅ FUNCIÓN `renderProfileEditView` (Corregida para Perfiles)
         // ==================================================================
         async function renderProfileEditView() {
-            if (!currentUser) return renderLoginView();
+            if (!currentUser) return setView('login'); // Redirige si no está logueado
 
             const userRole = currentUser.user_metadata.user_role;
             const isProvider = userRole === 'proveedor';
-            const dashboardView = isProvider ? 'dashboard_proveedor' : 'dashboard_productor';
+            // 🟢 CAMBIO: Botón volver va a categorías para productor
+            const dashboardView = isProvider ? 'dashboard_proveedor' : 'categories_selection';
 
             // getProfileData ya está corregido y devuelve el objeto correcto
             const profileData = await getProfileData(currentUser.id, userRole);
@@ -749,7 +864,7 @@
 
             return `
                 <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
-                    <button onclick="setView('${dashboardView}')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+                    <button onclick="setView('${dashboardView}')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver</button>
                     <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Perfil (${userRole})</h2>
                     <p class="text-gray-600 mb-6 text-center">
                         Estás conectado como: <strong>${currentUser.email}</strong>
@@ -766,7 +881,7 @@
                                 value="${currentDireccion}" required class="w-full p-3 border rounded-lg">
 
                         ${extraFieldHtml} <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
-                        <button type="button" onclick="setView('${dashboardView}')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Volver al Dashboard</button>
+                        <button type="button" onclick="setView('${dashboardView}')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar</button>
                     </form>
                 </div>
             `;
@@ -774,7 +889,7 @@
 
 
         async function renderMyProductsView() {
-            if (!currentUser) return renderLoginView();
+            if (!currentUser) return setView('login'); // Redirige si no está logueado
 
             let productListHtml = `<p class="text-gray-400">Cargando productos...</p>`;
 
@@ -893,7 +1008,7 @@
                 return `<div class="p-8 text-red-500 font-sans">Error al cargar la oferta: ${error.message}</div>`;
             }
 
-            const categories = ["Equipos", "Locacion", "Servicio"];
+            const categories = ["Equipos", "Locacion", "Servicio", "Vestuario"]; // Agregada Vestuario si existe
             const categoryOptions = categories.map(cat =>
                 `<option value="${cat}" ${offer.categoria === cat ? 'selected' : ''}>${cat}</option>`
             ).join('');
@@ -970,7 +1085,7 @@
                 <div class="container mx-auto px-4">
                     <nav class="flex justify-between items-center py-4">
 
-                        <a href="#" onclick="goToDashboard()" class="flex items-center transition hover:opacity-80">
+                        <a href="#" onclick="setView('home')" class="flex items-center transition hover:opacity-80">
                             <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
                             <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
                         </a>
@@ -991,15 +1106,12 @@
             `;
         }
 
-      // ==================================================================
-        // ✅ FUNCIÓN `renderHomeView` (Actualizada para Flujo Correcto)
-        // ==================================================================
         // ==================================================================
         // ✅ FUNCIÓN `renderHomeView` (Botón "Buscar Recursos" CORREGIDO)
         // ==================================================================
         function renderHomeView() {
             // Carga los proveedores sin filtro por si el usuario vuelve a la home y luego al dashboard
-            // loadProvidersByOfferSearch(); // No es necesario cargar aquí, se cargan al buscar/categorizar
+            // loadProviderResults(); // Ya no es necesario cargar aquí
 
             return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);">
                         <div class="text-center max-w-4xl">
@@ -1027,6 +1139,7 @@
                         </div>
                     </section>`;
         }
+
         function renderLoginView() {
             return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`;
         }
@@ -1107,12 +1220,14 @@
                 }).join('');
             } else {
                  // Mensaje actualizado
-                resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda. Intenta con otro término o busca sin filtro para ver todos.</p>';
+                resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda. Intenta con otro término, selecciona una categoría o busca sin filtro para ver todos.</p>';
             }
 
             return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
+                     <button onclick="setView('categories_selection')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver a Categorías</button>
+
                     <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
                         <iframe id="map-iframe" src="https://www.google.com/maps?q=Argentina&output=embed&z=5" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                     </div>
@@ -1131,6 +1246,7 @@
         // ✅ FUNCIÓN `renderProviderDetailsView` (Actualizada para Búsqueda)
         // ==================================================================
         async function renderProviderDetailsView(providerId) {
+             console.log("Rendering provider details for ID:", providerId); // Debug
             if (!providerId) return `<p class="text-red-500">Error: No se recibió ID de proveedor.</p>`;
 
             let provider;
@@ -1142,7 +1258,11 @@
                     .eq('id', providerId)
                     .single();
 
-                if (error || !data) throw new Error("Proveedor no encontrado.");
+                if (error || !data) {
+                     console.error("Error fetching provider details:", error); // Debug
+                     throw new Error("Proveedor no encontrado o error de BDD.");
+                }
+
 
                 provider = {
                     nombre: data.nombre_empresa,
@@ -1165,7 +1285,8 @@
 
             let opinionsHtml = opinions.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join('');
 
-            return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div></div>`;
+             // 🟢 CAMBIO: Botón "Volver" ahora va a 'dashboard_productor' consistentemente
+            return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver a Resultados</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div></div>`;
         }
 
         function renderInfoView(title) {
@@ -1194,7 +1315,7 @@
                                 <option value="Equipos">Equipos (Cámaras, Luces, Audio)</option>
                                 <option value="Locacion">Locación (Estudios, Casas)</option>
                                 <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
-                            </select>
+                                <option value="Vestuario">Vestuario</option> </select>
 
                             <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
                         </div>
@@ -1213,19 +1334,15 @@
 
         window.onload = () => {
             if (initializeSupabase()) {
-                setupAuthListener();
-                // 🟢 CAMBIO: Carga los proveedores al iniciar
-                loadProvidersByOfferSearch();
+                setupAuthListener(); // Este se encarga de la vista inicial ahora
+                // 🟢 Ya no cargamos proveedores aquí, se hace bajo demanda o en setupAuthListener
+                // loadProviderResults();
+            } else {
+                 // Si Supabase falla, muestra un error y home
+                 contentView.innerHTML = `<p class="text-red-500 p-8 text-center">Error al conectar con la base de datos.</p>`;
+                 setView('home');
             }
 
-            // Revisa el hash de la URL para cargar la vista correcta al inicio
-            const currentHash = window.location.hash.replace('#', '');
-            if (currentHash) {
-                // No llamamos a setView aquí directamente para evitar doble carga
-                // setupAuthListener o el hashchange se encargarán
-            } else {
-                setView('home'); // Muestra el inicio por defecto
-            }
 
             // ==================================================================
             // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
@@ -1233,76 +1350,26 @@
             window.addEventListener('hashchange', () => {
                 // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
                 // en medio de una navegación programada por setView.
-                if (!isNavigating) {
+                 if (!isNavigating) {
+                    console.log("Hashchange triggered by browser navigation."); // Debug log
                     const newHash = window.location.hash.replace('#', '');
-                    if (newHash) {
-                        setView(newHash);
-                    } else {
-                        setView('home');
-                    }
+                    const viewName = newHash || 'home'; // Si el hash está vacío, va a home
+                    // Intentamos obtener el ID si es la vista de detalles
+                    const parts = newHash.split('/'); // Simple split as fallback
+                    const potentialId = parts.length > 1 ? parseInt(parts[1], 10) : null;
+                    const data = viewName === 'provider_details' && !isNaN(potentialId) ? potentialId : null;
+
+                    setView(viewName, data); // Llama a setView con el hash (y posible ID)
+                } else {
+                     console.log("Hashchange detected, but navigation is blocked by flag."); // Debug log
                 }
             });
 
             // Renderiza el header al inicio (llamado también desde setupAuthListener)
-            renderHeader();
+            // Ya no es necesario aquí si setupAuthListener lo hace
+            // renderHeader();
         };
 
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
