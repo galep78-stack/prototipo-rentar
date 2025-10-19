@@ -786,14 +786,14 @@ read                           <button onclick="setView('edit_offer
                     .eq('id', offerId)
                     .eq('user_id', currentUser.id); // Seguridad
 
-description                 if (error) throw error;
+                 if (error) throw error;
 
                 alert("¡Oferta actualizada con éxito!");
                 setView('my_products');
 
             } catch (error) {
                 alert(`Error al actualizar la oferta: ${error.message}.`);
-content               console.error('Error en handleUpdateOffer:', error);
+               console.error('Error en handleUpdateOffer:', error);
             }
         }
 
@@ -1275,3 +1275,4 @@ s           // Renderiza el header al inicio (llamado también desde setupA
     </script>
 </body>
 </html>
+
