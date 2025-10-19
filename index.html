@@ -168,6 +168,7 @@
         let selectedRole = null;
         const contentView = document.getElementById('content-view');
         let isNavigating = false; // 🟢 FIX: Para evitar "pantallazos"
+        let initialLoadComplete = false; // 🟢 NUEVO: Flag para controlar carga inicial
 
         // ⚠️ CLAVES (DEBES USAR TUS CLAVES REALES AQUÍ)
         const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
@@ -221,70 +222,84 @@
         });
 
         // ==================================================================
-        // ✅ FUNCIÓN `setupAuthListener` (CORREGIDA para persistencia de vista)
+        // ✅ FUNCIÓN `setupAuthListener` (SIMPLIFICADA para persistencia de vista)
         // ==================================================================
         function setupAuthListener() {
             if (!supabaseClient) return;
 
-            // 1. Manejo de la sesión INICIAL (al cargar la página o volver a la pestaña)
-            supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                currentUser = session ? session.user : null;
-                renderHeader(); // Renderiza el header con el estado actual
-
-                const currentHash = window.location.hash.replace('#', '');
-                console.log("Initial load check. User:", currentUser ? currentUser.email : 'none', "Hash:", currentHash);
-
-                if (currentUser) {
-                    // Si está logueado Y HAY un hash, respeta el hash
-                    if (currentHash) {
-                        console.log("User logged in, hash found. Setting view to:", currentHash);
-                        setView(currentHash);
-                    } else {
-                        // Si está logueado y NO HAY hash, va a su dashboard por defecto
-                        console.log("User logged in, no hash. Going to default dashboard.");
-                        goToDashboard(); // Lo manda a categories_selection o dashboard_proveedor
-                    }
-                } else {
-                    // Si NO está logueado Y HAY un hash (ej: #login, #register), respeta el hash
-                    if (currentHash && ['login', 'register', 'como_funciona', 'home'].includes(currentHash)) {
-                         console.log("User not logged in, hash found. Setting view to:", currentHash);
-                         setView(currentHash);
-                    } else {
-                         // Si NO está logueado y NO hay hash (o es inválido), va a home
-                         console.log("User not logged in, no hash or invalid. Going home.");
-                         setView('home');
-                    }
-                }
-            }).catch(error => {
-                 console.error("Error getting initial session:", error);
-                 setView('home'); // Fallback a home si hay error
-            });
-
-            // 2. Manejo de CAMBIOS de estado (cuando el usuario inicia o cierra sesión EXPLICITAMENTE)
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                console.log("Auth state changed:", event); // Debug log
-                const previousUser = currentUser; // Guardamos el estado anterior
+            // Listener para CAMBIOS de estado (Login/Logout explícito)
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                 console.log("Auth state changed:", event, "Session:", session ? "Exists" : "Null"); // Debug log
+                const previousUser = currentUser;
                 currentUser = session ? session.user : null;
 
-                // Solo re-renderiza el header si el usuario cambió (evita re-renders innecesarios en TOKEN_REFRESHED)
+                // Actualiza el header solo si el usuario cambió
                 if (currentUser?.id !== previousUser?.id) {
+                     console.log("User changed, rendering header.");
                      renderHeader();
                 }
 
+                // Manejo de Navegación SOLO en eventos explícitos
                 if (event === 'SIGNED_IN') {
-                    // Al iniciar sesión, SIEMPRE va al dashboard por defecto
-                    console.log("Event SIGNED_IN. Going to dashboard.");
+                    console.log("Event SIGNED_IN. Going to default dashboard.");
+                    // Espera un poquito para asegurar que el usuario esté listo
+                    await new Promise(resolve => setTimeout(resolve, 50));
                     goToDashboard();
                 } else if (event === 'SIGNED_OUT') {
-                    // Al cerrar sesión, SIEMPRE va a home
                     console.log("Event SIGNED_OUT. Going home.");
                     providerResults = []; // Limpia resultados
                     setView('home');
+                } else if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+                     // Al cargar inicialmente o al volver a la pestaña, NO navegamos desde aquí.
+                     // Dejamos que window.onload o el hashchange se encarguen.
+                      console.log("Event INITIAL_SESSION or TOKEN_REFRESHED. No navigation triggered by onAuthStateChange.");
+                      // Importante: Asegurarse de que el usuario esté actualizado
+                      if (session && !currentUser) currentUser = session.user;
+                      if (!session && currentUser) currentUser = null; // Caso raro: sesión expiró
+                      if (!initialLoadComplete) { // Solo en la carga inicial real
+                           handleInitialView(); // Llama a la lógica de vista inicial
+                      }
+
                 }
-                // IMPORTANTE: Para otros eventos como TOKEN_REFRESHED (al volver a la pestaña),
-                // NO hacemos nada aquí, dejando que la vista actual persista.
             });
         }
+        // ==================================================================
+        // 🟢 NUEVA: Lógica separada para manejar la vista inicial
+        // ==================================================================
+        function handleInitialView() {
+             initialLoadComplete = true; // Marcamos que la carga inicial se completó
+             const currentHash = window.location.hash.replace('#', '');
+             console.log("Handling initial view. User:", currentUser ? currentUser.email : 'None', "Hash:", currentHash);
+
+             if (currentUser) {
+                  // Si está logueado Y HAY un hash VÁLIDO para usuarios logueados, respeta el hash
+                  const allowedLoggedInHashes = ['dashboard_productor', 'dashboard_proveedor', 'categories_selection', 'profile_edit', 'my_products', 'edit_offer', 'provider_details', 'add_offer'];
+                  if (currentHash && allowedLoggedInHashes.includes(currentHash.split('/')[0])) { // Verifica hash base
+                       console.log("User logged in, valid hash found. Setting view to:", currentHash);
+                       // Pasamos el ID si es necesario (ej: #provider_details/123)
+                       const parts = currentHash.split('/');
+                       const viewName = parts[0];
+                       const data = parts.length > 1 ? parts[1] : null;
+                       setView(viewName, data);
+                  } else {
+                       // Si está logueado y NO HAY hash o es inválido, va a su dashboard por defecto
+                       console.log("User logged in, no hash or invalid. Going to default dashboard.");
+                       goToDashboard(); // Lo manda a categories_selection o dashboard_proveedor
+                  }
+             } else {
+                  // Si NO está logueado Y HAY un hash VÁLIDO para no logueados, respeta el hash
+                  const allowedLoggedOutHashes = ['login', 'register', 'como_funciona', 'home'];
+                  if (currentHash && allowedLoggedOutHashes.includes(currentHash)) {
+                        console.log("User not logged in, valid hash found. Setting view to:", currentHash);
+                        setView(currentHash);
+                  } else {
+                        // Si NO está logueado y NO hay hash o es inválido, va a home
+                        console.log("User not logged in, no hash or invalid. Going home.");
+                        setView('home');
+                  }
+             }
+        }
+
 
         async function handleLogout() {
             try {
@@ -311,6 +326,7 @@
                   setView('home');
               }
           } else {
+              // Si por alguna razón se llama sin usuario, va a home
               setView('home');
           }
       }
@@ -612,10 +628,14 @@
 
                 // 3. Navegamos al dashboard SI aplicamos un filtro
                 if (navigateAfterLoad) {
+                     console.log("Filter applied, navigating to dashboard_productor."); // Debug
                     setView('dashboard_productor');
-                } else if (window.location.hash.includes('dashboard_productor')) {
-                    // Si ya estábamos en el dashboard (ej: carga inicial), re-renderizamos
+                } else if (window.location.hash.includes('dashboard_productor') && initialLoadComplete) {
+                     // Si ya estábamos en el dashboard (y no es carga inicial), re-renderizamos para mostrar todos
+                     console.log("Already on dashboard and initial load complete, re-rendering."); // Debug
                      contentView.innerHTML = renderProducerDashboard();
+                } else if (!initialLoadComplete) {
+                     console.log("Initial load, dashboard rendering will be handled by handleInitialView."); // Debug
                 }
 
 
@@ -623,7 +643,7 @@
                 console.error('Error general en loadProviderResults:', error.message);
                 providerResults = []; // Resetea en caso de error
                  // Navegamos o re-renderizamos para mostrar el mensaje de error/vacío
-                if (navigateAfterLoad || window.location.hash.includes('dashboard_productor')) {
+                if (navigateAfterLoad || (window.location.hash.includes('dashboard_productor') && initialLoadComplete)) {
                     setView('dashboard_productor');
                 }
             }
@@ -698,10 +718,11 @@
                 const encodedAddress = encodeURIComponent(address);
                 // 🟢 CORRECCIÓN: URL de Google Maps Embed estándar (sin API Key)
                 const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
+                console.log("Setting map URL:", mapUrl); // Debug
                 iframe.src = mapUrl;
             } else if (!address) {
-                console.warn("Se intentó mostrar en mapa sin dirección.");
-                 // Opcional: Mostrar mapa general si no hay dirección
+                console.warn("Se intentó mostrar en mapa sin dirección. Mostrando mapa general."); // Debug
+                 // Mostrar mapa general si no hay dirección
                  iframe.src = `https://www.google.com/maps?q=Argentina&output=embed&z=5`;
             }
              else {
@@ -717,22 +738,23 @@
         // ✅ FUNCIÓN `setView` (Corregida para "Pantallazo" y Búsqueda)
         // ==================================================================
         function setView(viewName, data = null) {
-            // 🟢 Si ya estamos navegando (por la llamada original),
-            // ignoramos la llamada duplicada del hashchange.
-            if (isNavigating && window.location.hash === `#${viewName}`) {
-                console.log("Navigation blocked by flag (already navigating to target):", viewName); // Debug log
-                return;
-             } else if (isNavigating) {
-                 console.log("Navigation blocked by flag (navigating elsewhere):", viewName); // Debug log
-                 return
+            // Simplificamos el chequeo de navegación concurrente
+             if (isNavigating && window.location.hash === `#${viewName}`) {
+                 console.log(`Navigation blocked: already navigating to ${viewName}`); // Debug
+                 // Permitimos que la navegación actual termine, pero no iniciamos una nueva igual
+                 return;
              }
-
+             if (isNavigating) {
+                  console.log(`Navigation blocked: navigating elsewhere while trying to set ${viewName}`); // Debug
+                  return;
+             }
 
             console.log("Setting view:", viewName, "with data:", data); // Debug log
             isNavigating = true; // 🟢 Bloqueamos la navegación
 
-            // Actualiza el hash SOLO si es diferente
+            // Actualiza el hash SOLO si es diferente, previene loops con hashchange
             if (window.location.hash !== `#${viewName}`) {
+                 console.log("Updating hash to:", viewName); // Debug
                  window.location.hash = viewName;
             }
 
@@ -750,35 +772,36 @@
 
                 renderPromise.then(html => {
                      console.log("Async render complete for:", viewName); // Debug log
-                    // Solo actualiza si el hash no cambió mientras cargaba
+                    // Solo actualiza si el hash NO cambió MIENTRAS cargaba
                     if (window.location.hash === `#${viewName}`) {
                         contentView.innerHTML = html;
                     } else {
                          console.log("Hash changed during async load, aborting render for:", viewName); // Debug log
                     }
-                    // Retrasamos el desbloqueo ligeramente para asegurar que hashchange no interfiera
-                    setTimeout(() => { isNavigating = false; }, 50);
+                    // Retrasamos el desbloqueo ligeramente para que hashchange no interfiera
+                    setTimeout(() => { isNavigating = false; console.log("Navigation flag OFF (async success)"); }, 50); // Debug
                 }).catch(error => {
                     console.error("Error rendering async view:", viewName, error); // Debug log
                     contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
-                     setTimeout(() => { isNavigating = false; }, 50);
+                     setTimeout(() => { isNavigating = false; console.log("Navigation flag OFF (async error)"); }, 50); // Debug
                 });
                 return;
             }
 
             // Para vistas síncronas
              try {
+                 console.log("Rendering sync view:", viewName); // Debug
                 contentView.innerHTML = renderView(viewName, data);
             } catch (error) {
                  console.error("Error rendering sync view:", viewName, error); // Debug log
                  contentView.innerHTML = `<p class="text-red-500 font-sans">Error al mostrar la vista: ${error.message}</p>`;
             }
-             setTimeout(() => { isNavigating = false; }, 50); // Desbloqueamos para vistas normales
+             setTimeout(() => { isNavigating = false; console.log("Navigation flag OFF (sync)"); }, 50); // Debug: Desbloqueamos para vistas normales
         }
 
 
         function renderView(viewName, data) {
-             console.log("Rendering view:", viewName); // Debug
+             console.log("Rendering view function called for:", viewName); // Debug
             switch (viewName) {
                 case 'home': return renderHomeView();
                 case 'login': return renderLoginView();
@@ -792,7 +815,7 @@
                 case 'add_offer': return renderAddOfferView();
                     case 'como_funciona': return renderComoFuncionaView();
                 default:
-                    console.warn("Unknown view name, rendering home:", viewName); // Debug
+                    console.warn("Unknown view name in renderView, rendering home:", viewName); // Debug
                     return renderHomeView(); // Fallback a home
             }
         }
@@ -825,7 +848,7 @@
                             <p class="text-gray-600 font-sans">Alquiler, diseño...</p>
                         </button>
                         </div>
-                     <button onclick="loadProviderResults(); setView('dashboard_productor');" class="mt-12 btn-secondary px-6 py-3 rounded-lg font-semibold">
+                     <button onclick="loadProviderResults();" class="mt-12 btn-secondary px-6 py-3 rounded-lg font-semibold">
                         Ver Todos los Proveedores
                      </button>
                 </div>
@@ -1111,7 +1134,7 @@
         // ==================================================================
         function renderHomeView() {
             // Carga los proveedores sin filtro por si el usuario vuelve a la home y luego al dashboard
-            // loadProviderResults(); // Ya no es necesario cargar aquí
+            // loadProvidersByOfferSearch(); // Ya no es necesario cargar aquí
 
             return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);">
                         <div class="text-center max-w-4xl">
@@ -1247,7 +1270,11 @@
         // ==================================================================
         async function renderProviderDetailsView(providerId) {
              console.log("Rendering provider details for ID:", providerId); // Debug
-            if (!providerId) return `<p class="text-red-500">Error: No se recibió ID de proveedor.</p>`;
+            if (!providerId || isNaN(parseInt(providerId))) { // Verifica que sea un ID numérico válido
+                 console.error("Invalid provider ID received:", providerId);
+                 return `<p class="text-red-500 p-8">Error: ID de proveedor inválido.</p>`;
+            }
+
 
             let provider;
             try {
@@ -1332,44 +1359,44 @@
         // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
         // ===================================================================
 
+        // ==================================================================
+        // ✅ `window.onload` (SIMPLIFICADO - Deja que setupAuthListener maneje la vista inicial)
+        // ==================================================================
         window.onload = () => {
+             console.log("Window onload triggered."); // Debug
             if (initializeSupabase()) {
-                setupAuthListener(); // Este se encarga de la vista inicial ahora
-                // 🟢 Ya no cargamos proveedores aquí, se hace bajo demanda o en setupAuthListener
-                // loadProviderResults();
+                setupAuthListener(); // Este ahora maneja la vista inicial con handleInitialView
             } else {
                  // Si Supabase falla, muestra un error y home
                  contentView.innerHTML = `<p class="text-red-500 p-8 text-center">Error al conectar con la base de datos.</p>`;
                  setView('home');
             }
 
-
             // ==================================================================
             // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
             // ==================================================================
             window.addEventListener('hashchange', () => {
-                // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
-                // en medio de una navegación programada por setView.
+                 console.log("Hashchange event listener fired. Current hash:", window.location.hash); // Debug
+                // 🟢 Solo reaccionamos si NO estamos en medio de una navegación programada
                  if (!isNavigating) {
-                    console.log("Hashchange triggered by browser navigation."); // Debug log
+                    console.log("Hashchange processing (not navigating)."); // Debug log
                     const newHash = window.location.hash.replace('#', '');
-                    const viewName = newHash || 'home'; // Si el hash está vacío, va a home
-                    // Intentamos obtener el ID si es la vista de detalles
-                    const parts = newHash.split('/'); // Simple split as fallback
-                    const potentialId = parts.length > 1 ? parseInt(parts[1], 10) : null;
-                    const data = viewName === 'provider_details' && !isNaN(potentialId) ? potentialId : null;
+                    const viewName = newHash.split('/')[0] || 'home'; // Obtiene la vista base
+                    const data = newHash.includes('/') ? newHash.split('/')[1] : null; // Obtiene el dato si existe
 
-                    setView(viewName, data); // Llama a setView con el hash (y posible ID)
+                    // Llama a setView SOLO si el hash realmente cambió (evita loops)
+                    // (Esta comprobación ahora está dentro de setView)
+                    setView(viewName, data);
+
                 } else {
-                     console.log("Hashchange detected, but navigation is blocked by flag."); // Debug log
+                     console.log("Hashchange ignored (navigation flag is ON)."); // Debug log
                 }
             });
 
-            // Renderiza el header al inicio (llamado también desde setupAuthListener)
-            // Ya no es necesario aquí si setupAuthListener lo hace
-            // renderHeader();
+            // renderHeader() ya no es necesario aquí, lo llama setupAuthListener
         };
 
     </script>
 </body>
 </html>
+
