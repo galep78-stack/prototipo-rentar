@@ -994,9 +994,12 @@
       // ==================================================================
         // ✅ FUNCIÓN `renderHomeView` (Actualizada para Flujo Correcto)
         // ==================================================================
+        // ==================================================================
+        // ✅ FUNCIÓN `renderHomeView` (Botón "Buscar Recursos" CORREGIDO)
+        // ==================================================================
         function renderHomeView() {
             // Carga los proveedores sin filtro por si el usuario vuelve a la home y luego al dashboard
-            loadProvidersByOfferSearch(); // Mantenemos la carga inicial
+            // loadProvidersByOfferSearch(); // No es necesario cargar aquí, se cargan al buscar/categorizar
 
             return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);">
                         <div class="text-center max-w-4xl">
@@ -1276,6 +1279,7 @@
 
 </body>
 </html>
+
 
 
 
