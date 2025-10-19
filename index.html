@@ -911,12 +911,12 @@
             `;
         }
 
-        // ==================================================================
-        // ✅ FUNCIÓN `renderHomeView` (Actualizada para Búsqueda)
+      // ==================================================================
+        // ✅ FUNCIÓN `renderHomeView` (Actualizada para Flujo Correcto)
         // ==================================================================
         function renderHomeView() {
             // Carga los proveedores sin filtro por si el usuario vuelve a la home y luego al dashboard
-            loadProvidersByOfferSearch();
+            loadProvidersByOfferSearch(); // Mantenemos la carga inicial
 
             return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);">
                         <div class="text-center max-w-4xl">
@@ -933,8 +933,8 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div class="bg-white p-8 rounded-xl shadow-lg">
                                 <h3 class="text-2xl font-bold mb-3">Soy productor</h3>
-                                <p class="text-gray-600 mb-6">Buscá equipos y servicios.</p>
-                                <button onclick="handleSearch()" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar Recursos</button>
+                                <p class="text-gray-600 mb-6">Buscá equipos y servicios por categoría.</p>
+                                <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar por Categoría</button>
                             </div>
                             <div class="bg-white p-8 rounded-xl shadow-lg">
                                 <h3 class="text-2xl font-bold mb-3">Soy proveedor</h3>
@@ -944,7 +944,6 @@
                         </div>
                     </section>`;
         }
-
         function renderLoginView() {
             return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`;
         }
@@ -1168,6 +1167,7 @@
     </script>
 </body>
 </html>
+
 
 
 
