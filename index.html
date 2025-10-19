@@ -78,6 +78,86 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent.Ar - Prototipo Funcional Completo (Definitivo)</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 'primary-dark': '#061637', 'accent-blue': '#004aad', 'accent-cyan': '#5de0e6', 'secondary-dark': '#29007a' },
+                    fontFamily: { heading: ['"Helvetica World Bold"', 'Arial', 'sans-serif'], sans: ['Arial', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #061637; color: white; min-height: 100vh; display: flex; flex-direction: column; font-family: Arial, sans-serif; }
+        h1, h2, h3 { font-family: 'Helvetica World Bold', Arial, sans-serif; }
+        main { flex-grow: 1; }
+        .btn-secondary { border: 2px solid #5de0e6; color: #5de0e6; transition: background-color 0.3s; }
+        .btn-secondary:hover { background-color: rgba(93, 224, 230, 0.1); }
+        .logo-text-header { font-family: 'Helvetica World Bold', Arial, sans-serif; font-size: 1.75rem; font-weight: 700; color: white; }
+        .role-selector { 
+            border: 2px solid #ccc;
+            transition: all 0.3s ease-in-out; 
+            box-shadow: none;
+        }
+        .role-selector.active { 
+            border-color: #004aad;
+            background-color: rgba(0, 74, 173, 0.1);
+            box-shadow: 0 0 15px rgba(93, 224, 230, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <header id="main-header" class="sticky top-0 z-50 bg-primary-dark shadow-xl"></header>
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <div id="content-view"></div>
+    </main>
+    <footer class="bg-primary-dark border-t border-accent-blue/20">
+        <div class="container mx-auto px-4 pt-10 pb-6">
+             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+                 <div>
+                     <a href="#" onclick="goToDashboard()" class="flex items-center">
+                         <img src="logo-rentar.png" alt="Rent.Ar Logo" class="h-6 mr-2"> 
+                         <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
+                     </a>
+                     <p class="text-gray-400 font-sans mt-2">© 2025 Rent.Ar.</p>
+                 </div>
+                 <div>
+                     <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Soporte</h5>
+                     <ul class="space-y-2 font-sans">
+                         <li><a href="mailto:contactorentar@gmail.com" class="text-gray-300 hover:text-accent-cyan transition">Contacto</a></li>
+                     </ul>
+                 </div>
+                 <div>
+                     <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Seguinos</h5>
+                     <ul class="space-y-2 font-sans">
+                         <li>
+                             <a href="https://www.instagram.com/somosrent.ar" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-accent-cyan transition flex items-center">
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="1.25em" height="1.25em" viewBox="0 0 24 24" fill="currentColor" class="mr-2">
+                                     <path d="M7.8 2h8.4C17.9 2 19 3.1 19 4.6v8.8c0 1.5-1.1 2.6-2.8 2.6H7.8C6.1 16 5 14.9 5 13.4V4.6C5 3.1 6.1 2 7.8 2zm-.2 2a.6.6 0 0 0-.6.6v8.8a.6.6 0 0 0 .6.6h8.4a.6.6 0 0 0 .6-.6V4.6a.6.6 0 0 0-.6-.6H7.6zM12 7.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 0 0 0-9zm0 8a3.5 3.5 0 1 1 0-7a3.5 3.5 0 0 1 0 7zm5.5-8.5a1 1 0 1 0 0 2a1 1 0 0 0 0-2z"/>
+                                 </svg>
+                                 <span>@somosrentar</span>
+                             </a>
+                         </li>
+                     </ul>
+                 </div>
+             </div>
+             <div class="border-t border-accent-blue/20 mt-8 pt-6 col-span-2 md:col-span-4 text-center text-xs text-gray-500 font-sans">
+                 <h6 class="font-bold text-gray-400 mb-2 uppercase">Aviso Legal</h6>
+                 <p>Rent.ar es una plataforma que actúa como intermediario. No nos responsabilizamos por los acuerdos o transacciones entre las partes.</p>
+             </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ==================================================================
         // == CÓDIGO FINAL Y ESTABLE (TODOS LOS CAMBIOS CONSOLIDADOS) ==
@@ -1167,6 +1247,36 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
+
 
 
 
