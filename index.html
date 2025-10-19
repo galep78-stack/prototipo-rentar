@@ -595,7 +595,11 @@
             window.location.hash = viewName;
 
             // 🟢 CAMBIO: 'provider_details' ahora es asíncrona
-            const isAsyncView = viewName === 'profile_edit' || viewName === 'my_products' || viewName === 'edit_offer' || viewName === 'provider_details';
+            const isAsyncView = viewName === 'profile_edit' || 
+                        viewName === 'my_products' || 
+                        viewName === 'edit_offer' || 
+                        viewName === 'provider_details' ||
+                        viewName === 'offer_list_by_category';
 
             if (isAsyncView) {
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
@@ -603,6 +607,7 @@
                 const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
                                       viewName === 'my_products' ? renderMyProductsView() :
                                       viewName === 'edit_offer' ? renderEditOfferView(data) :
+                                      viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) :
                                       renderProviderDetailsView(data); // 🟢 CAMBIO
 
                 renderPromise.then(html => {
@@ -632,8 +637,9 @@
                 case 'dashboard_proveedor': return renderProviderDashboard();
                 case 'provider_details': return renderProviderDetailsView(data);
                 case 'info': return renderInfoView(data);
-                case 'add_offer': return renderAddOfferView();
-                    case 'como_funciona': return renderComoFuncionaView();
+                case 'add_offer': return ();
+                case 'como_funciona': return renderComoFuncionaView();
+                case 'categories_selection': return renderCategoriesSelectionView();
                 default: return renderHomeView();
             }
         }
@@ -691,7 +697,72 @@
                 </div>
             `;
         }
+// 🟢 NUEVA VISTA ASÍNCRONA: Lista de ofertas
+async function renderOfferListByCategoryView(categoryName) {
+    if (!categoryName) {
+        return '<p class="text-red-500">Error: No se especificó una categoría.</p>';
+    }
 
+    let offersHtml = `<p class="text-gray-400">Buscando ofertas para "${categoryName}"...</p>`;
+
+    try {
+        // Hacemos un JOIN para obtener el nombre de la empresa proveedora.
+        // Esto asume que 'ofertas.user_id' es una FK a 'proveedores.user_id'
+        const { data: offers, error } = await supabaseClient
+            .from('ofertas')
+            .select(`
+                id,
+                titulo,
+                descripcion,
+                precio,
+                ubicacion,
+                proveedores ( id, nombre_empresa ) 
+            `)
+            .eq('categoria', categoryName);
+
+        if (error) throw error;
+
+        if (offers && offers.length > 0) {
+            offersHtml = offers.map(offer => {
+                // Maneja el caso de que el proveedor no se encuentre (no debería pasar)
+                const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
+                const providerId = offer.proveedores ? offer.proveedores.id : null;
+                
+                return `
+                <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
+                    <div>
+                        <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+                        <p class="text-sm text-gray-400 font-sans">${offer.ubicacion}</p>
+                        <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
+                        <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
+                    </div>
+                    <div class="flex-shrink-0 text-left sm:text-right">
+                        <p class="text-sm text-gray-400">Ofrecido por:</p>
+                        <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
+                        ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        } else {
+            offersHtml = `<p class="text-gray-400 text-center py-8">No se encontraron ofertas publicadas en la categoría "${categoryName}".</p>`;
+        }
+
+    } catch (error) {
+        console.error('Error fetching offers by category:', error);
+        offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
+    }
+
+    return `
+        <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <button onclick="setView('categories_selection')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver a Categorías</button>
+            <h1 class="text-4xl font-bold mb-8 text-accent-cyan font-heading">Ofertas en: ${categoryName}</h1>
+            <div class="space-y-4">
+                ${offersHtml}
+            </div>
+        </div>
+    `;
+}
 
         async function renderMyProductsView() {
             if (!currentUser) return renderLoginView();
@@ -1123,7 +1194,33 @@
                 </div>
             `;
         }
+// 🟢 NUEVA VISTA: Selector de categorías
+function renderCategoriesSelectionView() {
+    const categories = [
+        { name: 'Equipos', emoji: '🎥', desc: 'Cámaras, luces, sonido, etc.' },
+        { name: 'Locacion', emoji: '🏠', desc: 'Estudios, casas, exteriores.' },
+        { name: 'Servicio', emoji: '🎬', desc: 'Post, catering, vestuario.' }
+    ];
 
+    let categoriesHtml = categories.map(cat => `
+        <div onclick="setView('offer_list_by_category', '${cat.name}')" 
+             class="p-8 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg cursor-pointer transition transform hover:scale-105 hover:border-accent-cyan">
+            <span class="text-4xl" role="img" aria-label="${cat.name}">${cat.emoji}</span>
+            <h3 class="text-2xl font-bold mt-4 font-heading text-accent-cyan">${cat.name}</h3>
+            <p class="text-gray-400 font-sans">${cat.desc}</p>
+        </div>
+    `).join('');
+
+    return `
+        <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <button onclick="setView('home')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Inicio</button>
+            <h1 class="text-4xl font-bold mb-8 text-center text-accent-cyan font-heading">Explorar Categorías</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                ${categoriesHtml}
+            </div>
+        </div>
+    `;
+}
         // ===================================================================
         // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
         // ===================================================================
@@ -1167,3 +1264,4 @@
     </script>
 </body>
 </html>
+
