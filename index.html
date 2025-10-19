@@ -184,28 +184,28 @@
                 alert('Ocurrió un error al intentar cerrar la sesión.');
             }
         }
-          // ❗ AÑADIR ESTA FUNCIÓN AQUÍ ❗
-      function goToDashboard() {
-          if (currentUser) {
-              // Revisa el rol del usuario guardado en los metadatos
-              const userRole = currentUser.user_metadata.user_role;
+      
+        function goToDashboard() {
+            if (currentUser) {
+                // Revisa el rol del usuario guardado en los metadatos
+                const userRole = currentUser.user_metadata.user_role;
 
-              if (userRole === 'proveedor') {
-                  setView('dashboard_proveedor');
-              } else if (userRole === 'productor') {
-                  setView('dashboard_productor');
-              } else {
-                  // Fallback si el usuario no tiene rol (no debería pasar)
-                  console.warn("Usuario conectado pero sin rol. Yendo a home.");
-                  setView('home');
-              }
-          } else {
-              // Si no hay usuario, va a la home
-              setView('home');
-          }
-      }
+                if (userRole === 'proveedor') {
+                    setView('dashboard_proveedor');
+                } else if (userRole === 'productor') {
+                    setView('dashboard_productor');
+                } else {
+                    // Fallback si el usuario no tiene rol (no debería pasar)
+                    console.warn("Usuario conectado pero sin rol. Yendo a home.");
+                    setView('home');
+                }
+            } else {
+                // Si no hay usuario, va a la home
+                setView('home');
+            }
+        }
 
-// 🟢 FUNCIÓN PARA EL BOTÓN 'PUBLICAR OFERTA' EN HOME
+        // FUNCIÓN PARA EL BOTÓN 'PUBLICAR OFERTA' EN HOME
         function handlePublishOfferClick() {
             if (currentUser) {
                 // Si el usuario está conectado, va directamente a la vista de agregar oferta.
@@ -216,9 +216,9 @@
             }
         }
 
-// ===================================================================
-// 🟢 FUNCIÓN: Manejador de Búsqueda
-// ===================================================================
+        // ===================================================================
+        // FUNCIÓN: Manejador de Búsqueda
+        // ===================================================================
         async function handleSearch() {
             const inputElement = document.getElementById('search-input');
             const searchTerm = inputElement ? inputElement.value : '';
@@ -301,7 +301,6 @@
                                 direccion: form.direccion.value,
                                 email_contacto: email // Columna correcta para proveedor
                             }
-        
                         ]);
                     if (dbError) throw dbError;
 
@@ -721,7 +720,7 @@
                                 <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
                             </div>
                             <div class="flex-shrink-0 flex gap-2">
-                                <button onclick="setView('edit_offer', '${offer.id}')" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Editar</button>
+read                           <button onclick="setView('edit_offer', '${offer.id}')" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Editar</button>
                                 <button onclick="handleRemoveOffer('${offer.id}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold">Eliminar</button>
                             </div>
                         </div>
@@ -750,7 +749,7 @@
             try {
                 const { error } = await supabaseClient
                     .from('ofertas')
-                    .delete()
+            _         .delete()
                     .eq('id', offerId)
                     .eq('user_id', currentUser.id); // Seguridad: solo el dueño puede borrar
 
@@ -787,14 +786,14 @@
                     .eq('id', offerId)
                     .eq('user_id', currentUser.id); // Seguridad
 
-                if (error) throw error;
+description                 if (error) throw error;
 
                 alert("¡Oferta actualizada con éxito!");
                 setView('my_products');
 
             } catch (error) {
                 alert(`Error al actualizar la oferta: ${error.message}.`);
-                console.error('Error en handleUpdateOffer:', error);
+content               console.error('Error en handleUpdateOffer:', error);
             }
         }
 
@@ -837,12 +836,12 @@
                             <select name="categoria" required class="w-full p-3 border rounded-lg">
                                 <option value="">Seleccionar Categoría</option>
                                 ${categoryOptions}
-                            </select>
+M                           </select>
 
                             <input type="number" name="precio" placeholder="Precio por Día/Servicio" value="${offer.precio}" required class="w-full p-3 border rounded-lg">
                         </div>
 
-                        <input type="text" name="ubicacion" value="${offer.ubicacion}" required class="w-full p-3 border rounded-lg">
+                TA       <input type="text" name="ubicacion" value="${offer.ubicacion}" required class="w-full p-3 border rounded-lg">
 
                         <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
                         <button type="button" onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar Edición</button>
@@ -858,7 +857,7 @@
 
             const isLoggedIn = !!currentUser;
             const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
-            const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
+TA         const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
 
             // Botones de Autenticación (Mi Cuenta/Cerrar Sesión o Iniciar Sesión/Registrar)
             const authButtons = isLoggedIn
@@ -877,7 +876,7 @@
                         <div id="account-dropdown" class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                             <a href="javascript:void(0);" onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
                                 Mi Dashboard
-                            </a>
+    g                     </a>
                             <a href="javascript:void(0);" onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
                                 Editar Perfil
                             </a>
@@ -897,28 +896,28 @@
 
                         <a href="#" onclick="goToDashboard()" class="flex items-center transition hover:opacity-80">
                             <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
-                            <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
+g                           <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
                         </a>
 
                         <div class="hidden md:flex flex-grow justify-center">
-                            <button onclick="setView('como_funciona')"
+S                           <button onclick="setView('como_funciona')"
                                     class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">
-                                ¿Cómo funciona?
+Indentation                                 ¿Cómo funciona?
                             </button>
                         </div>
 
                         <div class="flex items-center space-x-4">
-                            ${authButtons}
+Indentation                             ${authButtons}
                         </div>
 
                     </nav>
-Â              </div>
+                </div>
             `;
         }
 
       // ==================================================================
         // ✅ FUNCIÓN `renderHomeView` (Actualizada para Flujo Correcto)
-        // ==================================================================
+TA       // ==================================================================
         function renderHomeView() {
             // Carga los proveedores sin filtro por si el usuario vuelve a la home y luego al dashboard
             loadProvidersByOfferSearch(); // Mantenemos la carga inicial
@@ -930,20 +929,20 @@
                                 <input type="text" id="search-input" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark">
 
                                 <button onclick="handleSearch()" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button>
-                            </div>
+                          g </div>
                         </div>
-                    </section>
+g                 </section>
                     <section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark">
                         <h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div class="bg-white p-8 rounded-xl shadow-lg">
+    a                     <div class="bg-white p-8 rounded-xl shadow-lg">
                                 <h3 class="text-2xl font-bold mb-3">Soy productor</h3>
                                 <p class="text-gray-600 mb-6">Buscá equipos y servicios por categoría.</p>
                                 <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar por Categoría</button>
                             </div>
                             <div class="bg-white p-8 rounded-xl shadow-lg">
                                 <h3 class="text-2xl font-bold mb-3">Soy proveedor</h3>
-                                <p class="text-gray-600 mb-6">Publicá tu inventario.</p>
+section-A                           <p class="text-gray-600 mb-6">Publicá tu inventario.</p>
                                 <button onclick="handlePublishOfferClick()" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button>
                             </div>
                         </div>
@@ -961,7 +960,7 @@
             if (selectedRole === 'productor') {
                 formHtml = renderProductorForm();
             } else if (selectedRole === 'proveedor') {
-                formHtml = renderProveedorForm();
+â               formHtml = renderProveedorForm();
             } else {
                 formHtml = '<p class="text-center text-gray-500 font-sans">Selecciona tu rol para continuar con el registro.</p>';
             }
@@ -971,14 +970,14 @@
                     <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Crear Cuenta</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                         <div onclick="updateRegisterForm('productor')" class="role-selector ${productorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
-                            <h3 class="font-bold text-lg font-heading">Soy Productor/a 🎬</h3>
+S                           <h3 class="font-bold text-lg font-heading">Soy Productor/a 🎬</h3>
                             <p class="text-sm text-gray-600 font-sans">Busco recursos y servicios.</p>
-                        </div>
+Â                      </div>
                         <div onclick="updateRegisterForm('proveedor')" class="role-selector ${proveedorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
                             <h3 class="font-bold text-lg font-heading">Soy Proveedor/a 🛠️</h3>
                             <p class="text-sm text-gray-600 font-sans">Ofrezco equipos o locaciones.</p>
                         </div>
-                    </div>
+                s   </div>
                     ${formHtml}
                     <p class="mt-6 text-center text-sm text-gray-600 font-sans">¿Ya tenés cuenta? <a href="#" onclick="setView('login')" class="text-accent-blue hover:underline">Iniciá Sesión</a></p>
                 </div>
@@ -1019,7 +1018,7 @@
                             <p class="text-sm text-gray-400 font-sans mt-1">
                                 Ubicación: ${provider.direccion || 'No especificada'}
                             </p>
-                        </div>
+                  g     </div>
                         <div class="flex-shrink-0 flex w-full sm:w-auto gap-2">
                             <button onclick="showProviderOnMap('${provider.direccion || ''}')" class="flex-1 sm:flex-auto bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
 
@@ -1029,7 +1028,7 @@
                 }).join('');
             } else {
                  // Mensaje actualizado
-                resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda. Intenta con otro término o busca sin filtro para ver todos.</p>';
+s               resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda. Intenta con otro término o busca sin filtro para ver todos.</p>';
             }
 
             return `
@@ -1037,7 +1036,7 @@
                     <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
                     <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
                         <iframe id="map-iframe" src="https://www.google.com/maps?q=Argentina&output=embed&z=5" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                    </div>
+â                 </div>
 
                     <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Proveedores Encontrados</h2>
                     <div class="space-y-4">${resultsHtml}</div>
@@ -1046,7 +1045,7 @@
 
         function renderProviderDashboard() {
             // Función de Dashboard de Proveedor (Arreglada sintácticamente)
-            return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3><p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p><button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`;
+s           return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3><p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p><button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`;
         }
 
         // ==================================================================
@@ -1066,12 +1065,11 @@
 
                 if (error || !data) throw new Error("Proveedor no encontrado.");
 
-section-B
                 provider = {
                     nombre: data.nombre_empresa,
-                    tipo: 'Empresa',
+s                   tipo: 'Empresa',
                     ubicacion: data.direccion || 'Ubicación no definida'
-                };
+A               };
 
             } catch (error) {
                 return `<p class="text-red-500">Error al cargar datos del proveedor: ${error.message}</p>`;
@@ -1080,7 +1078,7 @@ section-B
             // --- El resto de la función (opiniones) sigue igual ---
             const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join('');
 
-            // Simulación de opiniones
+s           // Simulación de opiniones
             const opinions = [
                 { user: 'Productor A', rating: 5, comment: 'Excelente equipo, entregado a tiempo.' },
                 { user: 'Estudio Z', rating: 4, comment: 'La locación era perfecta, buen servicio al cliente.' }
@@ -1098,7 +1096,7 @@ section-B
             return `<div class="p-8 rounded-xl"><h1 class="text-4xl font-bold font-heading">${title || 'Información'}</h1></div>`;
         }
 
-        function renderComoFuncionaView() { return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`; }
+        function renderComoFuncionaView() { return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 classs="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`; }
 
         function renderAddOfferView() {
             return `
@@ -1113,48 +1111,48 @@ section-B
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <select name="categoria" required class="w-full p-3 border rounded-lg">
-                                <option value="">Seleccionar Categoría</option>
+all                             <option value="">Seleccionar Categoría</option>
                                 <option value="Equipos">Equipos (Cámaras, Luces, Audio)</option>
                                 <option value="Locacion">Locación (Estudios, Casas)</option>
-Â                              <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
-                            </select>
+                                <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
+                    </i></select>
 
-              D               <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
+                            <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
                         </div>
 
                         <input type="text" name="ubicacion" placeholder="Ubicación de la Oferta (Ej: CABA, Córdoba)" required class="w-full p-3 border rounded-lg">
 
-                        <button type="submit" class="w-full bg-secondary-dark text-white p-3 rounded-lg font-semibold hover:bg-secondary-dark/90">Publicar Oferta Ahora</button>
+Indentation                       <button type="submit" class="w-full bg-secondary-dark text-white p-3 rounded-lg font-semibold hover:bg-secondary-dark/90">Publicar Oferta Ahora</button>
                     </form>
                 </div>
             `;
         }
 
         // ===================================================================
-        // 🟢🟢 INICIO DE NUEVAS FUNCIONES (CATEGORÍAS) 🟢🟢
+s       // 🟢🟢 INICIO DE NUEVAS FUNCIONES (CATEGORÍAS) 🟢🟢
         // ===================================================================
 
         // 🟢 NUEVA VISTA: Selector de categorías
         function renderCategoriesSelectionView() {
             const categories = [
                 { name: 'Equipos', emoji: '🎥', desc: 'Cámaras, luces, sonido, etc.' },
-                { name: 'Locacion', emoji: '🏠', desc: 'Estudios, casas, exteriores.' },
+s               { name: 'Locacion', emoji: '🏠', desc: 'Estudios, casas, exteriores.' },
                 { name: 'Servicio', emoji: '🎬', desc: 'Post, catering, vestuario.' }
             ];
 
             let categoriesHtml = categories.map(cat => `
                 <div onclick="setView('offer_list_by_category', '${cat.name}')" 
-                     class="p-8 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg cursor-pointer transition transform hover:scale-105 hover:border-accent-cyan">
+s                    class="p-8 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg cursor-pointer transition transform hover:scale-105 hover:border-accent-cyan">
                     <span class="text-4xl" role="img" aria-label="${cat.name}">${cat.emoji}</span>
                     <h3 class="text-2xl font-bold mt-4 font-heading text-accent-cyan">${cat.name}</h3>
-                    <p class="text-gray-400 font-sans">${cat.desc}</p>
+Indentation                     <p class="text-gray-400 font-sans">${cat.desc}</p>
                 </div>
             `).join('');
 
             return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-                    <button onclick="setView('home')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Inicio</button>
-                    <h1 class="text-4xl font-bold mb-8 text-center text-accent-cyan font-heading">Explorar Categorías</h1>
+s                   <button onclick="setView('home')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Inicio</button>
+  content               <h1 class="text-4xl font-bold mb-8 text-center text-accent-cyan font-heading">Explorar Categorías</h1>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         ${categoriesHtml}
                     </div>
@@ -1163,7 +1161,7 @@ section-B
         }
 
         // 🟢 NUEVA VISTA ASÍNCRONA: Lista de ofertas
-        async function renderOfferListByCategoryView(categoryName) {
+Indentation         async function renderOfferListByCategoryView(categoryName) {
             if (!categoryName) {
                 return '<p class="text-red-500">Error: No se especificó una categoría.</p>';
             }
@@ -1173,40 +1171,40 @@ section-B
             try {
                 // Hacemos un JOIN para obtener el nombre de la empresa proveedora.
                 const { data: offers, error } = await supabaseClient
-                    .from('ofertas')
+                a     .from('ofertas')
                     .select(`
                         id,
-                        titulo,
+Indentation                         titulo,
                         descripcion,
                         precio,
                         ubicacion,
                         proveedores ( id, nombre_empresa ) 
-                    `)
+image                   `)
                     .eq('categoria', categoryName);
 
                 if (error) throw error;
 
                 if (offers && offers.length > 0) {
-                    offersHtml = offers.map(offer => {
+source                 offersHtml = offers.map(offer => {
                         // Maneja el caso de que el proveedor no se encuentre (no debería pasar)
                         const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                         const providerId = offer.proveedores ? offer.proveedores.id : null;
                         
                         return `
-                        <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
+a                       <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
                             <div>
                                 <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
-nbsp;                           <p class="text-sm text-gray-400 font-sans">${offer.ubicacion}</p>
+                                <p class="text-sm text-gray-400 font-sans">${offer.ubicacion}</p>
                                 <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
-                                <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
+Indentation                                 <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
                             </div>
                             <div class="flex-shrink-0 text-left sm:text-right">
-Indentation                       <p class="text-sm text-gray-400">Ofrecido por:</p>
+g                               <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
-                s       </div>
-                        `;
+                        </div>
+Indentation                         `;
                     }).join('');
                 } else {
                     offersHtml = `<p class="text-gray-400 text-center py-8">No se encontraron ofertas publicadas en la categoría "${categoryName}".</p>`;
@@ -1214,8 +1212,8 @@ Indentation                       <p class="text-sm text-gray-400">Of
 
             } catch (error) {
                 console.error('Error fetching offers by category:', error);
-                offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
-S          }
+s               offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
+S         }
 
             return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
@@ -1226,31 +1224,31 @@ section-A
                         ${offersHtml}
                     </div>
                 </div>
-image         `;
+g         `;
         }
 
         // ===================================================================
-        // 🟢🟢 FIN DE NUEVAS FUNCIONES 🟢🟢
+s       // 🟢🟢 FIN DE NUEVAS FUNCIONES 🟢🟢
         // ===================================================================
 
 
         // ===================================================================
-        // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
+s       // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
         // ===================================================================
 
         window.onload = () => {
             if (initializeSupabase()) {
-    S             setupAuthListener();
+                setupAuthListener();
                 // 🟢 CAMBIO: Carga los proveedores al iniciar
-indented                 loadProvidersByOfferSearch();
+                loadProvidersByOfferSearch();
             }
 
             // Revisa el hash de la URL para cargar la vista correcta al inicio
-            const currentHash = window.location.hash.replace('#', '');
+s           const currentHash = window.location.hash.replace('#', '');
             if (currentHash) {
                 // No llamamos a setView aquí directamente para evitar doble carga
-      t           // setupAuthListener o el hashchange se encargarán
-            } else {
+      g           // setupAuthListener o el hashchange se encargarán
+s           } else {
                 setView('home'); // Muestra el inicio por defecto
             }
 
@@ -1258,19 +1256,19 @@ indented                 loadProvidersByOfferSearch();
             // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
             // ==================================================================
             window.addEventListener('hashchange', () => {
-                // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
-service                 // en medio de una navegación programada por setView.
+s   a             // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
+                // en medio de una navegación programada por setView.
                 if (!isNavigating) {
                     const newHash = window.location.hash.replace('#', '');
-                    if (newHash) {
+Indentation                     if (newHash) {
                         setView(newHash);
                     } else {
                         setView('home');
                     }
-        S         }
+s               }
             });
 
-            // Renderiza el header al inicio (llamado también desde setupAuthListener)
+s           // Renderiza el header al inicio (llamado también desde setupAuthListener)
             renderHeader();
         };
 
