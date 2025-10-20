@@ -1603,7 +1603,7 @@ async function renderOfferListByCategoryView(categoryName) {
             offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerTableId = offer.proveedores ? offer.proveedores.id : null; // El id de la tabla (para 'Ver Proveedor')
-+               const providerUserId = offer.proveedores ? offer.proveedores.user_id : null; // El UUID (para el pedido)
+                const providerUserId = offer.proveedores ? offer.proveedores.user_id : null; // El UUID (para el pedido)
                 
                 // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
@@ -1851,6 +1851,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
