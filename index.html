@@ -185,13 +185,7 @@
             }
         }
 
-        function goToDashboard() {
-    const lastView = localStorage.getItem('lastView'); // 🟢 Leemos la última vista
-    
-    if (currentUser) {
-        const userRole = currentUser.user_metadata.user_role;
-        
-        // 🟢 CAMBIO: Si hay una vista guardada que no sea el dashboard (para evitar bucles),
+              // 🟢 CAMBIO: Si hay una vista guardada que no sea el dashboard (para evitar bucles),
         // volvemos a esa vista en lugar de ir al dashboard.
         if (lastView && !lastView.includes('dashboard')) {
             setView(lastView);
@@ -645,10 +639,12 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
 // ==================================================================
 function setView(viewName, data = null) {
     // 🟢 1. Guardar la vista en localStorage ANTES de navegar
-    if (viewName !== 'login' && viewName !== 'register') {
-        localStorage.setItem('lastView', viewName);
-    }
-    
+if (viewName === 'home') {
+    localStorage.removeItem('lastView'); // 👈 Limpiamos el historial al ir a Home
+    window.location.hash = viewName;
+} else if (viewName !== 'login' && viewName !== 'register') {
+    localStorage.setItem('lastView', viewName);
+}
     if (isNavigating) return;
 
     isNavigating = true; // 🟢 Bloqueamos la navegación
@@ -960,7 +956,7 @@ function setView(viewName, data = null) {
                 <div class="container mx-auto px-4">
                     <nav class="flex justify-between items-center py-4">
 
-                        <a href="#" onclick="goToDashboard()" class="flex items-center transition hover:opacity-80">
+                        <a href="#" onclick="setView('home')" class="flex items-center transition hover:opacity-80">
                             <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
                             <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
                         </a>
@@ -1389,6 +1385,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
