@@ -1123,103 +1123,110 @@ function renderHeader() {
         // ===================================================================
 // 🟢 FUNCIÓN NUEVA: Vista de Solicitudes de Pedido para el Proveedor
 // ===================================================================
-function renderProviderRequestsView() {
-    if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
-        return renderLoginView();
-    }
-    
-    // El ID del usuario actual es su user_id (clave foránea en la tabla 'ofertas')
-    const currentProviderUserId = currentUser.id; 
-    let requestsForProvider = [];
-    let totalPending = 0;
+// 🟢 REEMPLAZÁ LA FUNCIÓN VIEJA "renderProviderRequestsView" POR ESTA:
 
-    // Iteramos sobre el historial global (simulando la consulta)
-    historialPedidos.forEach(pedido => {
-        // Un pedido es relevante si contiene CUALQUIER ítem del proveedor actual.
-        const isRelevant = pedido.items.some(item => {
-            // Utilizamos el user_id para filtrar (asumiendo que item.providerId es el ID de la tabla 'proveedores', 
-            // y que ese ID se mapea 1:1 con el user_id en la práctica de la BDD real, lo simplificaremos aquí:
-            // Dado que en handleSendPedido el item.providerId es el ID de la tabla 'proveedores',
-            // necesitamos encontrar el user_id de ese proveedor para comparar. Esto requeriría una consulta asíncrona.
-            //
-            // 🟢 SIMPLIFICACIÓN: Asumiremos que el item.providerId guardado en pedidoActual es el user_id del proveedor.
-            // Para que esto funcione, en handlePedido debería estar guardando el user_id, pero se guardó el id de la tabla 'proveedores'.
-            //
-            // 💡 REVISIÓN: Buscamos qué user_id pertenece al proveedor con item.providerId
-            // Como no podemos hacer llamadas a Supabase dentro de un map/forEach sincrónico, vamos a asumir que
-            // el historial de pedidos contiene el user_id del proveedor en item.providerId (para el prototipo).
-            return item.providerId == currentProviderUserId;
+async function renderProviderRequestsView() {
+    if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
+        return renderLoginView();
+    }
+    
+    const currentProviderUserId = currentUser.id; 
+    let requestsForProvider = [];
+    let totalPending = 0;
+
+    // 1. Consultar a Supabase
+    try {
+        const { data: pedidos, error } = await supabaseClient
+            .from('solicitudes_pedido') // Tu tabla
+            .select('*')
+            
+            // Esta es la consulta correcta para buscar tu ID
+            // dentro de la columna 'items_json'
+            .filter('items_json', '@>', `[{"providerUserId":"${currentProviderUserId}"}]`)
+
+            .order('fecha_envio', { ascending: false });
+
+        if (error) throw error;
+
+        // 2. Procesar los datos (esto sí es de tu código original)
+        pedidos.forEach(pedido => {
+            const items = pedido.items_json || [];
+            
+            // Filtramos los ítems para mostrar solo los que son de este proveedor
+            const itemsForThisProvider = items.filter(item => item.providerUserId == currentProviderUserId);
+            
+            // Solo agregamos el pedido si encontramos items
+            if (itemsForThisProvider.length > 0) {
+                requestsForProvider.push({
+                    ...pedido, // Trae codigocodigo, estado, fecha_envio
+                    items: itemsForThisProvider, // Reemplazamos los items por los filtrados
+                    totalItemsProveedor: itemsForThisProvider.length
+                });
+                
+                if (pedido.estado === 'Pendiente de Cotización') {
+                    totalPending++;
+                }
+            }
         });
 
-        if (isRelevant) {
-            // Filtramos los ítems para mostrar solo los que son de este proveedor
-            const itemsForThisProvider = pedido.items.filter(item => item.providerId == currentProviderUserId);
-            
-            requestsForProvider.push({
-                ...pedido,
-                items: itemsForThisProvider,
-                totalItemsProveedor: itemsForThisProvider.length
-            });
-            
-            if (pedido.estado === 'Pendiente de Cotización') {
-                totalPending++;
-            }
-        }
-    });
+    } catch (error) {
+        return `<p class="text-red-500">Error al cargar las solicitudes: ${error.message}. (Asegúrate de tener la política RLS de SELECT)</p>`;
+    }
+    
+    // 3. Renderizado (Este HTML es el tuyo, no cambia)
+    const tableRows = requestsForProvider.map((pedido, index) => {
+        let estadoClass = pedido.estado.includes('Pendiente') ? 'text-yellow-400 bg-yellow-900/50' : 'text-green-400 bg-green-900/50';
+        const fechaFormateada = new Date(pedido.fecha_envio).toLocaleString('es-AR');
 
-    // Renderizado del historial
-    const tableRows = requestsForProvider.map((pedido, index) => {
-        let estadoClass = pedido.estado.includes('Pendiente') ? 'text-yellow-400 bg-yellow-900/50' : 'text-green-400 bg-green-900/50';
+        const itemsDetail = pedido.items.map(item => `<li class="text-xs text-gray-500 font-sans">${item.titulo} ($${item.precio.toLocaleString('es-AR')})</li>`).join('');
 
-        const itemsDetail = pedido.items.map(item => `<li class="text-xs text-gray-500 font-sans">${item.titulo} ($${item.precio.toLocaleString('es-AR')})</li>`).join('');
+        return `
+            <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
+                <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigocodigo}</td>
+                <td class="px-6 py-4 text-gray-300">${fechaFormateada}</td>
+                <td class="px-6 py-4">
+                    <ul class="list-disc list-inside space-y-1 max-w-sm">${itemsDetail}</ul>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
+                        ${pedido.estado}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <button onclick="alert('Funcionalidad de Contacto Implementada: Aquí puedes contactar al Productor para enviar tu cotización.')" class="bg-accent-cyan text-primary-dark text-xs py-1 px-3 rounded-lg hover:bg-white">
+                        Responder
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 
-        return `
-            <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
-                <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
-                <td class="px-6 py-4 text-gray-300">${pedido.fecha}</td>
-                <td class="px-6 py-4">
-                    <ul class="list-disc list-inside space-y-1 max-w-sm">${itemsDetail}</ul>
-                </td>
-                <td class="px-6 py-4">
-                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
-                        ${pedido.estado}
-                    </span>
-                </td>
-                <td class="px-6 py-4">
-                    <button onclick="alert('Funcionalidad de Contacto Implementada: Aquí puedes contactar al Productor para enviar tu cotización.')" class="bg-accent-cyan text-primary-dark text-xs py-1 px-3 rounded-lg hover:bg-white">
-                        Responder
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
+    const content = `
+        <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
+            <table class="min-w-full divide-y divide-gray-700/50">
+                <thead class="bg-primary-dark/50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código de Pedido</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Solicitud</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems Solicitados</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700/50">
+                    ${tableRows.length > 0 ? tableRows : `<tr><td colspan="5" class="text-center py-8 text-gray-500">No hay solicitudes de cotización para tu empresa.</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+    `;
 
-    const content = `
-        <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
-            <table class="min-w-full divide-y divide-gray-700/50">
-                <thead class="bg-primary-dark/50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código de Pedido</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Solicitud</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems Solicitados</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acción</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-700/50">
-                    ${tableRows.length > 0 ? tableRows : `<tr><td colspan="5" class="text-center py-8 text-gray-500">No hay solicitudes de cotización para tu empresa.</td></tr>`}
-                </tbody>
-            </table>
-        </div>
-    `;
-
-    return `
-        <div class="max-w-6xl mx-auto p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-            <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Mis Solicitudes de Pedido</h1>
-            <p class="text-gray-400 mb-6">Tienes <strong class="text-accent-cyan">${totalPending}</strong> solicitudes <strong class="text-yellow-400">pendientes</strong> de respuesta.</p>
-            ${content}
-        </div>
-    `;
+    return `
+        <div class="max-w-6xl mx-auto p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Mis Solicitudes de Pedido</h1>
+            <p class="text-gray-400 mb-6">Tienes <strong class="text-accent-cyan">${totalPending}</strong> solicitudes <strong class="text-yellow-400">pendientes</strong> de respuesta.</p>
+S           ${content}
+        </div>
+    `;
 }
 function renderComoFuncionaView() {
     return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`;
@@ -1803,4 +1810,5 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
