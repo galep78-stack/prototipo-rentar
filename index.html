@@ -1273,7 +1273,7 @@ async function renderProviderDetailsView(providerId) {
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
-                class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold"
+                class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
             Quitar del pedido
         </button>
                                 ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
@@ -1349,6 +1349,7 @@ async function renderProviderDetailsView(providerId) {
     </script>
 </body>
 </html>
+
 
 
 
