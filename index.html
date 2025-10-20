@@ -141,28 +141,46 @@
             }
         });
 
-        function setupAuthListener() {
-            if (!supabaseClient) return;
-            // 💡 1. Obtener el hash actual de la URL al cargar
-            const currentHash = window.location.hash.replace('#', '');
+      function setupAuthListener() {
+            if (!supabaseClient) return;
+            
+            const currentHash = window.location.hash.replace('#', '');
 
-            // 2. Manejo de la sesión inicial (al cargar o volver a la pestaña)
-            supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                currentUser = session ? session.user : null;
-                renderHeader()
-                actualizarIndicadorPedido();
-               // 🟢 LÓGICA DE INICIO MEJORADA (REEMPLAZÁ LA ANTERIOR)
+            // 2. Manejo de la sesión inicial (Lógica de carga corregida)
+            supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                currentUser = session ? session.user : null;
+                renderHeader()
+                actualizarIndicadorPedido();
+                
+                // ESTA ES LA LÓGICA CORREGIDA:
                 if (currentHash) {
-                    // Si hay un hash (ej: #login), cárgalo.
+                    // 1. Si hay un hash (ej: #login o #historial_pedidos), respétalo.
                     setView(currentHash); 
                 } else if (currentUser) {
-                    // Si NO hay hash Y SÍ está logueado, ir al Dashboard
+                    // 2. Si NO hay hash Y el usuario está logueado, ir al Dashboard.
                     goToDashboard();
                 } else {
-                    // Si NO hay hash Y NO está logueado, ir a Home
+                    // 3. Si NO hay hash Y NO está logueado, ir a Home.
                     setView('home');
                 }
             });
+
+            // 3. Manejo de cambios de estado (Login/Logout) - ESTO QUEDA IGUAL
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                currentUser = session ? session.user : null;
+                renderHeader();
+                actualizarIndicadorPedido();
+                if (currentUser) {
+                    // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
+                    if (event === 'SIGNED_IN') {
+                         goToDashboard();
+                    }
+                } else if (event === 'SIGNED_OUT') {
+                    // Si el evento es LOGOUT, ir a Home
+                    setView('home');
+                }
+            });
+        }
 
             // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
             supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -1833,6 +1851,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
