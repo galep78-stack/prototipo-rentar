@@ -1051,83 +1051,88 @@
         }
 
         // ==================================================================
-        // ✅ FUNCIÓN `renderProviderDetailsView` (Actualizada para Búsqueda)
-        // ==================================================================
-        async function renderProviderDetailsView(providerId) {
-            if (!providerId) return `<p class="text-red-500">Error: No se recibió ID de proveedor.</p>`;
+// ✅ FUNCIÓN `renderProviderDetailsView` (ACTUALIZADA para mostrar Ofertas)
+// ==================================================================
+async function renderProviderDetailsView(providerId) {
+    if (!providerId) return `<p class="text-red-500">Error: No se recibió ID de proveedor.</p>`;
 
-            let provider;
-            try {
-                // Busca el proveedor específico en la BDD
-                const { data, error } = await supabaseClient
-                    .from('proveedores')
-                    .select('nombre_empresa, direccion')
-                    .eq('id', providerId)
-                    .single();
+    let providerData;
+    let offers = []; // Variable para guardar las ofertas
 
-                if (error || !data) throw new Error("Proveedor no encontrado.");
+    try {
+        // 1. Busca el proveedor específico Y SU USER_ID en la BDD
+        const { data: providerResult, error: providerError } = await supabaseClient
+            .from('proveedores')
+            // 🟢 PEDIMOS TAMBIÉN EL user_id PARA BUSCAR OFERTAS
+            .select('nombre_empresa, direccion, user_id')
+            .eq('id', providerId)
+            .single();
 
-                provider = { // <-- 'section-B' eliminado
-                    nombre: data.nombre_empresa,
-                    tipo: 'Empresa',
-                    ubicacion: data.direccion || 'Ubicación no definida'
-                };
+        if (providerError || !providerResult) throw new Error("Proveedor no encontrado.");
+        providerData = providerResult; // Guardamos todos los datos del proveedor
 
-            } catch (error) {
-                return `<p class="text-red-500">Error al cargar datos del proveedor: ${error.message}</p>`;
-            }
+        // 2. Busca las ofertas asociadas a ESE proveedor usando su user_id
+        const { data: offersResult, error: offersError } = await supabaseClient
+            .from('ofertas')
+            .select('id, titulo, descripcion, precio, categoria, ubicacion')
+            .eq('user_id', providerData.user_id); // 🟢 Filtramos por el user_id del proveedor
 
-            // --- El resto de la función (opiniones) sigue igual ---
-            const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join('');
+        if (offersError) throw new Error(`Error al buscar ofertas: ${offersError.message}`);
+        offers = offersResult || []; // Guardamos las ofertas encontradas (o un array vacío)
 
-            // Simulación de opiniones
-            const opinions = [
-                { user: 'Productor A', rating: 5, comment: 'Excelente equipo, entregado a tiempo.' },
-                { user: 'Estudio Z', rating: 4, comment: 'La locación era perfecta, buen servicio al cliente.' }
-            ];
+    } catch (error) {
+        return `<p class="text-red-500">Error al cargar datos del proveedor o sus ofertas: ${error.message}</p>`;
+    }
 
-            let opinionsHtml = opinions.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join('');
+    // --- Renderizado de la información del proveedor (igual que antes) ---
+    const provider = {
+        nombre: providerData.nombre_empresa,
+        tipo: 'Empresa',
+        ubicacion: providerData.direccion || 'Ubicación no definida'
+    };
 
-            return `<div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20"><button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1><p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p><h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2><div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div></div>`;
-        }
-
-        function renderInfoView(title) {
-            if (title === '¿Cómo funciona?') {
-                return renderComoFuncionaView();
-            }
-            return `<div class="p-8 rounded-xl"><h1 class="text-4xl font-bold font-heading">${title || 'Información'}</h1></div>`;
-        }
-
-        function renderComoFuncionaView() { return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`; }
-
-        function renderAddOfferView() {
-            return `
-                <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
-                    <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
-                    <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
-                    <form onsubmit="handleAddOffer(event)" class="space-y-6">
-
-                        <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Blackmagic 6K)" required class="w-full p-3 border rounded-lg">
-
-                        <textarea name="descripcion" placeholder="Descripción detallada del equipo o servicio" rows="4" required class="w-full p-3 border rounded-lg"></textarea>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <select name="categoria" required class="w-full p-3 border rounded-lg">
-                                <option value="">Seleccionar Categoría</option>
-                                <option value="Equipos">Equipos (Cámaras, Luces, Audio)</option>
-                                <option value="Locacion">Locación (Estudios, Casas)</option>
-                                <option value="Servicio">Servicio (Postproducción, Vestuario)</option>
-                            </select> <input type="number" name="precio" placeholder="Precio por Día/Servicio (Ej: 50000)" required class="w-full p-3 border rounded-lg">
-                        </div>
-
-                        <input type="text" name="ubicacion" placeholder="Ubicación de la Oferta (Ej: CABA, Córdoba)" required class="w-full p-3 border rounded-lg">
-
-                        <button type="submit" class="w-full bg-secondary-dark text-white p-3 rounded-lg font-semibold hover:bg-secondary-dark/90">Publicar Oferta Ahora</button>
-                    </form>
+    // --- 🟢 NUEVO: Renderizado de la lista de ofertas ---
+    let offersHtml = '<p class="text-gray-400 font-sans">Este proveedor no tiene ofertas publicadas actualmente.</p>';
+    if (offers.length > 0) {
+        offersHtml = offers.map(offer => `
+            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+                        <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion || 'Sin ubicación'}</p>
+                    </div>
+                    <p class="text-lg text-accent-cyan font-bold flex-shrink-0 ml-4">$${offer.precio}</p>
                 </div>
-            `;
-        }
+                <p class="text-gray-300 font-sans mt-2 text-sm">${offer.descripcion || 'Sin descripción.'}</p>
+                
+                </div>
+        `).join('');
+    }
 
+    // --- Renderizado de opiniones (igual que antes) ---
+    const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join('');
+    const opinions = [ // Simulación
+        { user: 'Productor A', rating: 5, comment: 'Excelente equipo, entregado a tiempo.' },
+        { user: 'Estudio Z', rating: 4, comment: 'La locación era perfecta, buen servicio al cliente.' }
+    ];
+    let opinionsHtml = opinions.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join('');
+
+    // --- HTML Final Combinado ---
+    return `
+        <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
+
+            <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1>
+            <p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
+
+            
+            <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
+            <div class="space-y-4 mb-10">${offersHtml}</div>
+
+            <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2>
+            <div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div>
+        </div>`;
+}
         // ===================================================================
         // 🟢🟢 INICIO DE NUEVAS FUNCIONES (CATEGORÍAS) 🟢🟢
         // ===================================================================
@@ -1274,3 +1279,4 @@
     </script>
 </body>
 </html>
+
