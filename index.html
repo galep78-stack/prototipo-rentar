@@ -97,6 +97,7 @@
         // 🟢 NUEVA: Variable para resultados de búsqueda de proveedores
         let providerResults = [];
         let pedidoActual = [];
+        let historialPedidos = [];
         // ===================================================================
         // 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
         // ===================================================================
@@ -1445,8 +1446,7 @@ function handleRemoveItemFromPedido(index, titulo) {
 }
 
 // ===================================================================
-// 🟢 NUEVA FUNCIÓN: Lógica para "Enviar" el pedido
-// (Simulación de envío - La persistencia final requeriría tablas adicionales)
+// 🟢 FUNCIÓN ACTUALIZADA: Lógica para "Enviar" el pedido (Simulación de Email y GUARDADO)
 // ===================================================================
 function handleSendPedido() {
     if (pedidoActual.length === 0) {
@@ -1454,33 +1454,67 @@ function handleSendPedido() {
         return;
     }
 
-    // Lógica para agrupar por proveedor
+    // --- 1. Generación de Código Único de Pedido (Simulado) ---
+    const now = new Date();
+    // Formato YYYYMMDDHHMM
+    const timestamp = now.getFullYear().toString() + 
+                      (now.getMonth() + 1).toString().padStart(2, '0') + 
+                      now.getDate().toString().padStart(2, '0') + 
+                      now.getHours().toString().padStart(2, '0') + 
+                      now.getMinutes().toString().padStart(2, '0');
+                      
+    const counter = historialPedidos.length + 1; // Contador simple
+    const codigoPedido = `RTA-${timestamp}-${counter.toString().padStart(3, '0')}`;
+
+
+    // 2. Agrupar ítems por proveedor (usando providerId como clave, ya que es el ID de la tabla 'proveedores')
     const groupedByProvider = pedidoActual.reduce((acc, item) => {
-        if (!acc[item.providerId]) {
-            acc[item.providerId] = {
-                nombreProveedor: 'ID ' + item.providerId, // Temporal
-                items: []
+        const providerId = item.providerId; // Este es el ID de la tabla 'proveedores'
+        if (!acc[providerId]) {
+            acc[providerId] = {
+                items: [],
+                totalParcial: 0
             };
         }
-        acc[item.providerId].items.push(item.titulo);
+        acc[providerId].items.push(item);
+        acc[providerId].totalParcial += item.precio;
         return acc;
     }, {});
 
+    let totalGlobal = 0;
+    pedidoActual.forEach(item => { totalGlobal += item.precio; });
+
+    // 3. Simulación de Envío (Alerta)
     const numProviders = Object.keys(groupedByProvider).length;
 
-    let summary = `Tu pedido de ${pedidoActual.length} ítems será enviado a ${numProviders} proveedor(es):\n\n`;
+    let summary = `Tu solicitud de contacto ha sido enviada con éxito. Un total de ${pedidoActual.length} ítems se enviaron a ${numProviders} proveedor(es).\n\n`;
+    summary += `📋 CÓDIGO DE PEDIDO: ${codigoPedido}\n\n`;
+    summary += `Detalle de Contacto Enviado:\n\n`;
 
     for (const providerId in groupedByProvider) {
-        summary += `--- Proveedor ID ${providerId} ---\n`;
-        groupedByProvider[providerId].items.forEach(item => {
-            summary += `- ${item}\n`;
-        });
-        summary += '\n';
+        const group = groupedByProvider[providerId];
+        const itemsList = group.items.map(item => 
+            `- ${item.titulo} (Ref: $${item.precio.toLocaleString('es-AR')})`
+        ).join('\n');
+        
+        summary += `--- Proveedor ID ${providerId} (Total Ref: $${group.totalParcial.toLocaleString('es-AR')}) ---\n`;
+        summary += `Ítems: \n${itemsList}\n\n`;
     }
 
-    alert(summary + "✅ Solicitud de contacto enviada con éxito. Los proveedores serán notificados para que te contacten. El carrito se vaciará ahora.");
+    alert(summary + "✅ El carrito se vaciará ahora. ¡Revisa tu historial de pedidos para el código!");
     
-    // Vacía el pedido local después del "envío"
+    // 4. Guardar en Historial Simulado
+    historialPedidos.push({
+        codigo: codigoPedido,
+        fecha: now.toLocaleString('es-AR'),
+        productorId: currentUser.id,
+        items: pedidoActual,
+        proveedoresInvolucrados: numProviders,
+        totalEstimado: totalGlobal,
+        estado: 'Pendiente de Cotización'
+    });
+    
+    // 5. Vacía el pedido local y actualiza la UI
     pedidoActual = [];
     actualizarIndicadorPedido();
     setView('dashboard_productor'); // Vuelve al dashboard del productor
@@ -1528,5 +1562,6 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
