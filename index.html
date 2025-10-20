@@ -145,21 +145,16 @@
 
 function setupAuthListener() {
             if (!supabaseClient) return;
-            
-            // 💡 1. Obtener el hash (con el fix para el error 'replace')
-            // Usamos (window.location.hash || '') para evitar el error si fuera null
-            const currentHash = (window.location.hash || '').replace('#', '');
-
+          
             // 2. Manejo de la sesión inicial (Lógica de carga corregida)
-            supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                currentUser = session ? session.user : null;
-                renderHeader()
-                actualizarIndicadorPedido();
-                
-                // ESTA ES LA LÓGICA QUE ARREGLA LA PANTALLA EN BLANCO:
-                if (currentHash) {
-                    // 1. Si hay un hash (ej: #login o #historial_pedidos), respétalo.
-                    setView(currentHash); 
+            const hash = (window.location.hash || '').replace('#', '');
+                const parts = hash.split('/');
+                const viewNameFromHash = parts[0];
+                const dataFromHash = parts[1] ? decodeURIComponent(parts[1]) : null;
+
+                if (viewNameFromHash) {
+                    // 1. Si hay un hash (ej: #offer_list_by_category/Equipos), respétalo.
+                    setView(viewNameFromHash, dataFromHash);
                 } else if (currentUser) {
                     // 2. Si NO hay hash Y el usuario está logueado, ir al Dashboard.
                     goToDashboard();
@@ -168,7 +163,7 @@ function setupAuthListener() {
                     setView('home');
                 }
             });
-
+                   
             // 3. Manejo de cambios de estado (Login/Logout) - ESTO QUEDA IGUAL
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 currentUser = session ? session.user : null;
@@ -649,10 +644,12 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
             // 🟢 Si ya estamos navegando (por la llamada original),
             // ignoramos la llamada duplicada del hashchange.
             if (isNavigating) return;
-
             isNavigating = true; // 🟢 Bloqueamos la navegación
-
-            window.location.hash = viewName;
+            let newHash = viewName;
+            if (data !== null) {
+                newHash += `/${encodeURIComponent(data)}`; 
+            }
+            window.location.hash = newHash;
 
             // 🟢 CAMBIO: 'provider_details' y 'offer_list_by_category' son asíncronas
             const isAsyncView = viewName === 'profile_edit' ||
@@ -1813,22 +1810,25 @@ function handleSendPedido() {
             // ESTE LISTENER DE HASHCHANGE ES NECESARIO
             window.addEventListener('hashchange', () => {
                 if (!isNavigating) {
-                    // 💡 Fix de 'replace' aplicado aquí también
-                    const newHash = (window.location.hash || '').replace('#', ''); 
-                    if (newHash) {
-                        setView(newHash);
+                    const hash = (window.location.hash || '').replace('#', '');
+                    const parts = hash.split('/');
+                    const viewNameFromHash = parts[0];
+                    const dataFromHash = parts[1] ? decodeURIComponent(parts[1]) : null;
+
+                    if (viewNameFromHash) {
+                        setView(viewNameFromHash, dataFromHash);
                     } else {
                         setView('home');
                     }
-                } 
-            }); 
-
+                }
+            });
             // Renderiza el header al inicio
             renderHeader(); 
         };
     </script>
 </body>
 </html>
+
 
 
 
