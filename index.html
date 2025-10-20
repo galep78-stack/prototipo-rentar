@@ -96,7 +96,7 @@
 
         // 🟢 NUEVA: Variable para resultados de búsqueda de proveedores
         let providerResults = [];
-
+        let pedidoActual = [];
         // ===================================================================
         // 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
         // ===================================================================
@@ -149,7 +149,7 @@
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
                 currentUser = session ? session.user : null;
                 renderHeader()
-
+                actualizarIndicadorPedido();
                 // ❗ Redirección SIEMPRE que haya un cambio de estado a conectado
                 if (currentUser && !currentHash) {
                     goToDashboard();
@@ -160,7 +160,7 @@
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 currentUser = session ? session.user : null;
                 renderHeader();
-
+                actualizarIndicadorPedido();
                 if (currentUser) {
                     // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
                     if (event === 'SIGNED_IN') {
@@ -215,7 +215,40 @@
                 setView('login');
             }
         }
+// ===================================================================
+// 🟢 NUEVA FUNCIÓN: Manejar Selección de Ofertas para el Pedido
+// ===================================================================
+function handleTogglePedido(offerId, providerId, titulo, precio) {
+    // 1. Verificar si es un productor conectado
+    if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
+        alert("Debes iniciar sesión como Productor para armar un pedido.");
+        setView('login'); // Opcional: redirigir al login
+        return;
+    }
 
+    // Convertir precio a número por si acaso
+    const precioNum = parseFloat(precio);
+
+    // 2. Buscar si la oferta ya está en el pedido
+    const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
+
+    if (indexEnPedido > -1) {
+        // Si ya está, la quitamos (efecto toggle)
+        pedidoActual.splice(indexEnPedido, 1);
+        console.log(`Oferta ${offerId} quitada del pedido.`);
+        alert(`"${titulo}" quitado de tu pedido.`);
+    } else {
+        // Si no está, la agregamos
+        pedidoActual.push({ offerId, providerId, titulo, precio: precioNum });
+        console.log(`Oferta ${offerId} agregada al pedido.`);
+        alert(`"${titulo}" agregado a tu pedido.`);
+    }
+
+    // 3. Actualizar UI (ej. contador en el header)
+    actualizarIndicadorPedido();
+    // Opcional: Cambiar texto/estilo del botón (Agregar/Quitar)
+    // (Esto requiere modificar las funciones render... para darle un ID único a cada botón)
+}
         // ===================================================================
         // FUNCIÓN: Manejador de Búsqueda
         // ===================================================================
@@ -907,7 +940,14 @@
                                 ¿Cómo funciona?
                             </button>
                         </div>
-
+<div id="pedido-indicator" class="relative mr-4 ${isLoggedIn && userRole === 'productor' ? '' : 'hidden'}">
+                           <button onclick="setView('pedido_actual')" class="text-accent-cyan hover:text-white transition">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="1.8em" height="1.8em" viewBox="0 0 24 24" fill="currentColor">
+                                   <path d="M17 18a2 2 0 1 1 0 4a2 2 0 0 1 0-4Zm-10 0a2 2 0 1 1 0 4a2 2 0 0 1 0-4ZM1 3h3.27l.94 2H22l-4 8H7.21L5.27 3H1V1h4.73l.27.64l.94 2.11L6.73 6H21.4l-3.2 6.4H7.83l-.27-.64L4.27 4H1zm18 10H7.83l1.83 4H18.17l.83-4Z"/>
+                               </svg>
+                               <span id="pedido-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5">0</span>
+                           </button>
+                       </div>
                         <div class="flex items-center space-x-4">
                             ${authButtons}
                         </div>
@@ -1001,7 +1041,24 @@ function renderComoFuncionaView() {
                 `<span class="text-2xl ${i < simulatedRating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`
             ).join('');
         }
+// ===================================================================
+// 🟢 NUEVA FUNCIÓN: Actualizar contador del header
+// ===================================================================
+function actualizarIndicadorPedido() {
+    const countElement = document.getElementById('pedido-count');
+    const indicatorElement = document.getElementById('pedido-indicator');
+    const esProductor = currentUser && currentUser.user_metadata.user_role === 'productor';
 
+    if (countElement && indicatorElement) {
+        if (esProductor) {
+            indicatorElement.classList.remove('hidden');
+            countElement.textContent = pedidoActual.length;
+            countElement.classList.toggle('hidden', pedidoActual.length === 0); // Oculta el número si es 0
+        } else {
+            indicatorElement.classList.add('hidden'); // Oculta todo si no es productor
+        }
+    }
+}
         // ==================================================================
         // ✅ FUNCIÓN `renderProducerDashboard` (REESCRITA para mostrar Proveedores)
         // ==================================================================
@@ -1205,9 +1262,19 @@ async function renderProviderDetailsView(providerId) {
                                 <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
                                 <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
                             </div>
+                            <div class="mt-3 text-right"> 
+            <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
+                    class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold">
+                Agregar al Pedido
+            </button>
+        </div>
                             <div class="flex-shrink-0 text-left sm:text-right">
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
+                                <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
+                class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
+            Agregar
+        </button>
                                 ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
                         </div>
@@ -1281,5 +1348,6 @@ async function renderProviderDetailsView(providerId) {
     </script>
 </body>
 </html>
+
 
 
