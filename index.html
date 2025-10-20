@@ -690,11 +690,9 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
                 case 'add_offer': return renderAddOfferView();
                 case 'como_funciona': return renderComoFuncionaView();
                 case 'categories_selection': return renderCategoriesSelectionView(); // 🟢 CORRECCIÓN AÑADIDA
-                    case 'pedido_actual': return renderPedidoActualView();
-                    case 'historial_pedidos': // 🟢 NUEVO: Caso para la vista de Historial
-            document.getElementById('content').innerHTML = renderHistorialPedidosView();
-            break;
-                default: return renderHomeView();
+                case 'pedido_actual': return renderPedidoActualView();
+                case 'historial_pedidos': return renderHistorialPedidosView(); // 🟢 NUEVO: Caso para la vista de Historial
+               default: return renderHomeView();
             }
         }
 
@@ -1648,6 +1646,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
