@@ -186,24 +186,33 @@
         }
 
         function goToDashboard() {
-            if (currentUser) {
-                // Revisa el rol del usuario guardado en los metadatos
-                const userRole = currentUser.user_metadata.user_role;
-
-                if (userRole === 'proveedor') {
-                    setView('dashboard_proveedor');
-                } else if (userRole === 'productor') {
-                    setView('dashboard_productor');
-                } else {
-                    // Fallback si el usuario no tiene rol (no debería pasar)
-                    console.warn("Usuario conectado pero sin rol. Yendo a home.");
-                    setView('home');
-                }
-            } else {
-                // Si no hay usuario, va a la home
-                setView('home');
-            }
+    const lastView = localStorage.getItem('lastView'); // 🟢 Leemos la última vista
+    
+    if (currentUser) {
+        const userRole = currentUser.user_metadata.user_role;
+        
+        // 🟢 CAMBIO: Si hay una vista guardada que no sea el dashboard (para evitar bucles),
+        // volvemos a esa vista en lugar de ir al dashboard.
+        if (lastView && !lastView.includes('dashboard')) {
+            setView(lastView);
+            return;
         }
+
+        if (userRole === 'proveedor') {
+            setView('dashboard_proveedor');
+        } else if (userRole === 'productor') {
+            // 🟢 Si es productor y no hay otra vista guardada, va a su dashboard
+            setView('dashboard_productor');
+        } else {
+            console.warn("Usuario conectado pero sin rol. Yendo a home.");
+            setView('home');
+        }
+    } else {
+        // Si no hay usuario, va a la home y limpia la vista guardada.
+        localStorage.removeItem('lastView');
+        setView('home');
+    }
+}
 
         // FUNCIÓN PARA EL BOTÓN 'PUBLICAR OFERTA' EN HOME
         function handlePublishOfferClick() {
@@ -631,51 +640,57 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
         // 🟢 FUNCIONES DE VISTA (RENDERIZADO)
         // ===================================================================
 
-        // ==================================================================
-        // ✅ FUNCIÓN `setView` (Corregida para "Pantallazo" y Búsqueda)
-        // ==================================================================
-        function setView(viewName, data = null) {
-            // 🟢 Si ya estamos navegando (por la llamada original),
-            // ignoramos la llamada duplicada del hashchange.
-            if (isNavigating) return;
+       // ==================================================================
+// ✅ FUNCIÓN `setView` (Actualizada para Persistir la Vista en localStorage)
+// ==================================================================
+function setView(viewName, data = null) {
+    // 🟢 1. Guardar la vista en localStorage ANTES de navegar
+    if (viewName !== 'login' && viewName !== 'register') {
+        localStorage.setItem('lastView', viewName);
+    }
+    
+    if (isNavigating) return;
 
-            isNavigating = true; // 🟢 Bloqueamos la navegación
+    isNavigating = true; // 🟢 Bloqueamos la navegación
 
-            window.location.hash = viewName;
+    // Si no es un detalle (que usa data), actualizamos el hash
+    if (!data) {
+        window.location.hash = viewName;
+    }
 
-            // 🟢 CAMBIO: 'provider_details' y 'offer_list_by_category' son asíncronas
-            const isAsyncView = viewName === 'profile_edit' ||
-                                viewName === 'my_products' ||
-                                viewName === 'edit_offer' ||
-                                viewName === 'provider_details' ||
-                                viewName === 'offer_list_by_category'; // 🟢 CORRECCIÓN AÑADIDA
 
-            if (isAsyncView) {
-                contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
+    // 🟢 CAMBIO: 'provider_details' y 'offer_list_by_category' son asíncronas
+    const isAsyncView = viewName === 'profile_edit' ||
+                             viewName === 'my_products' ||
+                             viewName === 'edit_offer' ||
+                             viewName === 'provider_details' ||
+                             viewName === 'offer_list_by_category'; 
 
-                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
-                                      viewName === 'my_products' ? renderMyProductsView() :
-                                      viewName === 'edit_offer' ? renderEditOfferView(data) :
-                                      viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
-                                      renderProviderDetailsView(data); // 🟢 CAMBIO
+    if (isAsyncView) {
+        contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
 
-                renderPromise.then(html => {
-                    // Solo actualiza si el hash no cambió mientras cargaba
-                    if (window.location.hash === `#${viewName}`) {
-                        contentView.innerHTML = html;
-                    }
-                    isNavigating = false; // 🟢 Desbloqueamos al terminar
-                }).catch(error => {
-                    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
-                    isNavigating = false; // 🟢 Desbloqueamos si hay error
-                });
-                return;
+        const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
+                                 viewName === 'my_products' ? renderMyProductsView() :
+                                 viewName === 'edit_offer' ? renderEditOfferView(data) :
+                                 viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) :
+                                 renderProviderDetailsView(data); 
+
+        renderPromise.then(html => {
+            // Solo actualiza si el hash no cambió mientras cargaba
+            if (window.location.hash.includes(viewName)) {
+                contentView.innerHTML = html;
             }
+            isNavigating = false; // 🟢 Desbloqueamos al terminar
+        }).catch(error => {
+            contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
+            isNavigating = false; // 🟢 Desbloqueamos si hay error
+        });
+        return;
+    }
 
-            contentView.innerHTML = renderView(viewName, data);
-            isNavigating = false; // 🟢 Desbloqueamos para vistas normales
-        }
-
+    contentView.innerHTML = renderView(viewName, data);
+    isNavigating = false; // 🟢 Desbloqueamos para vistas normales
+}
 
         function renderView(viewName, data) {
             switch (viewName) {
@@ -1331,48 +1346,50 @@ async function renderOfferListByCategoryView(categoryName) {
 
 
         // ===================================================================
-        // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
-        // ===================================================================
+// 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad y Persistencia)
+// ===================================================================
 
-        window.onload = () => {
-            if (initializeSupabase()) {
-                setupAuthListener(); // <- 'S' eliminado
-                // 🟢 CAMBIO: Carga los proveedores al iniciar
-                loadProvidersByOfferSearch(); // <- 'indented' eliminado
-            }
+window.onload = () => {
+    if (initializeSupabase()) {
+        setupAuthListener();
+        loadProvidersByOfferSearch();
+    }
 
-            // Revisa el hash de la URL para cargar la vista correcta al inicio
-            const currentHash = window.location.hash.replace('#', ''); // <- 's' eliminado
-            if (currentHash) {
-                // No llamamos a setView aquí directamente para evitar doble carga
-                // setupAuthListener o el hashchange se encargarán // <- 't' eliminado
+    const currentHash = window.location.hash.replace('#', '');
+    const lastView = localStorage.getItem('lastView'); // 🟢 Leemos la última vista guardada
+
+    if (currentHash) {
+        // Si hay hash, el hashchange event o setupAuthListener lo manejará.
+    } else if (lastView && lastView !== 'home') {
+        // 🟢 Si NO hay hash, pero hay una vista guardada, vamos a esa vista
+        setView(lastView);
+    } else {
+        // 🟢 Si no hay hash ni vista guardada, vamos a 'home'
+        setView('home'); 
+    }
+
+    // ==================================================================
+    // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
+    // ==================================================================
+    window.addEventListener('hashchange', () => {
+        if (!isNavigating) {
+            const newHash = window.location.hash.replace('#', '');
+            if (newHash) {
+                setView(newHash);
             } else {
-                setView('home'); // Muestra el inicio por defecto
+                setView('home');
             }
+        }
+    });
 
-            // ==================================================================
-            // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
-            // ==================================================================
-            window.addEventListener('hashchange', () => {
-                // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
-                // en medio de una navegación programada por setView. // <- 'service' y 'a' eliminados
-                if (!isNavigating) {
-                    const newHash = window.location.hash.replace('#', ''); // <- 'Indentation' eliminado
-                    if (newHash) {
-                        setView(newHash);
-                    } else {
-                        setView('home');
-                    }
-                } // <- 'S' eliminado
-            }); // <- 's' eliminado
-
-            // Renderiza el header al inicio (llamado también desde setupAuthListener)
-            renderHeader(); // <- 's' eliminado
-        };
+    // Renderiza el header al inicio (llamado también desde setupAuthListener)
+    renderHeader();
+};
 
     </script>
 </body>
 </html>
+
 
 
 
