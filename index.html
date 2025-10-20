@@ -216,57 +216,38 @@
             }
         }
 // ===================================================================
-// 🟢 FUNCIÓN MODIFICADA: Manejar Selección de Ofertas (con acción)
+// 🟢 NUEVA FUNCIÓN: Manejar Selección de Ofertas para el Pedido
 // ===================================================================
-function handlePedidoAction(accion, offerId, providerId, titulo, precio) {
+function handleTogglePedido(offerId, providerId, titulo, precio) {
     // 1. Verificar si es un productor conectado
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
-        alert("Debes iniciar sesión como Productor para modificar tu pedido.");
-        // setView('login'); // Opcional: redirigir al login
+        alert("Debes iniciar sesión como Productor para armar un pedido.");
+        setView('login'); // Opcional: redirigir al login
         return;
     }
 
+    // Convertir precio a número por si acaso
     const precioNum = parseFloat(precio);
+
+    // 2. Buscar si la oferta ya está en el pedido
     const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
 
-    if (accion === 'agregar' && indexEnPedido === -1) {
-        // Si la acción es agregar Y no está en el pedido, lo agregamos
-        pedidoActual.push({ offerId, providerId, titulo, precio: precioNum });
-        console.log(`Oferta ${offerId} agregada al pedido.`);
-        // alert(`"${titulo}" agregado a tu pedido.`); // Quizás no mostrar alerta siempre
-    } else if (accion === 'quitar' && indexEnPedido > -1) {
-        // Si la acción es quitar Y sí está en el pedido, lo quitamos
+    if (indexEnPedido > -1) {
+        // Si ya está, la quitamos (efecto toggle)
         pedidoActual.splice(indexEnPedido, 1);
         console.log(`Oferta ${offerId} quitada del pedido.`);
-        // alert(`"${titulo}" quitado de tu pedido.`); // Quizás no mostrar alerta siempre
+        alert(`"${titulo}" quitado de tu pedido.`);
     } else {
-        // No hacer nada si se intenta agregar algo que ya está, o quitar algo que no está
-        console.log(`Acción '${accion}' para oferta ${offerId} ignorada (estado actual no lo permite).`);
-        return; // Salir para no actualizar UI innecesariamente
+        // Si no está, la agregamos
+        pedidoActual.push({ offerId, providerId, titulo, precio: precioNum });
+        console.log(`Oferta ${offerId} agregada al pedido.`);
+        alert(`"${titulo}" agregado a tu pedido.`);
     }
 
-    // 3. Actualizar UI
+    // 3. Actualizar UI (ej. contador en el header)
     actualizarIndicadorPedido();
-    actualizarVisibilidadBotonesPedido(offerId); // Nueva función para mostrar/ocultar
-}
-        // ===================================================================
-// 🟢 NUEVA FUNCIÓN: Mostrar/Ocultar botones de Agregar/Quitar
-// ===================================================================
-function actualizarVisibilidadBotonesPedido(offerId) {
-    const botonAgregar = document.getElementById(`pedido-btn-add-${offer.id}`);
-    const botonQuitar = document.getElementById(`pedido-btn-remove-${offer.id}`);
-
-    if (!botonAgregar || !botonQuitar) return; // Si los botones no están visibles
-
-    const estaEnPedido = pedidoActual.some(item => item.offerId === offerId);
-
-    if (estaEnPedido) {
-        botonAgregar.classList.add('hidden');    // Ocultar Agregar
-        botonQuitar.classList.remove('hidden'); // Mostrar Quitar
-    } else {
-        botonAgregar.classList.remove('hidden'); // Mostrar Agregar
-        botonQuitar.classList.add('hidden');     // Ocultar Quitar
-    }
+    // Opcional: Cambiar texto/estilo del botón (Agregar/Quitar)
+    // (Esto requiere modificar las funciones render... para darle un ID único a cada botón)
 }
         // ===================================================================
         // FUNCIÓN: Manejador de Búsqueda
@@ -1282,33 +1263,21 @@ async function renderProviderDetailsView(providerId) {
                                 <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
                             </div>
                             <div class="mt-3 text-right"> 
-            <button onclick="handlePedidoAction('agregar', '${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})"
-            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold"
-            id="pedido-btn-add-${offer.id}">
-        Agregar al Pedido
-    </button>
-    <button onclick="handlePedidoAction('quitar', '${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})"
-            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold hidden" // Empieza oculto
-            id="pedido-btn-remove-${offer.id}">
-        Quitar del pedido
-    </button>
+            <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
+                    class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold"
+                    id="pedido-btn-${offer.id}">
+                Agregar al Pedido
+            </button>
         </div>
                             <div class="flex-shrink-0 text-left sm:text-right">
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
-                    <button onclick="handlePedidoAction('agregar', '${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})"
-            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
-            id="pedido-btn-add-${offer.id}">
-        Agregar al Pedido
-    </button>
-                               // ▼▼▼ BOTÓN QUITAR (VERDE) ▼▼▼
-    <button onclick="handlePedidoAction('quitar', '${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})"
-            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0 hidden" // Empieza oculto
-            id="pedido-btn-remove-${offer.id}">
-        Quitar del pedido
-    </button>
-    ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
-</div>
+                                <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
+                class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold"
+            Quitar del pedido
+        </button>
+                                ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
+                            </div>
                         </div>
                         `; // <- 's' eliminado
                     }).join('');
@@ -1380,8 +1349,6 @@ async function renderProviderDetailsView(providerId) {
     </script>
 </body>
 </html>
-
-
 
 
 
