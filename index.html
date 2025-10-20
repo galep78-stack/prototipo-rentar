@@ -689,6 +689,7 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
                 case 'add_offer': return renderAddOfferView();
                 case 'como_funciona': return renderComoFuncionaView();
                 case 'categories_selection': return renderCategoriesSelectionView(); // 🟢 CORRECCIÓN AÑADIDA
+                    case 'pedido_actual': return renderPedidoActualView();
                 default: return renderHomeView();
             }
         }
@@ -1325,11 +1326,130 @@ async function renderOfferListByCategoryView(categoryName) {
                 </div>
             `;
 }
-        // ===================================================================
-        // 🟢🟢 FIN DE NUEVAS FUNCIONES 🟢🟢
-        // ===================================================================
+     // ===================================================================
+// 🟢 NUEVA VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView)
+// ===================================================================
+function renderPedidoActualView() {
+    if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
+        return renderLoginView();
+    }
 
+    const totalItems = pedidoActual.length;
+    let totalPrecio = 0;
+    
+    // Calcula el total del pedido
+    pedidoActual.forEach(item => {
+        totalPrecio += item.precio;
+    });
 
+    let itemsHtml = '';
+
+    if (totalItems === 0) {
+        itemsHtml = `
+            <div class="text-center py-10">
+                <p class="text-gray-400 text-lg">Tu lista de pedido está vacía. 🛒</p>
+                <p class="text-gray-500 mt-2">Busca equipos o locaciones para empezar a armarla.</p>
+                <button onclick="setView('categories_selection')" class="mt-4 bg-accent-blue text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">
+                    Explorar Categorías
+                </button>
+            </div>`;
+    } else {
+        // Genera el HTML de la lista de ítems
+        itemsHtml = pedidoActual.map((item, index) => `
+            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
+                <div>
+                    <h4 class="font-bold text-lg font-heading">${item.titulo}</h4>
+                    <p class="text-sm text-gray-400 font-sans">Proveedor ID: ${item.providerId}</p>
+                    <p class="text-lg text-accent-cyan font-bold">$${item.precio.toLocaleString('es-AR')}</p>
+                </div>
+                <button onclick="handleRemoveItemFromPedido(${index}, '${item.titulo.replace(/'/g, "\\'")}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0">
+                    Quitar (1)
+                </button>
+            </div>
+        `).join('');
+    }
+
+    return `
+        <div class="max-w-3xl mx-auto p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+            <h1 class="text-4xl font-bold mb-6 text-accent-cyan font-heading">Mi Lista de Pedido (${totalItems} ítems)</h1>
+
+            <div class="space-y-4 mb-8">
+                ${itemsHtml}
+            </div>
+            
+            ${totalItems > 0 ? `
+                <div class="bg-primary-dark p-6 rounded-lg border border-accent-cyan/20">
+                    <div class="flex justify-between items-center text-2xl font-bold mb-4">
+                        <span class="font-heading text-accent-cyan">TOTAL ESTIMADO:</span>
+                        <span class="font-heading text-accent-cyan">$${totalPrecio.toLocaleString('es-AR')}</span>
+                    </div>
+                    <p class="text-sm text-gray-400 mb-4">El precio es referencial. La cotización final se define al contactar a los proveedores.</p>
+                    <button onclick="handleSendPedido()" class="w-full bg-accent-cyan text-primary-dark py-4 rounded-lg font-bold text-xl hover:bg-white transition">
+                        Solicitar Contacto a Proveedores
+                    </button>
+                </div>
+            ` : ''}
+
+        </div>`;
+}
+
+// ===================================================================
+// 🟢 NUEVA FUNCIÓN AUXILIAR: Eliminar ítem por índice
+// (Necesaria para manejar duplicados en el pedido de forma simple)
+// ===================================================================
+function handleRemoveItemFromPedido(index, titulo) {
+    if (!confirm(`¿Estás seguro de que deseas quitar "${titulo}" de tu pedido?`)) return;
+    
+    // Remueve 1 elemento en la posición 'index'
+    pedidoActual.splice(index, 1);
+    
+    actualizarIndicadorPedido();
+    // Re-renderiza la vista para que el cambio sea visible
+    setView('pedido_actual');
+}
+
+// ===================================================================
+// 🟢 NUEVA FUNCIÓN: Lógica para "Enviar" el pedido
+// (Simulación de envío - La persistencia final requeriría tablas adicionales)
+// ===================================================================
+function handleSendPedido() {
+    if (pedidoActual.length === 0) {
+        alert("Tu pedido está vacío. Agrega ítems antes de solicitar contacto.");
+        return;
+    }
+
+    // Lógica para agrupar por proveedor
+    const groupedByProvider = pedidoActual.reduce((acc, item) => {
+        if (!acc[item.providerId]) {
+            acc[item.providerId] = {
+                nombreProveedor: 'ID ' + item.providerId, // Temporal
+                items: []
+            };
+        }
+        acc[item.providerId].items.push(item.titulo);
+        return acc;
+    }, {});
+
+    const numProviders = Object.keys(groupedByProvider).length;
+
+    let summary = `Tu pedido de ${pedidoActual.length} ítems será enviado a ${numProviders} proveedor(es):\n\n`;
+
+    for (const providerId in groupedByProvider) {
+        summary += `--- Proveedor ID ${providerId} ---\n`;
+        groupedByProvider[providerId].items.forEach(item => {
+            summary += `- ${item}\n`;
+        });
+        summary += '\n';
+    }
+
+    alert(summary + "✅ Solicitud de contacto enviada con éxito. Los proveedores serán notificados para que te contacten. El carrito se vaciará ahora.");
+    
+    // Vacía el pedido local después del "envío"
+    pedidoActual = [];
+    actualizarIndicadorPedido();
+    setView('dashboard_productor'); // Vuelve al dashboard del productor
+}
         // ===================================================================
         // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
         // ===================================================================
@@ -1373,3 +1493,4 @@ async function renderOfferListByCategoryView(categoryName) {
     </script>
 </body>
 </html>
+
