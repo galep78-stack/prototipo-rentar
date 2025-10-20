@@ -225,9 +225,9 @@ function isOfferInPedido(offerId) {
 // 🟢 NUEVA FUNCIÓN: Manejar Selección de Ofertas para el Pedido
 // ===================================================================
 // ===================================================================
-// 🟢 NUEVA FUNCIÓN: Manejar Selección de Ofertas para el Pedido (Actualizada para Re-Renderizar)
+// 🟢 FUNCIÓN ACTUALIZADA: Manejar Agregar o Quitar (Acción Unidireccional)
 // ===================================================================
-function handleTogglePedido(offerId, providerId, titulo, precio) {
+function handlePedido(offerId, providerId, titulo, precio, action) {
     // 1. Verificar si es un productor conectado
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
         alert("Debes iniciar sesión como Productor para armar un pedido.");
@@ -235,35 +235,33 @@ function handleTogglePedido(offerId, providerId, titulo, precio) {
         return;
     }
 
-    // Convertir precio a número por si acaso
     const precioNum = parseFloat(precio);
+    const itemToAdd = { offerId, providerId, titulo, precio: precioNum };
     const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
-    let alertMessage = "";
 
-    if (indexEnPedido > -1) {
-        // Si ya está, la quitamos (efecto toggle)
-        pedidoActual.splice(indexEnPedido, 1);
-        alertMessage = `"${titulo}" quitado de tu pedido.`;
-    } else {
-        // Si no está, la agregamos
-        pedidoActual.push({ offerId, providerId, titulo, precio: precioNum });
-        alertMessage = `"${titulo}" agregado a tu pedido.`;
+    if (action === 'agregar') {
+        // LÓGICA DE AGREGAR: Siempre añade el producto.
+        pedidoActual.push(itemToAdd);
+        alert(`"${titulo}" agregado al pedido.`);
+    } else if (action === 'quitar') {
+        // LÓGICA DE QUITAR: Solo quita si existe. Quita la primera coincidencia encontrada.
+        if (indexEnPedido > -1) {
+            pedidoActual.splice(indexEnPedido, 1);
+            alert(`"${titulo}" quitado del pedido.`);
+        } else {
+            alert(`Error: "${titulo}" no se encuentra en el pedido actual.`);
+        }
     }
 
     // 2. Actualizar UI
     actualizarIndicadorPedido();
     
-    // 3. CAMBIO CLAVE: Re-renderizar la vista actual (si es la lista de ofertas por categoría)
-    // Esto fuerza la actualización del texto/color del botón
+    // 3. Re-renderizar la vista para que el usuario vea el cambio (aunque ambos botones sean permanentes)
     if (window.location.hash.includes('offer_list_by_category')) {
-        // Obtenemos el nombre de la categoría (asumiendo que está justo después del hash)
         const categoryName = window.location.hash.replace('#offer_list_by_category', '').replace('/', '');
         if (categoryName) {
             setView('offer_list_by_category', categoryName);
         }
-    } else {
-        // Si no estamos en la vista de lista de ofertas, mostramos la alerta.
-        alert(alertMessage);
     }
 }
 
@@ -1271,17 +1269,17 @@ async function renderOfferListByCategoryView(categoryName) {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerId = offer.proveedores ? offer.proveedores.id : null;
                 
-                // 🟢 Botón QUITAR (Nuevo): Se mantiene visible con un color de paleta (Azul de acento)
+                // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
-                    <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
+                    <button onclick="handlePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio}, 'quitar')" 
                         class="bg-accent-blue hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
                         Quitar
                     </button>
                 `;
                 
-                // 🟢 Botón AGREGAR (Actualizado): Siempre visible con el color Morado (secondary-dark)
+                // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
                 const addButtonHtml = `
-                    <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
+                    <button onclick="handlePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio}, 'agregar')" 
                         class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
                         id="pedido-btn-${offer.id}">
                         Agregar
@@ -1327,7 +1325,6 @@ async function renderOfferListByCategoryView(categoryName) {
                 </div>
             `;
 }
-
         // ===================================================================
         // 🟢🟢 FIN DE NUEVAS FUNCIONES 🟢🟢
         // ===================================================================
@@ -1376,6 +1373,7 @@ async function renderOfferListByCategoryView(categoryName) {
     </script>
 </body>
 </html>
+
 
 
 
