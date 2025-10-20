@@ -468,7 +468,41 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
             }
         }
 
+// ===================================================================
+// 🟢 FUNCIÓN goToDashboard (Revisada para evitar el error 'Illegal return')
+// ===================================================================
+function goToDashboard() {
+    // El logo ya llama a setView('home'), por lo que esta función solo se usa
+    // para manejar la redirección post-login o cuando se hace clic en "Mi Dashboard".
 
+    if (currentUser) {
+        const userRole = currentUser.user_metadata.user_role;
+        
+        // 1. Intentar volver a la última vista persistida (si no es 'home')
+        const lastView = localStorage.getItem('lastView');
+        if (lastView && lastView !== 'home') {
+            setView(lastView);
+            return; // Salimos después de navegar a la vista persistida
+        }
+        
+        // 2. Si no hay vista persistida, ir al Dashboard principal del rol
+        if (userRole === 'proveedor') {
+            setView('dashboard_proveedor');
+        } else if (userRole === 'productor') {
+            // El dashboard de productor usa loadProvidersByOfferSearch, pero setView
+            // lo maneja si es una vista asíncrona. 
+            // Para asegurar que no se quede cargando al inicio, simplemente lo llamamos:
+            setView('dashboard_productor');
+        } else {
+            console.warn("Usuario conectado pero sin rol. Yendo a home.");
+            setView('home');
+        }
+    } else {
+        // Si no hay usuario, va a la home.
+        localStorage.removeItem('lastView'); // Ya manejado en setView('home'), pero es buena práctica
+        setView('home');
+    }
+}
         // ===================================================================
         // 🟢 FUNCIONES DE CARGA DE DATOS (GETTERS)
         // ===================================================================
@@ -1385,6 +1419,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
