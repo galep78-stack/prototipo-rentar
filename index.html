@@ -215,34 +215,57 @@
                 setView('login');
             }
         }
+        // ===================================================================
+// 🟢 NUEVA FUNCIÓN AUXILIAR: Verifica si una oferta está en el pedido actual
+// ===================================================================
+function isOfferInPedido(offerId) {
+    return pedidoActual.some(item => item.offerId === offerId);
+}
 // ===================================================================
 // 🟢 NUEVA FUNCIÓN: Manejar Selección de Ofertas para el Pedido
+// ===================================================================
+// ===================================================================
+// 🟢 NUEVA FUNCIÓN: Manejar Selección de Ofertas para el Pedido (Actualizada para Re-Renderizar)
 // ===================================================================
 function handleTogglePedido(offerId, providerId, titulo, precio) {
     // 1. Verificar si es un productor conectado
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
         alert("Debes iniciar sesión como Productor para armar un pedido.");
-        setView('login'); // Opcional: redirigir al login
+        setView('login');
         return;
     }
 
     // Convertir precio a número por si acaso
     const precioNum = parseFloat(precio);
-
-    // 2. Buscar si la oferta ya está en el pedido
     const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
+    let alertMessage = "";
 
     if (indexEnPedido > -1) {
         // Si ya está, la quitamos (efecto toggle)
         pedidoActual.splice(indexEnPedido, 1);
-        console.log(`Oferta ${offerId} quitada del pedido.`);
-        alert(`"${titulo}" quitado de tu pedido.`);
+        alertMessage = `"${titulo}" quitado de tu pedido.`;
     } else {
         // Si no está, la agregamos
         pedidoActual.push({ offerId, providerId, titulo, precio: precioNum });
-        console.log(`Oferta ${offerId} agregada al pedido.`);
-        alert(`"${titulo}" agregado a tu pedido.`);
+        alertMessage = `"${titulo}" agregado a tu pedido.`;
     }
+
+    // 2. Actualizar UI
+    actualizarIndicadorPedido();
+    
+    // 3. CAMBIO CLAVE: Re-renderizar la vista actual (si es la lista de ofertas por categoría)
+    // Esto fuerza la actualización del texto/color del botón
+    if (window.location.hash.includes('offer_list_by_category')) {
+        // Obtenemos el nombre de la categoría (asumiendo que está justo después del hash)
+        const categoryName = window.location.hash.replace('#offer_list_by_category', '').replace('/', '');
+        if (categoryName) {
+            setView('offer_list_by_category', categoryName);
+        }
+    } else {
+        // Si no estamos en la vista de lista de ofertas, mostramos la alerta.
+        alert(alertMessage);
+    }
+}
 
     // 3. Actualizar UI (ej. contador en el header)
     actualizarIndicadorPedido();
@@ -1224,7 +1247,7 @@ async function renderProviderDetailsView(providerId) {
             `;
         }
 
-        // 🟢 NUEVA VISTA ASÍNCRONA: Lista de ofertas
+       // 🟢 NUEVA VISTA ASÍNCRONA: Lista de ofertas
 async function renderOfferListByCategoryView(categoryName) {
     if (!categoryName) {
         return '<p class="text-red-500">Error: No se especificó una categoría.</p>';
@@ -1250,9 +1273,30 @@ async function renderOfferListByCategoryView(categoryName) {
 
         if (offers && offers.length > 0) {
             offersHtml = offers.map(offer => {
-                // Maneja el caso de que el proveedor no se encuentre (no debería pasar)
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerId = offer.proveedores ? offer.proveedores.id : null;
+                
+                // 🟢 Lógica para determinar si mostrar el botón QUITAR
+                const isAdded = isOfferInPedido(offer.id);
+                
+                // 🟢 Botón Quitar usa bg-accent-blue (azul) y aparece solo si está agregado
+                const removeButtonHtml = isAdded
+                    ? `
+                    <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
+                        class="bg-accent-blue hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
+                        Quitar
+                    </button>
+                    `
+                    : '';
+                
+                // 🟢 Botón Agregar usa bg-secondary-dark (morado) y siempre está visible
+                const addButtonHtml = `
+                    <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
+                        class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
+                        id="pedido-btn-${offer.id}">
+                        Agregar
+                    </button>
+                `;
 
                 return `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
@@ -1266,11 +1310,9 @@ async function renderOfferListByCategoryView(categoryName) {
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 
-                                <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
-                                    class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0" 
-                                    id="pedido-btn-${offer.id}">
-                                    Agregar
-                                </button>
+                                ${removeButtonHtml}
+
+                                ${addButtonHtml}
                                 
                                 ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
@@ -1345,6 +1387,7 @@ async function renderOfferListByCategoryView(categoryName) {
     </script>
 </body>
 </html>
+
 
 
 
