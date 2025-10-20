@@ -1271,20 +1271,15 @@ async function renderOfferListByCategoryView(categoryName) {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerId = offer.proveedores ? offer.proveedores.id : null;
                 
-                // 🟢 Lógica para determinar si mostrar el botón QUITAR
-                const isAdded = isOfferInPedido(offer.id);
-                
-                // 🟢 Botón Quitar usa bg-accent-blue (azul) y aparece solo si está agregado
-                const removeButtonHtml = isAdded
-                    ? `
+                // 🟢 Botón QUITAR (Nuevo): Se mantiene visible con un color de paleta (Azul de acento)
+                const removeButtonHtml = `
                     <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
                         class="bg-accent-blue hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
                         Quitar
                     </button>
-                    `
-                    : '';
+                `;
                 
-                // 🟢 Botón Agregar usa bg-secondary-dark (morado) y siempre está visible
+                // 🟢 Botón AGREGAR (Actualizado): Siempre visible con el color Morado (secondary-dark)
                 const addButtonHtml = `
                     <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
                         class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
@@ -1306,7 +1301,6 @@ async function renderOfferListByCategoryView(categoryName) {
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 
                                 ${removeButtonHtml}
-
                                 ${addButtonHtml}
                                 
                                 ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
@@ -1382,6 +1376,7 @@ async function renderOfferListByCategoryView(categoryName) {
     </script>
 </body>
 </html>
+
 
 
 
