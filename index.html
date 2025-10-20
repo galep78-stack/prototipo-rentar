@@ -691,6 +691,9 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
                 case 'como_funciona': return renderComoFuncionaView();
                 case 'categories_selection': return renderCategoriesSelectionView(); // 🟢 CORRECCIÓN AÑADIDA
                     case 'pedido_actual': return renderPedidoActualView();
+                    case 'historial_pedidos': // 🟢 NUEVO: Caso para la vista de Historial
+            document.getElementById('content').innerHTML = renderHistorialPedidosView();
+            break;
                 default: return renderHomeView();
             }
         }
@@ -902,7 +905,91 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
                 </div>
             `;
         }
+// ===================================================================
+// 🟢 FUNCIÓN NUEVA: Vista de Historial de Pedidos Realizados
+// ===================================================================
+function renderHistorialPedidosView() {
+    const header = `
+        <div class="mb-6">
+            <h2 class="text-3xl font-bold text-accent-cyan font-heading mb-2">📄 Historial de Solicitudes de Cotización</h2>
+            <p class="text-gray-400">Listado de todos los pedidos de equipamiento enviados a los proveedores.</p>
+        </div>
+    `;
 
+    if (historialPedidos.length === 0) {
+        return `
+            <div class="max-w-4xl mx-auto p-4 md:p-8">
+                ${header}
+                <div class="p-6 bg-primary-dark/50 border border-accent-blue/50 rounded-xl text-center">
+                    <p class="text-xl text-gray-400 font-semibold mb-3">No has realizado ninguna solicitud de cotización todavía.</p>
+                    <button onclick="setView('categories_selection')" class="bg-accent-blue hover:bg-accent-blue/80 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                        Comenzar Nueva Producción
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    const tableRows = historialPedidos.map((pedido, index) => {
+        // Estilos para el estado
+        let estadoClass = '';
+        if (pedido.estado.includes('Pendiente')) {
+            estadoClass = 'text-yellow-400 bg-yellow-900/50';
+        } else if (pedido.estado.includes('Cotizado')) {
+            estadoClass = 'text-green-400 bg-green-900/50';
+        } else {
+            estadoClass = 'text-gray-400 bg-gray-700/50';
+        }
+
+        return `
+            <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
+                <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
+                <td class="px-6 py-4 text-gray-300">${pedido.fecha}</td>
+                <td class="px-6 py-4 text-gray-300">${pedido.items.length} ítems</td>
+                <td class="px-6 py-4 text-gray-300">${pedido.proveedoresInvolucrados}</td>
+                <td class="px-6 py-4 text-gray-300">$${pedido.totalEstimado.toLocaleString('es-AR')} (ref)</td>
+                <td class="px-6 py-4">
+                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
+                        ${pedido.estado}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <button onclick="alert('Detalles del Pedido: ${pedido.codigo}. Faltaría implementar una vista de detalle.')" class="bg-accent-blue hover:bg-accent-blue/80 text-white text-xs py-1 px-3 rounded-lg">
+                        Ver Detalle
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    const content = `
+        <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
+            <table class="min-w-full divide-y divide-gray-700/50">
+                <thead class="bg-primary-dark/50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Envío</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Proveedores</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total (Ref)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700/50">
+                    ${tableRows}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    return `
+        <div class="max-w-6xl mx-auto p-4 md:p-8">
+            ${header}
+            ${content}
+        </div>
+    `;
+}
        // Función auxiliar para el header
        function renderHeader() {
             const header = document.getElementById('main-header');
@@ -1101,7 +1188,6 @@ function renderProducerDashboard() {
                 </div>
                 <div class="flex-shrink-0 flex w-full sm:w-auto gap-2">
                     <button onclick="showProviderOnMap('${provider.direccion || ''}')" class="flex-1 sm:flex-auto bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
-
                     <button onclick="setView('provider_details', ${provider.id})" class="flex-1 sm:flex-auto bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>
                 </div>
             </div>`;
@@ -1134,7 +1220,7 @@ function renderProducerDashboard() {
             <div class="p-4 rounded-xl bg-primary-dark/50 border border-accent-blue/50 text-center">
                 <h3 class="text-xl font-bold mb-2 font-heading">Historial</h3>
                 <p class="text-gray-400 text-sm mb-3">Revisa las solicitudes de cotización enviadas.</p>
-                <button onclick="alert('Funcionalidad Pendiente: ¡Necesitamos guardar los pedidos para mostrar el historial!')" class="w-full btn-secondary py-2 rounded-lg font-semibold">
+                <button onclick="setView('historial_pedidos')" class="w-full btn-secondary py-2 rounded-lg font-semibold">
                     📄 Ver Pedidos Realizados
                 </button>
             </div>
@@ -1562,6 +1648,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
