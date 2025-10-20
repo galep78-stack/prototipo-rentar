@@ -1264,7 +1264,8 @@ async function renderProviderDetailsView(providerId) {
                             </div>
                             <div class="mt-3 text-right"> 
             <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
-                    class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold">
+                    class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold"
+                    id="pedido-btn-${offer.id}">
                 Agregar al Pedido
             </button>
         </div>
@@ -1348,6 +1349,7 @@ async function renderProviderDetailsView(providerId) {
     </script>
 </body>
 </html>
+
 
 
 
