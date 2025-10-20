@@ -151,11 +151,18 @@
                 currentUser = session ? session.user : null;
                 renderHeader()
                 actualizarIndicadorPedido();
-                // ❗ Redirección SIEMPRE que haya un cambio de estado a conectado
-                if (currentUser && !currentHash) {
-                    goToDashboard();
-                }
-            });
+               // 🟢 LÓGICA DE INICIO MEJORADA (REEMPLAZÁ LA ANTERIOR)
+                if (currentHash) {
+                    // Si hay un hash (ej: #login), cárgalo.
+                    setView(currentHash); 
+                } else if (currentUser) {
+                    // Si NO hay hash Y SÍ está logueado, ir al Dashboard
+                    goToDashboard();
+                } else {
+                    // Si NO hay hash Y NO está logueado, ir a Home
+                    setView('home');
+                }
+            });
 
             // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
             supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -1778,15 +1785,6 @@ function handleSendPedido() {
                 loadProvidersByOfferSearch(); // <- 'indented' eliminado
             }
 
-            // Revisa el hash de la URL para cargar la vista correcta al inicio
-            const currentHash = window.location.hash.replace('#', ''); // <- 's' eliminado
-            if (currentHash) {
-                // No llamamos a setView aquí directamente para evitar doble carga
-                // setupAuthListener o el hashchange se encargarán // <- 't' eliminado
-            } else {
-                setView('home'); // Muestra el inicio por defecto
-            }
-
             // ==================================================================
             // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
             // ==================================================================
@@ -1810,5 +1808,6 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
