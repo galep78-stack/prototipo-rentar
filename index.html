@@ -1225,36 +1225,36 @@ async function renderProviderDetailsView(providerId) {
         }
 
         // 🟢 NUEVA VISTA ASÍNCRONA: Lista de ofertas
-        async function renderOfferListByCategoryView(categoryName) {
-            if (!categoryName) {
-                return '<p class="text-red-500">Error: No se especificó una categoría.</p>';
-            }
+async function renderOfferListByCategoryView(categoryName) {
+    if (!categoryName) {
+        return '<p class="text-red-500">Error: No se especificó una categoría.</p>';
+    }
 
-            let offersHtml = `<p class="text-gray-400">Buscando ofertas para "${categoryName}"...</p>`;
+    let offersHtml = `<p class="text-gray-400">Buscando ofertas para "${categoryName}"...</p>`;
 
-            try {
-                // Hacemos un JOIN para obtener el nombre de la empresa proveedora.
-                const { data: offers, error } = await supabaseClient
-                    .from('ofertas')
-                    .select(`
-                        id,
-                        titulo,
-                        descripcion,
-                        precio,
-                        ubicacion,
-                        proveedores ( id, nombre_empresa )
-                    `)
-                    .eq('categoria', categoryName);
+    try {
+        // Hacemos un JOIN para obtener el nombre de la empresa proveedora.
+        const { data: offers, error } = await supabaseClient
+            .from('ofertas')
+            .select(`
+                id,
+                titulo,
+                descripcion,
+                precio,
+                ubicacion,
+                proveedores ( id, nombre_empresa )
+            `)
+            .eq('categoria', categoryName);
 
-                if (error) throw error;
+        if (error) throw error;
 
-                if (offers && offers.length > 0) {
-                    offersHtml = offers.map(offer => {
-                        // Maneja el caso de que el proveedor no se encuentre (no debería pasar)
-                        const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
-                        const providerId = offer.proveedores ? offer.proveedores.id : null;
+        if (offers && offers.length > 0) {
+            offersHtml = offers.map(offer => {
+                // Maneja el caso de que el proveedor no se encuentre (no debería pasar)
+                const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
+                const providerId = offer.proveedores ? offer.proveedores.id : null;
 
-                        return `
+                return `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
                             <div>
                                 <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
@@ -1262,35 +1262,31 @@ async function renderProviderDetailsView(providerId) {
                                 <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
                                 <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
                             </div>
-                            <div class="mt-3 text-right"> 
-            <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
-                    class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold"
-                    id="pedido-btn-${offer.id}">
-                Agregar al Pedido
-            </button>
-        </div>
                             <div class="flex-shrink-0 text-left sm:text-right">
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
+                                
                                 <button onclick="handleTogglePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio})" 
-                class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
-            Agregar
-        </button>
+                                    class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0" 
+                                    id="pedido-btn-${offer.id}">
+                                    Agregar
+                                </button>
+                                
                                 ${providerId ? `<button onclick="setView('provider_details', ${providerId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
                         </div>
-                        `; // <- 's' eliminado
-                    }).join('');
-                } else {
-                    offersHtml = `<p class="text-gray-400 text-center py-8">No se encontraron ofertas publicadas en la categoría "${categoryName}".</p>`;
-                }
+                        `;
+            }).join('');
+        } else {
+            offersHtml = `<p class="text-gray-400 text-center py-8">No se encontraron ofertas publicadas en la categoría "${categoryName}".</p>`;
+        }
 
-            } catch (error) {
-                console.error('Error fetching offers by category:', error);
-                offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
-            } // <- 'S' eliminado
+    } catch (error) {
+        console.error('Error fetching offers by category:', error);
+        offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
+    }
 
-            return `
+    return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <button onclick="setView('categories_selection')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver a Categorías</button>
                     <h1 class="text-4xl font-bold mb-8 text-accent-cyan font-heading">Ofertas en: ${categoryName}</h1>
@@ -1298,8 +1294,8 @@ async function renderProviderDetailsView(providerId) {
                         ${offersHtml}
                     </div>
                 </div>
-            `; // <- 'image' y 'section-A' eliminados
-        }
+            `;
+}
 
         // ===================================================================
         // 🟢🟢 FIN DE NUEVAS FUNCIONES 🟢🟢
@@ -1349,6 +1345,7 @@ async function renderProviderDetailsView(providerId) {
     </script>
 </body>
 </html>
+
 
 
 
