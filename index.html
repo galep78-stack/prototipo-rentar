@@ -1077,50 +1077,85 @@ function actualizarIndicadorPedido() {
     }
 }
         // ==================================================================
-        // ✅ FUNCIÓN `renderProducerDashboard` (REESCRITA para mostrar Proveedores)
-        // ==================================================================
-        function renderProducerDashboard() {
-            let resultsHtml = '';
+// ✅ FUNCIÓN `renderProducerDashboard` (ACTUALIZADA con Gestión de Producción)
+// ==================================================================
+function renderProducerDashboard() {
+    let resultsHtml = '';
+    const searchTerm = document.getElementById('search-input')?.value || ''; // Para saber si hay una búsqueda activa
 
-            if (providerResults.length > 0) {
-                // 🟢 CAMBIO: Iteramos sobre 'providerResults' (proveedores)
-                resultsHtml = providerResults.map(provider => {
-
-                    return `
-                    <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                            <h4 class="font-bold text-lg font-heading text-accent-cyan">${provider.nombre_empresa}</h4>
-
-                            <div class="my-2">${renderRating()}</div>
-
-                            <p class="text-sm text-gray-400 font-sans mt-1">
-                                Ubicación: ${provider.direccion || 'No especificada'}
-                            </p>
-                        </div>
-                        <div class="flex-shrink-0 flex w-full sm:w-auto gap-2">
-                            <button onclick="showProviderOnMap('${provider.direccion || ''}')" class="flex-1 sm:flex-auto bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
-
-                            <button onclick="setView('provider_details', ${provider.id})" class="flex-1 sm:flex-auto bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>
-                        </div>
-                    </div>`;
-                }).join('');
-            } else {
-               // Mensaje actualizado
-               resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda. Intenta con otro término o busca sin filtro para ver todos.</p>';
-            }
+    if (providerResults.length > 0) {
+        // 🟢 CAMBIO: Iteramos sobre 'providerResults' (proveedores)
+        resultsHtml = providerResults.map(provider => {
 
             return `
-                <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-                    <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Buscar Recursos</h1>
-                    <div class="w-full h-[500px] rounded-lg border-4 border-accent-blue/50 overflow-hidden">
-                        <iframe id="map-iframe" src="https://www.google.com/maps?q=Argentina&output=embed&z=5" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                    </div>
+            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h4 class="font-bold text-lg font-heading text-accent-cyan">${provider.nombre_empresa}</h4>
 
-                    <h2 class="text-3xl font-bold mt-12 mb-6 text-accent-cyan font-heading">Proveedores Encontrados</h2>
-                    <div class="space-y-4">${resultsHtml}</div>
-                </div>`;
-        }
+                    <div class="my-2">${renderRating()}</div>
 
+                    <p class="text-sm text-gray-400 font-sans mt-1">
+                        Ubicación: ${provider.direccion || 'No especificada'}
+                    </p>
+                </div>
+                <div class="flex-shrink-0 flex w-full sm:w-auto gap-2">
+                    <button onclick="showProviderOnMap('${provider.direccion || ''}')" class="flex-1 sm:flex-auto bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
+
+                    <button onclick="setView('provider_details', ${provider.id})" class="flex-1 sm:flex-auto bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>
+                </div>
+            </div>`;
+        }).join('');
+    } else if (searchTerm) {
+        // Mensaje si la búsqueda no arroja resultados
+        resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda. Intenta con otro término.</p>';
+    } else {
+         // Mensaje si no hay filtro de búsqueda activo
+        resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">Utiliza el campo de búsqueda de arriba para encontrar proveedores de equipos y servicios.</p>';
+    }
+
+    // 🟢 NUEVA SECCIÓN DE CONTROL DE PRODUCCIÓN
+    const controlSection = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="p-4 rounded-xl bg-primary-dark/50 border border-accent-blue/50 text-center">
+                <h3 class="text-xl font-bold mb-2 font-heading">Buscar Recursos</h3>
+                <p class="text-gray-400 text-sm mb-3">Empieza una nueva búsqueda por categoría.</p>
+                <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-2 rounded-lg font-semibold">
+                    🎬 Nueva Producción
+                </button>
+            </div>
+            <div class="p-4 rounded-xl bg-primary-dark/50 border border-accent-blue/50 text-center">
+                <h3 class="text-xl font-bold mb-2 font-heading">Pedido Actual</h3>
+                <p class="text-gray-400 text-sm mb-3">Tienes <strong class="text-accent-cyan">${pedidoActual.length}</strong> ítems en tu lista.</p>
+                <button onclick="setView('pedido_actual')" class="w-full bg-accent-cyan text-primary-dark py-2 rounded-lg font-semibold">
+                    Revisar Pedido
+                </button>
+            </div>
+            <div class="p-4 rounded-xl bg-primary-dark/50 border border-accent-blue/50 text-center">
+                <h3 class="text-xl font-bold mb-2 font-heading">Historial</h3>
+                <p class="text-gray-400 text-sm mb-3">Revisa las solicitudes de cotización enviadas.</p>
+                <button onclick="alert('Funcionalidad Pendiente: ¡Necesitamos guardar los pedidos para mostrar el historial!')" class="w-full btn-secondary py-2 rounded-lg font-semibold">
+                    📄 Ver Pedidos Realizados
+                </button>
+            </div>
+        </div>
+    `;
+
+    return `
+        <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Dashboard de Productor</h1>
+            
+            ${controlSection}
+            
+            <h2 class="text-3xl font-bold mt-8 mb-6 text-accent-cyan font-heading">
+                ${searchTerm ? `Resultados para "${searchTerm}"` : 'Proveedores Destacados (Sin Filtro)'}
+            </h2>
+            <div class="w-full h-[300px] rounded-lg border-4 border-accent-blue/50 overflow-hidden mb-6">
+                <iframe id="map-iframe" src="https://www.google.com/maps?q=Argentina&output=embed&z=5" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+
+            <div class="space-y-4">${resultsHtml}</div>
+        </div>`;
+}
         function renderProviderDashboard() {
             // Función de Dashboard de Proveedor
             return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4"><h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1><p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3><p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p><button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3><p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p><button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button></div><div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg"><h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3><p class="text-gray-600 mb-4 font-sans">Tienes <strong>3 solicitudes</strong> sin revisar.</p><button class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button></div></div></div>`;
@@ -1493,4 +1528,5 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
