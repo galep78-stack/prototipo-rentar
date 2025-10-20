@@ -636,57 +636,59 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
         // 🟢 FUNCIONES DE VISTA (RENDERIZADO)
         // ===================================================================
 
-        // ==================================================================
-        // ✅ FUNCIÓN `setView` (Corregida para "Pantallazo" y Búsqueda)
-        // ==================================================================
-        function setView(viewName, data = null) {
-            // 🟢 Si ya estamos navegando (por la llamada original),
-            // ignoramos la llamada duplicada del hashchange.
-            if (isNavigating) return;
-            isNavigating = true; // 🟢 Bloqueamos la navegación
-            let newHash = viewName;
+        // 🟢 REEMPLAZÁ TU FUNCIÓN "setView" ENTERA POR ESTA:
+
+        function setView(viewName, data = null) {
+            // 🟢 Si ya estamos navegando, ignoramos
+            if (isNavigating) return;
+
+            isNavigating = true; // 🟢 Bloqueamos la navegación
+
+            // 1. LÓGICA DE URL CORREGIDA (esta era la que te pasé)
+            let newHash = viewName;
             if (data !== null) {
-                newHash += `/${encodeURIComponent(data)}`; 
+                newHash += `/${encodeURIComponent(data)}`; 
             }
-            window.location.hash = newHash;
-
-            // 🟢 CAMBIO: 'provider_details' y 'offer_list_by_category' son asíncronas
-            const isAsyncView = viewName === 'profile_edit' ||
-                                viewName === 'my_products' ||
-                                viewName === 'edit_offer' ||
-                                viewName === 'provider_details' ||
-                                viewName === 'historial_pedidos'
-                                viewName === 'provider_requests';
-
-            if (isAsyncView) {
-                contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
-
-                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
-                                      viewName === 'my_products' ? renderMyProductsView() :
-                                      viewName === 'edit_offer' ? renderEditOfferView(data) :
-                                      viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
-                                      viewName === 'historial_pedidos' ? renderHistorialPedidosView() :
-                                      viewName === 'provider_requests' ? renderProviderRequestsView() :
-                                      renderProviderDetailsView(data); // 🟢 CAMBIO
-
-                renderPromise.then(html => {
-                    // Solo actualiza si el hash no cambió mientras cargaba
-                    if (window.location.hash === `#${viewName}`) {
-                        contentView.innerHTML = html;
-                    }
-                    isNavigating = false; // 🟢 Desbloqueamos al terminar
-                }).catch(error => {
-                    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
-                    isNavigating = false; // 🟢 Desbloqueamos si hay error
-                });
-                return;
-            }
-
-            contentView.innerHTML = renderView(viewName, data);
-            isNavigating = false; // 🟢 Desbloqueamos para vistas normales
-        }
+            window.location.hash = newHash; // Ej: #offer_list_by_category/Equipos
 
 
+            // 2. LÓGICA DE VISTAS ASÍNCRONAS (esta es la que ya tenías y está bien)
+            const isAsyncView = viewName === 'profile_edit' ||
+                                viewName === 'my_products' ||
+                                viewName === 'edit_offer' ||
+                                viewName === 'provider_details' ||
+                                viewName === 'offer_list_by_category' ||
+                                viewName === 'historial_pedidos' ||
+                                viewName === 'provider_requests';
+
+            if (isAsyncView) {
+                contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
+
+                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
+                                      viewName === 'my_products' ? renderMyProductsView() :
+                                      viewName === 'edit_offer' ? renderEditOfferView(data) :
+                                      viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) :
+                                      viewName === 'historial_pedidos' ? renderHistorialPedidosView() :
+                                      viewName === 'provider_requests' ? renderProviderRequestsView() :
+                                      renderProviderDetailsView(data);
+
+                renderPromise.then(html => {
+                    // 3. CORRECCIÓN DE BUG: Comparamos con newHash, no con viewName
+                    if (window.location.hash === `#${newHash}`) {
+                        contentView.innerHTML = html;
+                    }
+                    isNavigating = false; // 🟢 Desbloqueamos al terminar
+                }).catch(error => {
+                    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
+                    isNavigating = false; // 🟢 Desbloqueamos si hay error
+    _           });
+                return;
+            }
+
+            // 4. VISTAS NORMALES (esto ya lo tenías)
+            contentView.innerHTML = renderView(viewName, data);
+            isNavigating = false; // 🟢 Desbloqueamos para vistas normales
+        }
         function renderView(viewName, data) {
             switch (viewName) {
                 case 'home': return renderHomeView();
@@ -1827,6 +1829,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
