@@ -141,10 +141,14 @@
             }
         });
 
-      function setupAuthListener() {
+    // 🟢 REEMPLAZÁ TU FUNCIÓN "setupAuthListener" ENTERA POR ESTA:
+
+function setupAuthListener() {
             if (!supabaseClient) return;
             
-            const currentHash = window.location.hash.replace('#', '');
+            // 💡 1. Obtener el hash (con el fix para el error 'replace')
+            // Usamos (window.location.hash || '') para evitar el error si fuera null
+            const currentHash = (window.location.hash || '').replace('#', '');
 
             // 2. Manejo de la sesión inicial (Lógica de carga corregida)
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
@@ -152,7 +156,7 @@
                 renderHeader()
                 actualizarIndicadorPedido();
                 
-                // ESTA ES LA LÓGICA CORREGIDA:
+                // ESTA ES LA LÓGICA QUE ARREGLA LA PANTALLA EN BLANCO:
                 if (currentHash) {
                     // 1. Si hay un hash (ej: #login o #historial_pedidos), respétalo.
                     setView(currentHash); 
@@ -171,32 +175,14 @@
                 renderHeader();
                 actualizarIndicadorPedido();
                 if (currentUser) {
-                    // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
                     if (event === 'SIGNED_IN') {
                          goToDashboard();
                     }
                 } else if (event === 'SIGNED_OUT') {
-                    // Si el evento es LOGOUT, ir a Home
                     setView('home');
                 }
             });
         }
-
-            // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                currentUser = session ? session.user : null;
-                renderHeader();
-                actualizarIndicadorPedido();
-                if (currentUser) {
-                    // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
-                    if (event === 'SIGNED_IN') {
-                         goToDashboard();
-                    }
-                } else if (event === 'SIGNED_OUT') {
-                    // Si el evento es LOGOUT, ir a Home
-                    setView('home');
-                }
-            });
         async function handleLogout() 
             try {
                 const { error } = await supabaseClient.auth.signOut();
@@ -1816,40 +1802,34 @@ function handleSendPedido() {
     actualizarIndicadorPedido();
     setView('dashboard_productor'); // Vuelve al dashboard del productor
 }
-        // ===================================================================
-        // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
-        // ===================================================================
+        // 🟢 REEMPLAZÁ TU FUNCIÓN "window.onload" (AL FINAL) POR ESTA:
 
-        window.onload = () => {
-            if (initializeSupabase()) {
-                setupAuthListener(); // <- 'S' eliminado
-                // 🟢 CAMBIO: Carga los proveedores al iniciar
-                loadProvidersByOfferSearch(); // <- 'indented' eliminado
-            }
+        window.onload = () => {
+            if (initializeSupabase()) {
+                setupAuthListener(); // Llama a la nueva función que arreglamos
+                loadProvidersByOfferSearch(); 
+            }
 
-            // ==================================================================
-            // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
-            // ==================================================================
-            window.addEventListener('hashchange', () => {
-                // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
-                // en medio de una navegación programada por setView. // <- 'service' y 'a' eliminados
-                if (!isNavigating) {
-                    const newHash = window.location.hash.replace('#', ''); // <- 'Indentation' eliminado
-                    if (newHash) {
-                        setView(newHash);
-                    } else {
-                        setView('home');
-                    }
-                } // <- 'S' eliminado
-            }); // <- 's' eliminado
+            // ESTE LISTENER DE HASHCHANGE ES NECESARIO
+            window.addEventListener('hashchange', () => {
+                if (!isNavigating) {
+                    // 💡 Fix de 'replace' aplicado aquí también
+                    const newHash = (window.location.hash || '').replace('#', ''); 
+                    if (newHash) {
+                        setView(newHash);
+                    } else {
+                        setView('home');
+                    }
+                } 
+            }); 
 
-            // Renderiza el header al inicio (llamado también desde setupAuthListener)
-            renderHeader(); // <- 's' eliminado
-        };
-
+            // Renderiza el header al inicio
+            renderHeader(); 
+        };
     </script>
 </body>
 </html>
+
 
 
 
