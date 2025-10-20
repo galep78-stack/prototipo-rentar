@@ -183,7 +183,7 @@ function setupAuthListener() {
                 }
             });
     }
-        async function handleLogout() 
+        async function handleLogout() {
             try {
                 const { error } = await supabaseClient.auth.signOut();
                 if (error) throw error;
@@ -194,7 +194,7 @@ function setupAuthListener() {
                 console.error('Error al cerrar sesión:', error.message);
                 alert('Ocurrió un error al intentar cerrar la sesión.');
             }
-        });
+        }
 
         function goToDashboard() {
             if (currentUser) {
@@ -1829,6 +1829,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
