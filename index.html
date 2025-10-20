@@ -97,7 +97,7 @@
         // 🟢 NUEVA: Variable para resultados de búsqueda de proveedores
         let providerResults = [];
         let pedidoActual = [];
-        let historialPedidos = [];
+        
         // ===================================================================
         // 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
         // ===================================================================
@@ -656,7 +656,8 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                                 viewName === 'my_products' ||
                                 viewName === 'edit_offer' ||
                                 viewName === 'provider_details' ||
-                                viewName === 'offer_list_by_category'; // 🟢 CORRECCIÓN AÑADIDA
+                                viewName === 'historial_pedidos'
+                                viewName === 'provider_requests';
 
             if (isAsyncView) {
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
@@ -665,6 +666,8 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                                       viewName === 'my_products' ? renderMyProductsView() :
                                       viewName === 'edit_offer' ? renderEditOfferView(data) :
                                       viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
+                                      viewName === 'historial_pedidos' ? renderHistorialPedidosView() :
+                                      viewName === 'provider_requests' ? renderProviderRequestsView() :
                                       renderProviderDetailsView(data); // 🟢 CAMBIO
 
                 renderPromise.then(html => {
@@ -911,90 +914,112 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                 </div>
             `;
         }
-// ===================================================================
-// 🟢 FUNCIÓN NUEVA: Vista de Historial de Pedidos Realizados
-// ===================================================================
-function renderHistorialPedidosView() {
-    const header = `
-        <div class="mb-6">
-            <h2 class="text-3xl font-bold text-accent-cyan font-heading mb-2">📄 Historial de Solicitudes de Cotización</h2>
-            <p class="text-gray-400">Listado de todos los pedidos de equipamiento enviados a los proveedores.</p>
-        </div>
-    `;
+// 🟢 REEMPLAZÁ tu función "renderHistORIALPedidosView" por ESTA:
 
-    if (historialPedidos.length === 0) {
-        return `
-            <div class="max-w-4xl mx-auto p-4 md:p-8">
-                ${header}
-                <div class="p-6 bg-primary-dark/50 border border-accent-blue/50 rounded-xl text-center">
-                    <p class="text-xl text-gray-400 font-semibold mb-3">No has realizado ninguna solicitud de cotización todavía.</p>
-                    <button onclick="setView('categories_selection')" class="bg-accent-blue hover:bg-accent-blue/80 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                        Comenzar Nueva Producción
-                    </button>
-                </div>
-            </div>
-        `;
+async function renderHistorialPedidosView() {
+    const header = `
+        <div class="mb-6">
+            <h2 class="text-3xl font-bold text-accent-cyan font-heading mb-2">📄 Historial de Solicitudes de Cotización</h2>
+            <p class="text-gray-400">Listado de todos los pedidos de equipamiento enviados a los proveedores.</p>
+        </div>
+    `;
+
+    let historialData = [];
+    try {
+        // ⬆️ AQUÍ ES DONDE LEE DE SUPABASE
+        const { data, error } = await supabaseClient
+            .from('solicitudes_pedido') // Tu tabla
+            .select('*')
+            .eq('productor_user_id', currentUser.id) // Filtra por el productor actual
+            .order('fecha_envio', { ascending: false }); // Muestra los más nuevos primero
+
+        if (error) throw error;
+        historialData = data || [];
+
+    } catch (error) {
+        return `<p class="text-red-500">Error al cargar el historial: ${error.message}</p>`;
     }
 
-    const tableRows = historialPedidos.map((pedido, index) => {
-        // Estilos para el estado
-        let estadoClass = '';
-        if (pedido.estado.includes('Pendiente')) {
-            estadoClass = 'text-yellow-400 bg-yellow-900/50';
-        } else if (pedido.estado.includes('Cotizado')) {
-            estadoClass = 'text-green-400 bg-green-900/50';
-        } else {
-            estadoClass = 'text-gray-400 bg-gray-700/50';
-        }
+    // Si no hay nada en la BDD, muestra el mensaje
+    if (historialData.length === 0) {
+        return `
+            <div class="max-w-4xl mx-auto p-4 md:p-8">
+                ${header}
+                <div class="p-6 bg-primary-dark/50 border border-accent-blue/50 rounded-xl text-center">
+                    <p class="text-xl text-gray-400 font-semibold mb-3">No has realizado ninguna solicitud de cotización todavía.</p>
+                    <button onclick="setView('categories_selection')" class="bg-accent-blue hover:bg-accent-blue/80 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                        Comenzar Nueva Producción
+                    </button>
+                </div>
+            </div>
+        `;
+    }
 
-        return `
-            <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
-                <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
-                <td class="px-6 py-4 text-gray-300">${pedido.fecha}</td>
-                <td class="px-6 py-4 text-gray-300">${pedido.items.length} ítems</td>
-                <td class="px-6 py-4 text-gray-300">${pedido.proveedoresInvolucrados}</td>
-                <td class="px-6 py-4 text-gray-300">$${pedido.totalEstimado.toLocaleString('es-AR')} (ref)</td>
-                <td class="px-6 py-4">
-                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
-                        ${pedido.estado}
-                    </span>
-                </td>
-                <td class="px-6 py-4">
-                    <button onclick="alert('Detalles del Pedido: ${pedido.codigo}. Faltaría implementar una vista de detalle.')" class="bg-accent-blue hover:bg-accent-blue/80 text-white text-xs py-1 px-3 rounded-lg">
-                        Ver Detalle
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
+    // Mapeamos los datos de Supabase (historialData)
+    const tableRows = historialData.map((pedido, index) => {
+        let estadoClass = '';
+        if (pedido.estado.includes('Pendiente')) {
+            estadoClass = 'text-yellow-400 bg-yellow-900/50';
+        } else if (pedido.estado.includes('Cotizado')) {
+            estadoClass = 'text-green-400 bg-green-900/50';
+        } else {
+            estadoClass = 'text-gray-400 bg-gray-700/50';
+        }
 
-    const content = `
-        <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
-            <table class="min-w-full divide-y divide-gray-700/50">
-                <thead class="bg-primary-dark/50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Envío</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Proveedores</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total (Ref)</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-700/50">
-                    ${tableRows}
-                </tbody>
-            </table>
-        </div>
-    `;
+        const fechaFormateada = new Date(pedido.fecha_envio).toLocaleString('es-AR');
+        const items = pedido.items_json || []; // Leemos del JSON
+        const proveedoresInvolucrados = [...new Set(items.map(item => item.providerUserId))].length;
+        // Calculamos el total desde el JSON
+        const totalEstimado = items.reduce((sum, item) => sum + (item.precio || 0), 0);
 
-    return `
-        <div class="max-w-6xl mx-auto p-4 md:p-8">
-            ${header}
-            ${content}
-        </div>
-    `;
+        return `
+            <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
+                <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigocodigo}</td>
+                <td class="px-6 py-4 text-gray-300">${fechaFormateada}</td>
+                <td class="px-6 py-4 text-gray-300">${items.length} ítems</td>
+                <td class="px-6 py-4 text-gray-300">${proveedoresInvolucrados}</td>
+                <td class="px-6 py-4 text-gray-300">$${totalEstimado.toLocaleString('es-AR')} (ref)</td>
+                <td class="px-6 py-4">
+                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
+                        ${pedido.estado}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <button onclick="alert('Detalles del Pedido: ${pedido.codigocodigo}. Faltaría implementar una vista de detalle.')" class="bg-accent-blue hover:bg-accent-blue/80 text-white text-xs py-1 px-3 rounded-lg">
+                        Ver Detalle
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    const content = `
+        <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
+            <table class="min-w-full divide-y divide-gray-700/50">
+                <thead class="bg-primary-dark/50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Envío</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Proveedores</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Total (Ref)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700/50">
+                    ${tableRows}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    return `
+        <div class="max-w-6xl mx-auto p-4 md:p-8">
+            ${header}
+            ${content}
+        </div>
+    `;
 }
        // Función auxiliar para el header
        // Función auxiliar para el header
@@ -1808,6 +1833,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
