@@ -681,7 +681,7 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                 }).catch(error => {
                     contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
                     isNavigating = false; // 🟢 Desbloqueamos si hay error
-    _           });
+              });
                 return;
             }
 
@@ -1829,6 +1829,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
