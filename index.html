@@ -991,6 +991,7 @@ function renderHistorialPedidosView() {
 }
        // Función auxiliar para el header
        // Función auxiliar para el header
+// Función auxiliar para el header
 function renderHeader() {
     const header = document.getElementById('main-header');
     if (!header) return;
@@ -999,18 +1000,25 @@ function renderHeader() {
     const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
     const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
 
+    // Iconos SVG para usar en móviles
+    const userIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
+    const logoutIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
+    const loginIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
+    const registerIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
+
     // Botones de Autenticación
     const authButtons = isLoggedIn
         ? // Estado: CONECTADO
-        `<div class="flex space-x-2 sm:space-x-3 items-center"> 
-            <span class="text-sm font-sans text-gray-300 mr-1 hidden md:block"> 
+        `<div class="flex space-x-2 sm:space-x-3 items-center">
+            <span class="text-sm font-sans text-gray-300 mr-1 hidden md:block">
                 Hola, <strong class="text-accent-cyan">${displayName}</strong>
             </span>
 
             <div class="relative">
                 <button onclick="toggleDropdown('account-dropdown')" class="dropdown-toggle btn-secondary text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center">
-                    Mi Cuenta
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <span class="hidden sm:inline">Mi Cuenta</span>
+                    <span class="inline sm:hidden">${userIcon}</span>
+                    <svg class="w-4 h-4 ml-1 hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
 
                 <div id="account-dropdown" class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
@@ -1022,17 +1030,22 @@ function renderHeader() {
                     </a>
                 </div>
             </div>
-            <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold">Cerrar Sesión</button>
+            <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
+                <span class="hidden sm:inline">Cerrar Sesión</span>
+                <span class="inline sm:hidden">${logoutIcon}</span>
+            </button>
         </div>`
         : // Estado: DESCONECTADO
-        `<div class="flex space-x-2 sm:space-x-3">
+        `<div class="flex space-x-2">
             <button onclick="setView('login')" 
-                class="bg-accent-blue text-white text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold">
-                Iniciar Sesión
+                class="bg-accent-blue text-white text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
+                <span class="hidden sm:inline">Iniciar Sesión</span>
+                <span class="inline sm:hidden">${loginIcon}</span>
             </button>
             <button onclick="setView('register')" 
-                class="btn-secondary text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold">
-                Registrar
+                class="btn-secondary text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
+                <span class="hidden sm:inline">Registrar</span>
+                <span class="inline sm:hidden">${registerIcon}</span>
             </button>
         </div>`;
 
@@ -1052,16 +1065,16 @@ function renderHeader() {
                     </button>
                 </div>
                 
-                <div id="pedido-indicator" class="relative mr-2 sm:mr-4 ${isLoggedIn && userRole === 'productor' ? '' : 'hidden'}">
-                    <button onclick="setView('pedido_actual')" class="text-accent-cyan hover:text-white transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17 18a2 2 0 1 1 0 4a2 2 0 0 1 0-4Zm-10 0a2 2 0 1 1 0 4a2 2 0 0 1 0-4ZM1 3h3.27l.94 2H22l-4 8H7.21L5.27 3H1V1h4.73l.27.64l.94 2.11L6.73 6H21.4l-3.2 6.4H7.83l-.27-.64L4.27 4H1zm18 10H7.83l1.83 4H18.17l.83-4Z"/>
-                        </svg>
-                        <span id="pedido-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full px-1 py-0.5">0</span>
-                    </button>
-                </div>
-                
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <div id="pedido-indicator" class="relative ${isLoggedIn && userRole === 'productor' ? '' : 'hidden'}">
+                        <button onclick="setView('pedido_actual')" class="text-accent-cyan hover:text-white transition p-1 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17 18a2 2 0 1 1 0 4a2 2 0 0 1 0-4Zm-10 0a2 2 0 1 1 0 4a2 2 0 0 1 0-4ZM1 3h3.27l.94 2H22l-4 8H7.21L5.27 3H1V1h4.73l.27.64l.94 2.11L6.73 6H21.4l-3.2 6.4H7.83l-.27-.64L4.27 4H1zm18 10H7.83l1.83 4H18.17l.83-4Z"/>
+                            </svg>
+                            <span id="pedido-count" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs rounded-full px-1 py-0.5">0</span>
+                        </button>
+                    </div>
+                    
                     ${authButtons}
                 </div>
 
@@ -1790,6 +1803,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
