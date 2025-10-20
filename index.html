@@ -162,7 +162,7 @@ function setupAuthListener() {
                     // 3. Si NO hay hash Y NO está logueado, ir a Home.
                     setView('home');
                 }
-            });
+            };
                    
             // 3. Manejo de cambios de estado (Login/Logout) - ESTO QUEDA IGUAL
             supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -1828,6 +1828,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
