@@ -176,7 +176,6 @@ function setupAuthListener() {
                     setView('home');
                 }
             });
-    }
         async function handleLogout() {
             try {
                 const { error } = await supabaseClient.auth.signOut();
@@ -1829,6 +1828,7 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
 
