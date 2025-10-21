@@ -141,7 +141,7 @@
             }
         });
 
-        function setupAuthListener() {
+function setupAuthListener() {
     if (!supabaseClient) return;
     
     // 💡 1. Obtener el hash actual de la URL al cargar
@@ -152,32 +152,17 @@
         currentUser = session ? session.user : null;
         renderHeader()
         actualizarIndicadorPedido();
+        });
         
-        if (currentUser) {
-            // 🟢 CORRECCIÓN CLAVE: Si hay usuario y hay un hash (vista específica), 
-            // intentamos cargar esa vista. Si el hash está vacío, vamos al dashboard.
-            if (currentHash && currentHash !== 'home') {
-                 // Intentar cargar la vista del hash, la función setView ya maneja si es async o sync.
-                setView(currentHash);
-            } else {
-                // Si está conectado pero está en # o #home, lo mandamos al dashboard por defecto.
-                goToDashboard();
-            }
-        } else if (currentHash && currentHash !== 'home') {
-            // Si no está conectado y está en cualquier hash, lo forzamos a 'home' o 'login'
-            setView('home'); 
-        }
-    });
-
     // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión) - NO CAMBIADO
     supabaseClient.auth.onAuthStateChange((event, session) => {
         currentUser = session ? session.user : null;
         renderHeader();
         actualizarIndicadorPedido();
         if (currentUser) {
-            // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
+            // ✅ SÓLO REDIRIGE AL DASHBOARD DESPUÉS DE UN INICIO DE SESIÓN EXITOSO
             if (event === 'SIGNED_IN') {
-                 goToDashboard();
+                 goToDashboard(); 
             }
         } else if (event === 'SIGNED_OUT') {
             // Si el evento es LOGOUT, ir a Home
@@ -1785,48 +1770,48 @@ function handleSendPedido() {
     actualizarIndicadorPedido();
     setView('dashboard_productor'); // Vuelve al dashboard del productor
 }
-        // ===================================================================
-        // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Máxima Estabilidad)
-        // ===================================================================
+        // ------------------------------------------------------------------
+// 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Persistencia de Vista)
+// ------------------------------------------------------------------
 
-        window.onload = () => {
-            if (initializeSupabase()) {
-                setupAuthListener();
-                loadProvidersByOfferSearch();
+window.onload = () => {
+    // 1. INICIALIZACIÓN DE SUPABASE Y CARGA DE DATOS
+    if (initializeSupabase()) {
+        loadProvidersByOfferSearch();
     }
-                
-            // Revisa el hash de la URL para cargar la vista correcta al inicio
-            const currentHash = window.location.hash.replace('#', ''); // <- 's' eliminado
-            if (!currentHash) {
-                // No llamamos a setView aquí directamente para evitar doble carga
-                // setupAuthListener o el hashchange se encargarán // <- 't' eliminado
-            } else {
-                setView('home'); // Muestra el inicio por defecto
-            }
 
-            // ==================================================================
-            // ✅ LISTENER `hashchange` (Corregido para "Pantallazo")
-            // ==================================================================
-            window.addEventListener('hashchange', () => {
-                // 🟢 Solo reaccionamos al "botón atrás" si NO estamos
-                // en medio de una navegación programada por setView. // <- 'service' y 'a' eliminados
-                if (!isNavigating) {
-                    const newHash = window.location.hash.replace('#', ''); // <- 'Indentation' eliminado
-                    if (newHash) {
-                        setView(newHash);
-                    } else {
-                        setView('home');
-                    }
-                } // <- 'S' eliminado
-            }); // <- 's' eliminado
+    // 2. CARGA INICIAL: Sigue el hash de la URL o va a 'home'.
+    // Esta es la fuente de verdad de la vista inicial.
+    const currentHash = window.location.hash.replace('#', '');
+    const initialView = currentHash || 'home';
+    
+    // Forzamos el renderizado sin usar setView, para evitar que la lógica
+    // de 'isNavigating' interfiera con la carga del hash en el listener.
+    contentView.innerHTML = renderView(initialView); 
+    
+    // 3. INICIAR LÓGICA DE AUTENTICACIÓN
+    // setupAuthListener ahora SOLO establece el currentUser y sus listeners.
+    if (supabaseClient) {
+        setupAuthListener(); 
+    }
 
-            // Renderiza el header al inicio (llamado también desde setupAuthListener)
-            renderHeader(); // <- 's' eliminado
-        };
+    // 4. LISTENERS (hashchange permanece igual)
+    window.addEventListener('hashchange', () => {
+        if (!isNavigating) {
+            const newHash = window.location.hash.replace('#', '');
+            // setView() manejará la carga de contenido y la lógica asíncrona si aplica
+            setView(newHash || 'home');
+        }
+    });
+
+    // Renderizamos el header al final
+    renderHeader();
+};
 
     </script>
 </body>
 </html>
+
 
 
 
