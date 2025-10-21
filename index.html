@@ -170,38 +170,47 @@ function setupAuthListener() {
         }
     });
 }
-        async function handleLogout() {
-            try {
-                const { error } = await supabaseClient.auth.signOut();
-                if (error) throw error;
-                currentUser = null;
-                alert("Sesión cerrada correctamente.");
-                setView('home');
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error.message);
-                alert('Ocurrió un error al intentar cerrar la sesión.');
-            }
+        // ===================================================================
+// 🟢 FUNCIÓN handleLogout CORREGIDA con LIMPIEZA FORZADA
+// ===================================================================
+async function handleLogout() {
+    try {
+        // Intenta cerrar la sesión en el servidor de Supabase
+        const { error } = await supabaseClient.auth.signOut();
+        
+        if (error) {
+            // No lanzamos el error aquí para que la limpieza local se ejecute,
+            // pero lo registramos.
+            console.error('Error del servidor Supabase al cerrar sesión:', error.message);
         }
-
-        function goToDashboard() {
-            if (currentUser) {
-                // Revisa el rol del usuario guardado en los metadatos
-                const userRole = currentUser.user_metadata.user_role;
-
-                if (userRole === 'proveedor') {
-                    setView('dashboard_proveedor');
-                } else if (userRole === 'productor') {
-                    setView('dashboard_productor');
-                } else {
-                    // Fallback si el usuario no tiene rol (no debería pasar)
-                    console.warn("Usuario conectado pero sin rol. Yendo a home.");
-                    setView('home');
-                }
-            } else {
-                // Si no hay usuario, va a la home
-                setView('home');
-            }
+        
+    } catch (error) {
+        // Captura errores de red o de cliente y los reporta
+        console.error('Error general durante signOut (catch):', error.message);
+    }
+    
+    // =============================================================
+    // LIMPIEZA LOCAL FORZADA: Esto resuelve "Auth session missing"
+    // =============================================================
+    
+    // 1. Limpia el estado de la aplicación
+    currentUser = null;
+    pedidoActual = []; // Limpia el carrito al desconectar
+    
+    // 2. Limpia el Local Storage (donde Supabase guarda los tokens)
+    // Esto asegura que no queden tokens antiguos o expirados
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('sb-')) {
+            localStorage.removeItem(key);
         }
+    }
+    
+    // 3. Actualiza la UI
+    alert("Sesión cerrada correctamente (Limpieza local completa).");
+    renderHeader(); // Asegura que los botones cambien
+    setView('home'); // Vuelve a la página de inicio
+}
 
         // FUNCIÓN PARA EL BOTÓN 'PUBLICAR OFERTA' EN HOME
         function handlePublishOfferClick() {
@@ -1830,6 +1839,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
