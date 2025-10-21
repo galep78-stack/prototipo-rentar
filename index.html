@@ -726,6 +726,7 @@ async function loadHistorialPedidos() {
                                 viewName === 'edit_offer' ||
                                 viewName === 'provider_details' ||
                                 viewName === 'offer_list_by_category'; // 🟢 CORRECCIÓN AÑADIDA
+                                viewName === 'provider_requests';
 
             if (isAsyncView) {
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
@@ -734,6 +735,7 @@ async function loadHistorialPedidos() {
                                       viewName === 'my_products' ? renderMyProductsView() :
                                       viewName === 'edit_offer' ? renderEditOfferView(data) :
                                       viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
+                                      viewName === 'provider_requests' ? renderProviderRequestsView() :
                                       renderProviderDetailsView(data); // 🟢 CAMBIO
 
                 renderPromise.then(html => {
@@ -1186,54 +1188,58 @@ function renderHeader() {
             return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`;
         }
 
-        // ===================================================================
-// 🟢 FUNCIÓN NUEVA: Vista de Solicitudes de Pedido para el Proveedor
+  // ===================================================================
+// 🟢 FUNCIÓN renderProviderRequestsView (CONSULTA PERSISTENTE ASÍNCRONA)
 // ===================================================================
-function renderProviderRequestsView() {
+async function renderProviderRequestsView() {
     if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
         return renderLoginView();
     }
     
-    // El ID del usuario actual es su user_id (clave foránea en la tabla 'ofertas')
-    const currentProviderUserId = currentUser.id; 
+    const currentProviderUserId = currentUser.id;
     let requestsForProvider = [];
     let totalPending = 0;
+    
+    try {
+        // 1. Cargar TODOS los pedidos del historial (si el RLS lo permite, o todos los que son visibles)
+        // La política RLS de SELECT debe permitir leer los pedidos para que esta consulta funcione.
+        const { data: allPedidos, error } = await supabaseClient
+            .from('solicitudes_pedido')
+            .select('*')
+            .order('fecha_envio', { ascending: false });
 
-    // Iteramos sobre el historial global (simulando la consulta)
-    historialPedidos.forEach(pedido => {
-        // Un pedido es relevante si contiene CUALQUIER ítem del proveedor actual.
-        const isRelevant = pedido.items.some(item => {
-            // Utilizamos el user_id para filtrar (asumiendo que item.providerId es el ID de la tabla 'proveedores', 
-            // y que ese ID se mapea 1:1 con el user_id en la práctica de la BDD real, lo simplificaremos aquí:
-            // Dado que en handleSendPedido el item.providerId es el ID de la tabla 'proveedores',
-            // necesitamos encontrar el user_id de ese proveedor para comparar. Esto requeriría una consulta asíncrona.
-            //
-            // 🟢 SIMPLIFICACIÓN: Asumiremos que el item.providerId guardado en pedidoActual es el user_id del proveedor.
-            // Para que esto funcione, en handlePedido debería estar guardando el user_id, pero se guardó el id de la tabla 'proveedores'.
-            //
-            // 💡 REVISIÓN: Buscamos qué user_id pertenece al proveedor con item.providerId
-            // Como no podemos hacer llamadas a Supabase dentro de un map/forEach sincrónico, vamos a asumir que
-            // el historial de pedidos contiene el user_id del proveedor en item.providerId (para el prototipo).
-            return item.providerId == currentProviderUserId;
+        if (error) throw error;
+        
+        // 2. Iterar y filtrar pedidos relevantes para ESTE proveedor
+        (allPedidos || []).forEach(pedido => {
+            const items = pedido.items_json || []; // Lista de ítems del pedido
+            
+            // Asumimos que item.providerId contiene el user_id del proveedor
+            const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId);
+
+            if (itemsForThisProvider.length > 0) {
+                requestsForProvider.push({
+                    codigo: pedido.codigocodigo_pedido,
+                    fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
+                    fechaInicio: pedido.fecha_inicio || 'N/A', // Usamos las nuevas columnas
+                    fechaFin: pedido.fecha_fin || 'N/A',       // Usamos las nuevas columnas
+                    items: itemsForThisProvider,
+                    estado: pedido.estado
+                });
+                
+                if (pedido.estado === 'Pendiente de Cotización') {
+                    totalPending++;
+                }
+            }
         });
 
-        if (isRelevant) {
-            // Filtramos los ítems para mostrar solo los que son de este proveedor
-            const itemsForThisProvider = pedido.items.filter(item => item.providerId == currentProviderUserId);
-            
-            requestsForProvider.push({
-                ...pedido,
-                items: itemsForThisProvider,
-                totalItemsProveedor: itemsForThisProvider.length
-            });
-            
-            if (pedido.estado === 'Pendiente de Cotización') {
-                totalPending++;
-            }
-        }
-    });
+    } catch (e) {
+        console.error("Error al cargar solicitudes para proveedor:", e.message);
+        return `<p class="text-red-500 p-8">Error al cargar solicitudes. Verifica la política RLS de SELECT en 'solicitudes_pedido'.</p>`;
+    }
 
-    // Renderizado del historial
+
+    // 3. Renderizado de la Tabla
     const tableRows = requestsForProvider.map((pedido, index) => {
         let estadoClass = pedido.estado.includes('Pendiente') ? 'text-yellow-400 bg-yellow-900/50' : 'text-green-400 bg-green-900/50';
 
@@ -1242,7 +1248,8 @@ function renderProviderRequestsView() {
         return `
             <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
                 <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
-                <td class="px-6 py-4 text-gray-300">${pedido.fecha}</td>
+                <td class="px-6 py-4 text-gray-300">${pedido.fechaEnvio}</td>
+                <td class="px-6 py-4 text-gray-300">${pedido.fechaInicio} al ${pedido.fechaFin}</td>
                 <td class="px-6 py-4">
                     <ul class="list-disc list-inside space-y-1 max-w-sm">${itemsDetail}</ul>
                 </td>
@@ -1267,13 +1274,14 @@ function renderProviderRequestsView() {
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código de Pedido</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Solicitud</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fechas de Uso</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems Solicitados</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acción</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-700/50">
-                    ${tableRows.length > 0 ? tableRows : `<tr><td colspan="5" class="text-center py-8 text-gray-500">No hay solicitudes de cotización para tu empresa.</td></tr>`}
+                    ${tableRows.length > 0 ? tableRows : `<tr><td colspan="6" class="text-center py-8 text-gray-500">No hay solicitudes de cotización para tu empresa.</td></tr>`}
                 </tbody>
             </table>
         </div>
@@ -1910,5 +1918,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
