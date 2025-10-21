@@ -951,19 +951,22 @@ function renderHistorialPedidosView() {
 }).join('');
 
   const content = `
-    <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
-        <table class="min-w-full divide-y divide-gray-700/50">
-            <thead class="bg-primary-dark/50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Envío</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fechas de Uso</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Proveedores</th>
-                    </tr>
-            </thead>
-            </table>
-    </div>
+    <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
+        <table class="min-w-full divide-y divide-gray-700/50">
+            <thead class="bg-primary-dark/50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Envío</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fechas de Uso</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Proveedores</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+    </div>
 `;
 
     return `
@@ -1811,6 +1814,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
