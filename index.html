@@ -1753,7 +1753,7 @@ async function handleSendPedido() {
             .from('solicitudes_pedido')
             .insert({
                 // ✅ Nombre de columna ajustado a tu BDD
-                codigocodigo: codigoPedido, 
+                codigocodigo_pedido: codigoPedido, 
                 productor_user_id: currentUser.id,
                 items_json: pedidoActual, 
                 // ✅ Usamos la columna fecha_envio con un timestamp completo (incluye hora)
@@ -1830,6 +1830,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
