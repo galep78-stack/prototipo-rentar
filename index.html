@@ -1791,9 +1791,10 @@ function handleSendPedido() {
 
         window.onload = () => {
             if (initializeSupabase()) {
-                setupAuthListener(); 
-                }
-
+                setupAuthListener();
+                loadProvidersByOfferSearch();
+    }
+                
             // Revisa el hash de la URL para cargar la vista correcta al inicio
             const currentHash = window.location.hash.replace('#', ''); // <- 's' eliminado
             if (!currentHash) {
@@ -1826,5 +1827,6 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
 
