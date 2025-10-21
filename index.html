@@ -162,7 +162,7 @@ function setupAuthListener() {
         if (currentUser) {
             // ✅ SÓLO REDIRIGE AL DASHBOARD DESPUÉS DE UN INICIO DE SESIÓN EXITOSO
             if (event === 'SIGNED_IN') {
-                 goToDashboard(); 
+            loadHistorialPedidos().then(() => goToDashboard());
             }
         } else if (event === 'SIGNED_OUT') {
             // Si el evento es LOGOUT, ir a Home
@@ -576,7 +576,54 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
                 }
             }
         }
+// ===================================================================
+// 🟢 NUEVA FUNCIÓN: Cargar Historial de Pedidos desde Supabase
+// ===================================================================
+async function loadHistorialPedidos() {
+    if (!supabaseClient || !currentUser) {
+        historialPedidos = [];
+        return;
+    }
 
+    try {
+        // Obtenemos los pedidos del usuario productor actual
+        const { data, error } = await supabaseClient
+            .from('solicitudes_pedido')
+            .select('*')
+            .eq('productor_user_id', currentUser.id)
+            .order('fecha_envio', { ascending: false }); // Ordenamos por fecha más reciente
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+            // Mapeamos los datos de Supabase a la estructura local que usa renderHistorialPedidosView
+            historialPedidos = data.map(pedido => ({
+                codigo: pedido.codigocodigo_pedido,
+                fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
+                fechaInicio: pedido.fecha_inicio || 'N/A', // Asumiendo que agregaste estas columnas
+                fechaFin: pedido.fecha_fin || 'N/A',     // Asumiendo que agregaste estas columnas
+                productorId: pedido.productor_user_id,
+                items: pedido.items_json || [], // Los items están en el campo JSONB
+                proveedoresInvolucrados: (pedido.items_json || []).reduce((acc, item) => {
+                    if (item.providerId && !acc.includes(item.providerId)) {
+                        acc.push(item.providerId);
+                    }
+                    return acc;
+                }, []).length,
+                totalEstimado: (pedido.items_json || []).reduce((sum, item) => sum + (item.precio || 0), 0),
+                estado: pedido.estado
+            }));
+        } else {
+            historialPedidos = [];
+        }
+
+        console.log("Historial de pedidos cargado desde BDD:", historialPedidos.length);
+
+    } catch (error) {
+        console.error("Error al cargar el historial de pedidos:", error.message);
+        historialPedidos = [];
+    }
+}
 
         // ==================================================================
         // ✅ FUNCIÓN `getProfileData` (Corregida para Perfiles)
@@ -1829,6 +1876,7 @@ window.onload = () => {
     // 1. INICIALIZACIÓN DE SUPABASE Y CARGA DE DATOS
     if (initializeSupabase()) {
         loadProvidersByOfferSearch();
+        loadHistorialPedidos(); // 🟢 LLAMADA INICIAL (cargará si hay sesión guardada)
     }
 
     // 2. CARGA INICIAL: Sigue el hash de la URL o va a 'home'.
@@ -1862,4 +1910,5 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
