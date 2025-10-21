@@ -142,37 +142,49 @@
         });
 
         function setupAuthListener() {
-            if (!supabaseClient) return;
-            // 💡 1. Obtener el hash actual de la URL al cargar
-            const currentHash = window.location.hash.replace('#', '');
+    if (!supabaseClient) return;
+    
+    // 💡 1. Obtener el hash actual de la URL al cargar
+    const currentHash = window.location.hash.replace('#', '');
 
-            // 2. Manejo de la sesión inicial (al cargar o volver a la pestaña)
-            supabaseClient.auth.getSession().then(({ data: { session } }) => {
-                currentUser = session ? session.user : null;
-                renderHeader()
-                actualizarIndicadorPedido();
-                // ❗ Redirección SIEMPRE que haya un cambio de estado a conectado
-                if (currentUser && !currentHash) {
-                    goToDashboard();
-                }
-            });
-
-            // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión)
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                currentUser = session ? session.user : null;
-                renderHeader();
-                actualizarIndicadorPedido();
-                if (currentUser) {
-                    // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
-                    if (event === 'SIGNED_IN') {
-                         goToDashboard();
-                    }
-                } else if (event === 'SIGNED_OUT') {
-                    // Si el evento es LOGOUT, ir a Home
-                    setView('home');
-                }
-            });
+    // 2. Manejo de la sesión inicial (al cargar o volver a la pestaña)
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        currentUser = session ? session.user : null;
+        renderHeader()
+        actualizarIndicadorPedido();
+        
+        if (currentUser) {
+            // 🟢 CORRECCIÓN CLAVE: Si hay usuario y hay un hash (vista específica), 
+            // intentamos cargar esa vista. Si el hash está vacío, vamos al dashboard.
+            if (currentHash && currentHash !== 'home') {
+                 // Intentar cargar la vista del hash, la función setView ya maneja si es async o sync.
+                setView(currentHash);
+            } else {
+                // Si está conectado pero está en # o #home, lo mandamos al dashboard por defecto.
+                goToDashboard();
+            }
+        } else if (currentHash && currentHash !== 'home') {
+            // Si no está conectado y está en cualquier hash, lo forzamos a 'home' o 'login'
+            setView('home'); 
         }
+    });
+
+    // 3. Manejo de cambios de estado (cuando el usuario inicia o cierra sesión) - NO CAMBIADO
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        currentUser = session ? session.user : null;
+        renderHeader();
+        actualizarIndicadorPedido();
+        if (currentUser) {
+            // Si el evento es un inicio de sesión explícito, forzamos la ida al Dashboard.
+            if (event === 'SIGNED_IN') {
+                 goToDashboard();
+            }
+        } else if (event === 'SIGNED_OUT') {
+            // Si el evento es LOGOUT, ir a Home
+            setView('home');
+        }
+    });
+}
         async function handleLogout() {
             try {
                 const { error } = await supabaseClient.auth.signOut();
@@ -1779,14 +1791,12 @@ function handleSendPedido() {
 
         window.onload = () => {
             if (initializeSupabase()) {
-                setupAuthListener(); // <- 'S' eliminado
-                // 🟢 CAMBIO: Carga los proveedores al iniciar
-                loadProvidersByOfferSearch(); // <- 'indented' eliminado
-            }
+                setupAuthListener(); 
+                }
 
             // Revisa el hash de la URL para cargar la vista correcta al inicio
             const currentHash = window.location.hash.replace('#', ''); // <- 's' eliminado
-            if (currentHash) {
+            if (!currentHash) {
                 // No llamamos a setView aquí directamente para evitar doble carga
                 // setupAuthListener o el hashchange se encargarán // <- 't' eliminado
             } else {
@@ -1816,4 +1826,5 @@ function handleSendPedido() {
     </script>
 </body>
 </html>
+
 
