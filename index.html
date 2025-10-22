@@ -1831,7 +1831,7 @@ async function handleSendPedido() {
             .from('solicitudes_pedido')
             .insert({
                 // ... (Datos de inserción en Supabase se mantienen igual)
-                codigocodigo_pedido: codigoPedido,
+                codigopedido: codigoPedido,
                 productor_user_id: currentUser.id,
                 items_json: pedidoActual,
                 fecha_envio: now.toISOString(),
@@ -1905,6 +1905,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
