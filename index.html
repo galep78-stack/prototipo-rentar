@@ -1923,8 +1923,8 @@ async function handleSendPedido() {
         console.error('Error en Supabase INSERT para solicitudes_pedido:', error);
     }
 }
-        // ===================================================================
-// 🟢 NUEVA FUNCIÓN: Eliminar Pedido del Historial (handleDeletePedido)
+// ===================================================================
+// 🟢 FUNCIÓN CORREGIDA: Eliminar Pedido del Historial (handleDeletePedido)
 // ===================================================================
 async function handleDeletePedido(codigoPedido) {
     if (!currentUser || !currentUser.id) {
@@ -1941,16 +1941,21 @@ async function handleDeletePedido(codigoPedido) {
             .from('solicitudes_pedido')
             .delete()
             .eq('codigoPedido', codigoPedido)
+            // Filtro de seguridad: solo el dueño puede borrar.
             .eq('productor_user_id', currentUser.id);
 
         if (error) {
             console.error('Error al intentar eliminar el pedido:', error);
             alert(`No se pudo eliminar el pedido: ${error.message}.`);
         } else {
-            alert('Solicitud de cotización eliminada con éxito.');
-            // 💡 CRÍTICO: Recargar los datos y la vista
+            // MOVER alert AQUÍ para que aparezca antes de recargar la vista
+            alert('Solicitud de cotización eliminada con éxito.'); 
+
+            // 1. RECARGAR DATOS: Carga la lista actualizada (asíncrona)
             await loadHistorialPedidos();
-            setView('historial_pedidos');
+            
+            // 2. RE-RENDERIZAR VISTA: Dibuja la pantalla de Historial nuevamente
+            setView('historial_pedidos'); 
         }
     } catch (e) {
         console.error('Excepción al procesar la eliminación:', e);
@@ -1999,6 +2004,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
