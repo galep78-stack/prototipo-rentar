@@ -162,7 +162,13 @@ function setupAuthListener() {
         if (currentUser) {
             // ✅ SÓLO REDIRIGE AL DASHBOARD DESPUÉS DE UN INICIO DE SESIÓN EXITOSO
             if (event === 'SIGNED_IN') {
-            loadHistorialPedidos().then(() => goToDashboard());
+                // 🟢 CORRECCIÓN CLAVE: Solo ir al dashboard si no hay un hash específico (como #add_offer)
+                if (window.location.hash === '' || window.location.hash === '#home') {
+                    loadHistorialPedidos().then(() => goToDashboard());
+                } else {
+                    // Si ya hay un hash (#add_offer, #profile_edit, etc.), quédate allí.
+                    // El listener de hashchange se encargará del renderizado.
+                }
             }
         } else if (event === 'SIGNED_OUT') {
             // Si el evento es LOGOUT, ir a Home
@@ -1956,6 +1962,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
