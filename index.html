@@ -1811,7 +1811,6 @@ function handleRemoveItemFromPedido(index, titulo) {
 
 // ===================================================================
 // 🟢 FUNCIÓN ACTUALIZADA: Lógica para "Enviar" el pedido (Guardado PERSISTENTE)
-//    *** AJUSTADO A LAS COLUMNAS DE TU TABLA solicitudes_pedido ***
 // ===================================================================
 async function handleSendPedido() {
     if (!supabaseClient || !currentUser) {
@@ -1819,25 +1818,45 @@ async function handleSendPedido() {
         setView('login');
         return;
     }
-    // ... (El código de validación de fechas y cálculo de resumen se mantiene igual)
+
+    // --- 1. DEFINICIÓN DE VARIABLES CRÍTICAS Y VALIDACIÓN DE FECHAS (MOVIDAS AFUERA) ---
+    const fechaInicioElement = document.getElementById('fecha-inicio');
+    const fechaFinElement = document.getElementById('fecha-fin');
     
-    // ... (Generación del código único y resumen se mantiene igual)
+    if (!fechaInicioElement || !fechaFinElement) {
+        alert("Error de Interfaz: No se encontraron los campos de fecha.");
+        return;
+    }
+
+    const fechaInicio = fechaInicioElement.value;
+    const fechaFin = fechaFinElement.value;
+
+    if (!fechaInicio || !fechaFin || fechaInicio > fechaFin) {
+        alert("Por favor, selecciona un rango de fechas de alquiler válido.");
+        return;
+    }
+
+    const now = new Date();
+    // 💡 CORRECCIÓN: Definición de codigoPedido y Total fuera del try/catch
+    const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
+    const totalPrecio = pedidoActual.reduce((sum, item) => sum + item.precio, 0);
+
+    const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
+    // ------------------------------------------------------------------------------------
 
     // =========================================================
-    // 4. Guardar en Historial PERSISTENTE (Supabase INSERT)
+    // 2. Guardar en Historial PERSISTENTE (Supabase INSERT)
     // =========================================================
     try {
         const { error } = await supabaseClient
             .from('solicitudes_pedido')
             .insert({
-                // ... (Datos de inserción en Supabase se mantienen igual)
                 codigoPedido: codigoPedido,
                 productor_user_id: currentUser.id,
                 items_json: pedidoActual,
                 fecha_envio: now.toISOString(),
                 estado: 'Pendiente de Cotización',
-                // ✅ Faltaban las fechas en la inserción. Aseguramos que se guarden:
-                fecha_inicio: fechaInicio, 
+                fecha_inicio: fechaInicio,
                 fecha_fin: fechaFin
             });
 
@@ -1846,20 +1865,17 @@ async function handleSendPedido() {
         // El pedido se guardó correctamente en Supabase
         alert(summary + "\n\n✅ El carrito se vaciará ahora. El pedido está registrado en Supabase.");
         
- 
-
-        // 5. Vacía el pedido local, actualiza la UI, y lo más importante: RECAGA LOS DATOS
+        // 3. Limpieza y Redirección
         pedidoActual = [];
         actualizarIndicadorPedido();
         
-        // ✅ CORRECCIÓN CLAVE: Forzar la recarga de TODOS los pedidos desde Supabase
-        await loadHistorialPedidos(); 
+        await loadHistorialPedidos();
         
-        // Redirigimos al historial, que ahora tiene el último pedido cargado desde la BDD
-        setView('historial_pedidos'); 
+        setView('historial_pedidos');
 
     } catch (error) {
-        alert(`🚨 Error al guardar el pedido en Supabase: ${error.message}. Asegúrate de que las políticas RLS permitan la inserción.`);
+        // 🚨 MENSAJE CORREGIDO: Ya no intenta usar una variable que podría no existir.
+        alert(`🚨 Error al guardar el pedido en Supabase: ${error.message}.`);
         console.error('Error en Supabase INSERT para solicitudes_pedido:', error);
     }
 }
@@ -1905,6 +1921,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
