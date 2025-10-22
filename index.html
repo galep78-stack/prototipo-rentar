@@ -604,7 +604,7 @@ async function loadHistorialPedidos() {
         if (data && data.length > 0) {
             // Mapeamos los datos de Supabase a la estructura local que usa renderHistorialPedidosView
             historialPedidos = data.map(pedido => ({
-                codigo: pedido.codigocodigo_pedido,
+                codigo: pedido.codigoPedido,
                 fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
                 fechaInicio: pedido.fecha_inicio || 'N/A', // Asumiendo que agregaste estas columnas
                 fechaFin: pedido.fecha_fin || 'N/A',     // Asumiendo que agregaste estas columnas
@@ -1263,7 +1263,7 @@ async function renderProviderRequestsView() {
 
             if (itemsForThisProvider.length > 0) {
                 requestsForProvider.push({
-                    codigo: pedido.codigocodigo_pedido,
+                    codigo: pedido.codigoPedido,
                     fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
                     fechaInicio: pedido.fecha_inicio || 'N/A', // Usamos las nuevas columnas
                     fechaFin: pedido.fecha_fin || 'N/A',       // Usamos las nuevas columnas
@@ -1831,7 +1831,7 @@ async function handleSendPedido() {
             .from('solicitudes_pedido')
             .insert({
                 // ... (Datos de inserción en Supabase se mantienen igual)
-                codigopedido: codigoPedido,
+                codigoPedido: codigoPedido,
                 productor_user_id: currentUser.id,
                 items_json: pedidoActual,
                 fecha_envio: now.toISOString(),
@@ -1905,6 +1905,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
