@@ -99,7 +99,6 @@
         let providerResults = [];
         let pedidoActual = [];
         let historialPedidos = [];
-        
         // ===================================================================
         // 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
         // ===================================================================
@@ -720,7 +719,60 @@ async function loadHistorialPedidos() {
         // 🟢 FUNCIONES DE VISTA (RENDERIZADO)
         // ===================================================================
 
-      function setView(viewName, data = null) {
+        // ==================================================================
+        // ✅ FUNCIÓN `setView` (Corregida para "Pantallazo" y Búsqueda)
+        // ==================================================================
+        function setView(viewName, data = null) {
+            // 🟢 Si ya estamos navegando (por la llamada original),
+            // ignoramos la llamada duplicada del hashchange.
+            if (isNavigating) return;
+
+            isNavigating = true; // 🟢 Bloqueamos la navegación
+
+            window.location.hash = viewName;
+
+            // 🟢 CAMBIO: 'provider_details' y 'offer_list_by_category' son asíncronas
+            const isAsyncView = viewName === 'profile_edit' ||
+                                viewName === 'my_products' ||
+                                viewName === 'edit_offer' ||
+                                viewName === 'provider_details' ||
+                                viewName === 'offer_list_by_category'; // 🟢 CORRECCIÓN AÑADIDA
+                                viewName === 'provider_requests';
+
+            if (isAsyncView) {
+                contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
+// 🚨 Agregar una verificación de usuario para vistas críticas
+    if (!currentUser && (viewName.includes('dashboard') || viewName.includes('requests') || viewName.includes('products'))) {
+        console.warn(`Intento de acceso a ${viewName} sin usuario. Redirigiendo a home.`);
+        isNavigating = false;
+        return setView('home'); // Redirige a Home si no hay usuario antes de iniciar la promesa.
+    }
+                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
+                                      viewName === 'my_products' ? renderMyProductsView() :
+                                      viewName === 'edit_offer' ? renderEditOfferView(data) :
+                                      viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
+                                      viewName === 'provider_requests' ? renderProviderRequestsView() :
+                                      renderProviderDetailsView(data); // 🟢 CAMBIO
+
+                renderPromise.then(html => {
+                    // Solo actualiza si el hash no cambió mientras cargaba
+                    if (window.location.hash === `#${viewName}`) {
+                        contentView.innerHTML = html;
+                    }
+                    isNavigating = false; // 🟢 Desbloqueamos al terminar
+                }).catch(error => {
+                    // 🚨 Este bloque es CRUCIAL. Si renderProviderRequestsView lanza un error (como un rol incorrecto)
+    // Se muestra el error, no te redirige al Home.
+    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
+    isNavigating = false; // 🟢 Desbloqueamos si hay error
+});
+                return;
+            }
+
+            contentView.innerHTML = renderView(viewName, data);
+            isNavigating = false; // 🟢 Desbloqueamos para vistas normales
+        }
+
 
         function renderView(viewName, data) {
             switch (viewName) {
@@ -1919,71 +1971,48 @@ async function handleDeletePedido(codigoPedido) {
         alert('Ocurrió un error inesperado.');
     }
 }
- // ------------------------------------------------------------------
+        // ------------------------------------------------------------------
 // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Persistencia de Vista)
 // ------------------------------------------------------------------
 
 window.onload = () => {
-    // 1. INICIALIZACIÓN DE SUPABASE Y CARGA DE DATOS
-    if (initializeSupabase()) {
-        loadProvidersByOfferSearch();
-        loadHistorialPedidos(); // 🟢 LLAMADA INICIAL (cargará si hay sesión guardada)
-    }
+    // 1. INICIALIZACIÓN DE SUPABASE Y CARGA DE DATOS
+    if (initializeSupabase()) {
+        loadProvidersByOfferSearch();
+        loadHistorialPedidos(); // 🟢 LLAMADA INICIAL (cargará si hay sesión guardada)
+    }
 
-    // 2. CARGA INICIAL: Sigue el hash de la URL o va a 'home'.
-    // Esta es la fuente de verdad de la vista inicial.
-    const currentHash = window.location.hash.replace('#', '');
-    const initialView = currentHash || 'home';
-    
-    // Forzamos el renderizado sin usar setView, para evitar que la lógica
-    // de 'isNavigating' interfiera con la carga del hash en el listener.
-    contentView.innerHTML = renderView(initialView); 
-    
-    // 3. INICIAR LÓGICA DE AUTENTICACIÓN
-    // setupAuthListener ahora SOLO establece el currentUser y sus listeners.
-    if (supabaseClient) {
-        setupAuthListener(); 
-    }
+    // 2. CARGA INICIAL: Sigue el hash de la URL o va a 'home'.
+    // Esta es la fuente de verdad de la vista inicial.
+    const currentHash = window.location.hash.replace('#', '');
+    const initialView = currentHash || 'home';
+    
+    // Forzamos el renderizado sin usar setView, para evitar que la lógica
+    // de 'isNavigating' interfiera con la carga del hash en el listener.
+    contentView.innerHTML = renderView(initialView); 
+    
+    // 3. INICIAR LÓGICA DE AUTENTICACIÓN
+    // setupAuthListener ahora SOLO establece el currentUser y sus listeners.
+    if (supabaseClient) {
+        setupAuthListener(); 
+    }
 
-    // 4. LISTENERS (hashchange permanece igual)
-    window.addEventListener('hashchange', () => {
-        if (!isNavigating) {
-            const newHash = window.location.hash.replace('#', '');
-            // setView() manejará la carga de contenido y la lógica asíncrona si aplica
-            setView(newHash || 'home');
-        }
-    });
+    // 4. LISTENERS (hashchange permanece igual)
+    window.addEventListener('hashchange', () => {
+        if (!isNavigating) {
+            const newHash = window.location.hash.replace('#', '');
+            // setView() manejará la carga de contenido y la lógica asíncrona si aplica
+            setView(newHash || 'home');
+        }
+    });
 
-    // Renderizamos el header al final
-    renderHeader();
+    // Renderizamos el header al final
+    renderHeader();
 };
+
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
