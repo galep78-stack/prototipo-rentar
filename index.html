@@ -44,7 +44,7 @@
         <div class="container mx-auto px-4 pt-10 pb-6">
              <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
                  <div>
-                     <a href="#" onclick="goToDashboard()" class="flex items-center">
+                     <a href="#" onclick="setView('home')" class="flex items-center">
                          <img src="logo-rentar.png" alt="Rent.Ar Logo" class="h-6 mr-2">
                          <span class="logo-text-header text-xl text-accent-cyan">Rent.Ar</span>
                      </a>
@@ -157,7 +157,7 @@ function setupAuthListener() {
         currentUser = session ? session.user : null;
         
         // Renderiza el header AHORA (no depende del historial)
-        renderHeader();
+        ;
         actualizarIndicadorPedido();
 
         // 🟢==== ¡CORRECCIÓN CLAVE! ====🟢
@@ -1105,6 +1105,7 @@ function renderHistorialPedidosView() {
         </div>
     `;
 }
+        
        // Función auxiliar para el header
        // Función auxiliar para el header
 // Función auxiliar para el header
@@ -1168,8 +1169,7 @@ function renderHeader() {
     header.innerHTML = `
         <div class="container mx-auto px-4">
             <nav class="flex justify-between items-center py-4">
-
-                <a href="#" onclick="goToDashboard()" class="flex items-center transition hover:opacity-80">
+                <a href="#" onclick="setView('home')" class="flex items-center transition hover:opacity-80">
                     <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
                     <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
                 </a>
@@ -2029,6 +2029,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
