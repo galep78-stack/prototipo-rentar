@@ -1924,7 +1924,7 @@ async function handleSendPedido() {
     }
 }
 // ===================================================================
-// 🟢 FUNCIÓN CORREGIDA: Eliminar Pedido del Historial (handleDeletePedido)
+// 🟢 FUNCIÓN CORREGIDA FINAL (Añadido PARSE INT)
 // ===================================================================
 async function handleDeletePedido(codigoPedido) {
     if (!currentUser || !currentUser.id) {
@@ -1932,7 +1932,18 @@ async function handleDeletePedido(codigoPedido) {
         return;
     }
 
-    if (!confirm(`¿Está seguro de que desea eliminar la solicitud de cotización con código ${codigoPedido}? Esta acción es irreversible y solo usted, el Productor, puede realizarla.`)) {
+    if (!confirm(`¿Está seguro de que desea eliminar el pedido ${codigoPedido}?`)) {
+        return;
+    }
+    
+    // 💡 CAMBIO CLAVE: Aseguramos que el código sea tratado como número entero, 
+    // ya que es probable que la columna en la BDD sea BIGINT.
+    const codigoABorrar = parseInt(codigoPedido, 10);
+
+    // Si parseInt falla (devuelve NaN) o si el código es 0, no continuamos.
+    if (isNaN(codigoABorrar) || codigoABorrar === 0) {
+        console.error("Error: Código de pedido inválido para eliminar:", codigoPedido);
+        alert("Error interno: El código del pedido no es válido.");
         return;
     }
 
@@ -1940,26 +1951,24 @@ async function handleDeletePedido(codigoPedido) {
         const { error } = await supabaseClient
             .from('solicitudes_pedido')
             .delete()
-            .eq('codigoPedido', codigoPedido)
-            // Filtro de seguridad: solo el dueño puede borrar.
+            // USAMOS el número entero PARSEADO
+            .eq('codigoPedido', codigoABorrar) 
+            // Filtro de seguridad RLS
             .eq('productor_user_id', currentUser.id);
 
         if (error) {
             console.error('Error al intentar eliminar el pedido:', error);
             alert(`No se pudo eliminar el pedido: ${error.message}.`);
         } else {
-            // MOVER alert AQUÍ para que aparezca antes de recargar la vista
             alert('Solicitud de cotización eliminada con éxito.'); 
-
-            // 1. RECARGAR DATOS: Carga la lista actualizada (asíncrona)
-            await loadHistorialPedidos();
             
-            // 2. RE-RENDERIZAR VISTA: Dibuja la pantalla de Historial nuevamente
+            // Recarga la lista después de la eliminación
+            await loadHistorialPedidos();
             setView('historial_pedidos'); 
         }
     } catch (e) {
         console.error('Excepción al procesar la eliminación:', e);
-        alert('Ocurrió un error inesperado al intentar eliminar el pedido.');
+        alert('Ocurrió un error inesperado.');
     }
 }
         // ------------------------------------------------------------------
@@ -2004,6 +2013,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
