@@ -1846,17 +1846,7 @@ async function handleSendPedido() {
         // El pedido se guardó correctamente en Supabase
         alert(summary + "\n\n✅ El carrito se vaciará ahora. El pedido está registrado en Supabase.");
         
-        // =======================================================================================
-        // ❌ PASO A ELIMINAR/REEMPLAZAR:
-        // 
-        // ❌ ELIMINAR ESTE BLOQUE: Ya no es necesario el "Historial SIMULADO"
-        /*
-        historialPedidos.push({
-            codigo: codigoPedido,
-            // ... (Resto de datos) ...
-        });
-        */
-        // =======================================================================================
+ 
 
         // 5. Vacía el pedido local, actualiza la UI, y lo más importante: RECAGA LOS DATOS
         pedidoActual = [];
@@ -1915,6 +1905,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
