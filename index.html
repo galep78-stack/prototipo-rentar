@@ -745,7 +745,12 @@ async function loadHistorialPedidos() {
 
             if (isAsyncView) {
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
-
+// 🚨 Agregar una verificación de usuario para vistas críticas
+    if (!currentUser && (viewName.includes('dashboard') || viewName.includes('requests') || viewName.includes('products'))) {
+        console.warn(`Intento de acceso a ${viewName} sin usuario. Redirigiendo a home.`);
+        isNavigating = false;
+        return setView('home'); // Redirige a Home si no hay usuario antes de iniciar la promesa.
+    }
                 const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
                                       viewName === 'my_products' ? renderMyProductsView() :
                                       viewName === 'edit_offer' ? renderEditOfferView(data) :
@@ -1255,12 +1260,11 @@ function renderAddOfferView() {
 // 🟢 FUNCIÓN OPTIMIZADA: renderProviderRequestsView (CONSULTA ÚNICA)
 // ===================================================================
 async function renderProviderRequestsView() {
-   // 🚨 MODIFICACIÓN: Cambia el 'return renderLoginView()' por un 'throw Error'
+   // 🚨 1. Verificación estricta de rol. Si falla, el usuario no tiene acceso.
     if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
-        // En lugar de devolver renderLoginView(), lanzamos un error o devolvemos un mensaje
-        // Esto debería ser manejado por setView, pero lo forzamos.
-        // Si tienes la línea 'return renderLoginView();', elimínala o cámbiala.
-        return `<p class="text-red-500 p-8">Debes iniciar sesión como proveedor para ver esta página.</p>`;
+        // En lugar de llamar a una vista de login, que puede forzar la redirección,
+        // lanzamos un error que es capturado por setView y devuelve un mensaje en pantalla.
+        throw new Error("Acceso denegado. Debes iniciar sesión como proveedor.");
     }
     
     const currentProviderUserId = currentUser.id;
@@ -1961,6 +1965,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
