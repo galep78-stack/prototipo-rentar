@@ -1187,7 +1187,45 @@ function renderHeader() {
         function renderLoginView() {
             return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`;
         }
+// ===================================================================
+// 🟢 FUNCIÓN NUEVA: Renderizar el Formulario para Agregar Oferta
+// ===================================================================
+function renderAddOfferView() {
+    // Control de acceso: solo proveedores logueados pueden ver esta vista
+    if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
+        alert("Debes iniciar sesión como Proveedor para publicar una oferta.");
+        return renderLoginView(); 
+    }
 
+    const categories = ["Equipos", "Locacion", "Servicio"];
+    const categoryOptions = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+    // La función handleAddOffer (línea 312) ya maneja el submit.
+    return `
+        <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
+            <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+
+            <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
+            
+            <form onsubmit="handleAddOffer(event)" class="space-y-6">
+                <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Sony FX9)" required class="w-full p-3 border rounded-lg">
+                <textarea name="descripcion" rows="4" placeholder="Descripción detallada del producto o servicio" required class="w-full p-3 border rounded-lg"></textarea>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select name="categoria" required class="w-full p-3 border rounded-lg">
+                        <option value="">Seleccionar Categoría</option>
+                        ${categoryOptions}
+                    </select>
+                    <input type="number" name="precio" placeholder="Precio por Día/Servicio" required class="w-full p-3 border rounded-lg">
+                </div>
+                
+                <input type="text" name="ubicacion" placeholder="Ubicación (Ej: CABA, Villa Crespo)" required class="w-full p-3 border rounded-lg">
+                
+                <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Publicar Oferta</button>
+            </form>
+        </div>
+    `;
+}
   // ===================================================================
 // 🟢 FUNCIÓN renderProviderRequestsView (CONSULTA PERSISTENTE ASÍNCRONA)
 // ===================================================================
@@ -1918,6 +1956,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
