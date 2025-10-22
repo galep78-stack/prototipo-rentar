@@ -1838,7 +1838,7 @@ function handleRemoveItemFromPedido(index, titulo) {
 }
 
 // ===================================================================
-// 🟢 FUNCIÓN ACTUALIZADA: Lógica para "Enviar" el pedido (Guardado PERSISTENTE)
+// 🟢 FUNCIÓN CORREGIDA: Lógica para "Enviar" el pedido (Guardado PERSISTENTE)
 // ===================================================================
 async function handleSendPedido() {
     if (!supabaseClient || !currentUser) {
@@ -1846,13 +1846,17 @@ async function handleSendPedido() {
         setView('login');
         return;
     }
-
-    // --- 1. DEFINICIÓN DE VARIABLES CRÍTICAS Y VALIDACIÓN DE FECHAS (MOVIDAS AFUERA) ---
+    
+    // --- 1. DEFINICIÓN Y VALIDACIÓN DE VARIABLES CRÍTICAS (MOVIDAS AL INICIO) ---
     const fechaInicioElement = document.getElementById('fecha-inicio');
     const fechaFinElement = document.getElementById('fecha-fin');
     
+    // 🚨 CORRECCIÓN CLAVE: Detener la ejecución si los elementos del DOM no están disponibles.
     if (!fechaInicioElement || !fechaFinElement) {
-        alert("Error de Interfaz: No se encontraron los campos de fecha.");
+        // Esto puede ocurrir si se presiona el botón antes de que el DOM esté listo,
+        // o si la vista del pedido no se renderizó correctamente.
+        alert("Error de Interfaz: No se encontraron los campos de fecha. Por favor, recarga la página.");
+        console.error("DOM Error: Elementos de fecha no encontrados.");
         return;
     }
 
@@ -1864,8 +1868,12 @@ async function handleSendPedido() {
         return;
     }
 
+    if (pedidoActual.length === 0) {
+        alert("Tu pedido está vacío. Agrega ítems antes de solicitar la cotización.");
+        return;
+    }
+    
     const now = new Date();
-    // 💡 CORRECCIÓN: Definición de codigoPedido y Total fuera del try/catch
     const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
     const totalPrecio = pedidoActual.reduce((sum, item) => sum + item.precio, 0);
 
@@ -1891,7 +1899,7 @@ async function handleSendPedido() {
         if (error) throw error;
         
         // El pedido se guardó correctamente en Supabase
-        alert(summary + "\n\n✅ El carrito se vaciará ahora. El pedido está registrado en Supabase.");
+        alert(summary + "\n\n✅ El carrito se vaciará ahora.");
         
         // 3. Limpieza y Redirección
         pedidoActual = [];
@@ -1901,41 +1909,8 @@ async function handleSendPedido() {
         setView('historial_pedidos');
 
     } catch (error) {
-        // 🚨 MENSAJE CORREGIDO: Ya no intenta usar una variable que podría no existir.
         alert(`🚨 Error al guardar el pedido en Supabase: ${error.message}.`);
         console.error('Error en Supabase INSERT para solicitudes_pedido:', error);
-    }
-}
-        async function handleDeletePedido(codigoPedido) {
-    if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
-        alert("Acceso denegado.");
-        return;
-    }
-
-    if (!confirm(`¿Estás seguro de que deseas ELIMINAR definitivamente el pedido ${codigoPedido}? Esta acción es irreversible.`)) {
-        return;
-    }
-
-    try {
-        // Ejecuta el DELETE, protegido por la política RLS que acabamos de crear
-        const { error } = await supabaseClient
-            .from('solicitudes_pedido')
-            .delete()
-            .eq('codigoPedido', codigoPedido)
-            .eq('productor_user_id', currentUser.id); // Doble seguridad
-
-        if (error) throw error;
-
-        alert(`Pedido ${codigoPedido} eliminado con éxito.🗑️`);
-        
-        // 1. Recargar el historial global
-        await loadHistorialPedidos();
-        // 2. Re-renderizar la vista de historial para ver el cambio
-        setView('historial_pedidos');
-
-    } catch (error) {
-        alert(`Error al eliminar el pedido: ${error.message}.`);
-        console.error('Error en handleDeletePedido:', error);
     }
 }
         // ------------------------------------------------------------------
@@ -1980,6 +1955,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
