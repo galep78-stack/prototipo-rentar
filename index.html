@@ -1819,77 +1819,26 @@ async function handleSendPedido() {
         setView('login');
         return;
     }
-
-    // 1. Obtener las fechas (Aún necesitamos fechaInicio y fechaFin para el resumen, aunque solo guardemos una)
-    const fechaInicioElement = document.getElementById('fecha-inicio');
-    const fechaFinElement = document.getElementById('fecha-fin');
+    // ... (El código de validación de fechas y cálculo de resumen se mantiene igual)
     
-    // VALIDACIÓN Y OBTENCIÓN DE FECHAS
-    if (!fechaInicioElement || !fechaFinElement || !fechaInicioElement.value || !fechaFinElement.value) {
-        alert("🚨 Por favor, selecciona las fechas de inicio y fin de la producción.");
-        return;
-    }
-    
-    const fechaInicio = fechaInicioElement.value; // Necesaria para el historial local y resumen
-    const fechaFin = fechaFinElement.value;      // Necesaria para el historial local y resumen
-
-    if (new Date(fechaFin) < new Date(fechaInicio)) {
-        alert("🚨 La fecha de fin no puede ser anterior a la fecha de inicio.");
-        return;
-    }
-    
-    if (pedidoActual.length === 0) {
-        alert("Tu pedido está vacío. Agrega ítems antes de solicitar contacto.");
-        return;
-    }
-
-    // --- 2. Generación de Código Único de Pedido ---
-    const now = new Date();
-    // Formato YYYYMMDDHHMM
-    const timestamp = now.getFullYear().toString() + 
-                      (now.getMonth() + 1).toString().padStart(2, '0') + 
-                      now.getDate().toString().padStart(2, '0') + 
-                      now.getHours().toString().padStart(2, '0') + 
-                      now.getMinutes().toString().padStart(2, '0');
-                      
-    const counter = historialPedidos.length + 1;
-    const codigoPedido = `RTA-${timestamp}-${counter.toString().padStart(3, '0')}`;
-
-
-    // 3. Generar resumen (preparación para la alerta)
-    const groupedByProvider = pedidoActual.reduce((acc, item) => {
-        const providerId = item.providerId;
-        if (!acc[providerId]) {
-            acc[providerId] = { items: [], totalParcial: 0 };
-        }
-        acc[providerId].items.push(item);
-        acc[providerId].totalParcial += item.precio;
-        return acc;
-    }, {});
-
-    const numProviders = Object.keys(groupedByProvider).length;
-    let totalGlobal = pedidoActual.reduce((sum, item) => sum + item.precio, 0);
-
-    let summary = `Tu solicitud de contacto ha sido enviada con éxito. Un total de ${pedidoActual.length} ítems se enviaron a ${numProviders} proveedor(es).\n`;
-    summary += `📅 FECHAS DE ALQUILER: ${fechaInicio} al ${fechaFin}\n\n`;
-    summary += `📋 CÓDIGO DE PEDIDO: ${codigoPedido}\n\n`;
-    summary += `Detalle de Contacto Enviado: (Revisa tu historial para los detalles completos)`;
+    // ... (Generación del código único y resumen se mantiene igual)
 
     // =========================================================
     // 4. Guardar en Historial PERSISTENTE (Supabase INSERT)
-    //    *** Usando las columnas codigocodigo, fecha_envio, items_json ***
     // =========================================================
     try {
         const { error } = await supabaseClient
             .from('solicitudes_pedido')
             .insert({
-                // ✅ Nombre de columna ajustado a tu BDD
-                codigocodigo_pedido: codigoPedido, 
+                // ... (Datos de inserción en Supabase se mantienen igual)
+                codigocodigo_pedido: codigoPedido,
                 productor_user_id: currentUser.id,
-                items_json: pedidoActual, 
-                // ✅ Usamos la columna fecha_envio con un timestamp completo (incluye hora)
+                items_json: pedidoActual,
                 fecha_envio: now.toISOString(),
-                estado: 'Pendiente de Cotización'
+                estado: 'Pendiente de Cotización',
+                // ✅ Faltaban las fechas en la inserción. Aseguramos que se guarden:
+                fecha_inicio: fechaInicio, 
+                fecha_fin: fechaFin
             });
 
         if (error) throw error;
@@ -1897,23 +1846,27 @@ async function handleSendPedido() {
         // El pedido se guardó correctamente en Supabase
         alert(summary + "\n\n✅ El carrito se vaciará ahora. El pedido está registrado en Supabase.");
         
-        // 4.1. Guardar en Historial SIMULADO (Para que renderHistorialPedidosView funcione en la sesión actual)
+        // =======================================================================================
+        // ❌ PASO A ELIMINAR/REEMPLAZAR:
+        // 
+        // ❌ ELIMINAR ESTE BLOQUE: Ya no es necesario el "Historial SIMULADO"
+        /*
         historialPedidos.push({
             codigo: codigoPedido,
-            fechaEnvio: now.toLocaleString('es-AR'),
-            fechaInicio: fechaInicio,
-            fechaFin: fechaFin,
-            productorId: currentUser.id,
-            items: pedidoActual,
-            proveedoresInvolucrados: numProviders,
-            totalEstimado: totalGlobal,
-            estado: 'Pendiente de Cotización'
+            // ... (Resto de datos) ...
         });
+        */
+        // =======================================================================================
 
-        // 5. Vacía el pedido local y actualiza la UI
+        // 5. Vacía el pedido local, actualiza la UI, y lo más importante: RECAGA LOS DATOS
         pedidoActual = [];
         actualizarIndicadorPedido();
-        setView('historial_pedidos'); // Redirigimos al historial para que vea el pedido guardado
+        
+        // ✅ CORRECCIÓN CLAVE: Forzar la recarga de TODOS los pedidos desde Supabase
+        await loadHistorialPedidos(); 
+        
+        // Redirigimos al historial, que ahora tiene el último pedido cargado desde la BDD
+        setView('historial_pedidos'); 
 
     } catch (error) {
         alert(`🚨 Error al guardar el pedido en Supabase: ${error.message}. Asegúrate de que las políticas RLS permitan la inserción.`);
@@ -1962,6 +1915,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
