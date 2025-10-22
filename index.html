@@ -1297,9 +1297,7 @@ async function renderProviderRequestsView() {
             .from('solicitudes_pedido')
             .select('*')
             .order('fecha_envio', { ascending: false })
-            // 💡 Filtro RLS-compatible: Busca si el UID está en el JSONB
-            .contains('items_json', [{ providerId: currentProviderUserId }]); 
-            
+                        
         // NOTA: La política RLS con '@>' debería ser suficiente, pero el filtro .containedBy en JS añade claridad.
         // Si tienes problemas de rendimiento, confía solo en la política RLS.
             
@@ -2029,6 +2027,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
