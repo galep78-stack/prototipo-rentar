@@ -1920,51 +1920,56 @@ async function handleSendPedido() {
     }
 }
 // ===================================================================
-// 🟢 FUNCIÓN CORREGIDA FINAL (Sin parseInt)
+// 🟢 FUNCIÓN DE DIAGNÓSTICO (Comprueba 'count')
 // ===================================================================
 async function handleDeletePedido(codigoPedido) {
-    if (!currentUser || !currentUser.id) {
-        alert('Error de autenticación. Por favor, inicie sesión nuevamente.');
-        return;
-    }
+    if (!currentUser || !currentUser.id) {
+        alert('Error de autenticación. Por favor, inicie sesión nuevamente.');
+        return;
+    }
 
-    if (!confirm(`¿Está seguro de que desea eliminar el pedido ${codigoPedido}?`)) {
-        return;
-    }
-    
-    // 💡 CAMBIO CLAVE: Ya no usamos parseInt.
-    // El código "PEDIDO-..." es un string.
+    if (!confirm(`¿Está seguro de que desea eliminar el pedido ${codigoPedido}?`)) {
+        return;
+    }
+    
+    if (!codigoPedido) { 
+        console.error("Error: Código de pedido inválido para eliminar:", codigoPedido);
+        alert("Error interno: El código del pedido no es válido.");
+        return;
+    }
 
-    // Si el string es nulo o vacío, no continuamos.
-    if (!codigoPedido) { 
-        console.error("Error: Código de pedido inválido para eliminar:", codigoPedido);
-        alert("Error interno: El código del pedido no es válido.");
-        return;
-    }
+    try {
+        // 💡 DIAGNÓSTICO: Pedimos 'count' para ver cuántas filas se borraron
+        const { error, count } = await supabaseClient
+            .from('solicitudes_pedido')
+            .delete() 
+            .eq('codigoPedido', codigoPedido)
+            .eq('productor_user_id', currentUser.id);
 
-    try {
-        const { error } = await supabaseClient
-            .from('solicitudes_pedido')
-            .delete()
-            // USAMOS el string original
-            .eq('codigoPedido', codigoPedido) 
-            // Filtro de seguridad RLS
-            .eq('productor_user_id', currentUser.id);
-
-        if (error) {
-            console.error('Error al intentar eliminar el pedido:', error);
-            alert(`No se pudo eliminar el pedido: ${error.message}.`);
-        } else {
-            alert('Solicitud de cotización eliminada con éxito.'); 
-            
-            // Recarga la lista después de la eliminación
-            await loadHistorialPedidos();
-            setView('historial_pedidos');
-        }
-    } catch (e) {
-        console.error('Excepción al procesar la eliminación:', e);
-        alert('Ocurrió un error inesperado.');
-    }
+        if (error) {
+            // Caso 1: Supabase da un error explícito (ej. permiso denegado)
+            console.error('Error al intentar eliminar el pedido:', error);
+            alert(`No se pudo eliminar el pedido: ${error.message}.`);
+        } 
+        // 💡 NUEVA VERIFICACIÓN:
+        else if (count === 0 || count === null) {
+            // Caso 2: El query corrió bien, PERO no borró nada.
+            console.warn('Delete query se ejecutó pero no borró filas (count: 0).', {
+                sent_codigo: codigoPedido,
+                sent_user_id: currentUser.id
+            });
+            alert('La solicitud de cotización no se pudo eliminar. No se encontró el registro o no tienes permisos (Verifica RLS).');
+        }
+        else {
+            // Caso 3: ÉXITO REAL
+            alert(`Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`);  
+            await loadHistorialPedidos();
+            setView('historial_pedidos'); 
+        }
+    } catch (e) {
+        console.error('Excepción al procesar la eliminación:', e);
+        alert('Ocurrió un error inesperado.');
+    }
 }
         // ------------------------------------------------------------------
 // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Persistencia de Vista)
@@ -2008,6 +2013,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
