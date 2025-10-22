@@ -760,9 +760,11 @@ async function loadHistorialPedidos() {
                     }
                     isNavigating = false; // 🟢 Desbloqueamos al terminar
                 }).catch(error => {
-                    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
-                    isNavigating = false; // 🟢 Desbloqueamos si hay error
-                });
+                    // 🚨 Este bloque es CRUCIAL. Si renderProviderRequestsView lanza un error (como un rol incorrecto)
+    // Se muestra el error, no te redirige al Home.
+    contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
+    isNavigating = false; // 🟢 Desbloqueamos si hay error
+});
                 return;
             }
 
@@ -1253,8 +1255,12 @@ function renderAddOfferView() {
 // 🟢 FUNCIÓN OPTIMIZADA: renderProviderRequestsView (CONSULTA ÚNICA)
 // ===================================================================
 async function renderProviderRequestsView() {
+   // 🚨 MODIFICACIÓN: Cambia el 'return renderLoginView()' por un 'throw Error'
     if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
-        return renderLoginView();
+        // En lugar de devolver renderLoginView(), lanzamos un error o devolvemos un mensaje
+        // Esto debería ser manejado por setView, pero lo forzamos.
+        // Si tienes la línea 'return renderLoginView();', elimínala o cámbiala.
+        return `<p class="text-red-500 p-8">Debes iniciar sesión como proveedor para ver esta página.</p>`;
     }
     
     const currentProviderUserId = currentUser.id;
@@ -1955,6 +1961,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
