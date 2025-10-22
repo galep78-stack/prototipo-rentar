@@ -702,22 +702,18 @@ async function loadHistorialPedidos() {
         // ==================================================================
         // ✅ LÓGICA DE MAPAS (Corregida)
         // ==================================================================
-        function showProviderOnMap(address) {
-            const iframe = document.getElementById('map-iframe');
-            if (iframe && address) { // Verifica que address no sea null o undefined
-                const encodedAddress = encodeURIComponent(address);
-                // 🟢 CORRECCIÓN: URL de Google Maps Embed estándar (sin API Key)
-                const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
-                iframe.src = mapUrl;
-            } else if (!address) {
-                console.warn("Se intentó mostrar en mapa sin dirección.");
-                 // Opcional: Mostrar mapa general si no hay dirección
-                 iframe.src = `https://www.google.com/maps?q=Argentina&output=embed&z=5`;
-            }
-             else {
-                console.error("Error: No se encontró el iframe con id='map-iframe'.");
-            }
-        }
+       function showProviderOnMap(address) {
+    const iframe = document.getElementById('map-iframe');
+    if (iframe && address) {
+        const encodedAddress = encodeURIComponent(address);
+        // 🟢 CORRECCIÓN: URL estándar de Google Maps Embed
+        const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
+        iframe.src = mapUrl;
+    } else if (iframe) {
+        // Muestra un mapa general de Argentina si no hay dirección
+        iframe.src = `https://maps.google.com/maps?q=Argentina&output=embed&z=4`;
+    }
+}
 
         // ===================================================================
         // 🟢 FUNCIONES DE VISTA (RENDERIZADO)
@@ -1941,7 +1937,7 @@ async function handleDeletePedido(codigoPedido) {
     const codigoABorrar = parseInt(codigoPedido, 10);
 
     // Si parseInt falla (devuelve NaN) o si el código es 0, no continuamos.
-    if (isNaN(codigoABorrar) || codigoABorrar === 0) {
+    if (!codigoPedido) { //
         console.error("Error: Código de pedido inválido para eliminar:", codigoPedido);
         alert("Error interno: El código del pedido no es válido.");
         return;
@@ -1952,8 +1948,7 @@ async function handleDeletePedido(codigoPedido) {
             .from('solicitudes_pedido')
             .delete()
             // USAMOS el número entero PARSEADO
-            .eq('codigoPedido', codigoABorrar) 
-            // Filtro de seguridad RLS
+            .eq('codigoPedido', codigoPedido) // <-- Corrección
             .eq('productor_user_id', currentUser.id);
 
         if (error) {
@@ -2013,6 +2008,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
