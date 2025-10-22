@@ -142,31 +142,44 @@
             }
         });
 
+// ===================================================================
+// 🟢 FUNCIÓN setupAuthListener (CORREGIDA V3 - SOLUCIONA F5)
+// ===================================================================
 function setupAuthListener() {
     if (!supabaseClient) return;
     
-    // 1. Obtenemos el hash ANTES de que 'getSession' termine
+    // 1. Obtenemos el hash ANTES
     const currentHash = window.location.hash.replace('#', '');
-    // 🟢 CORRECCIÓN: Parsear data (ej: "offer_list_by_category/Equipos")
     const [initialView, initialData] = currentHash.split('/'); 
     
-    // 2. Manejo de la sesión inicial (esto soluciona el F5)
+    // 2. Manejo de la sesión inicial
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
         currentUser = session ? session.user : null;
         
-        // 🟢 CORRECCIÓN: Carga de datos dependiente del usuario
-        if (currentUser) {
-            // AHORA SÍ: Llamamos al historial DESPUÉS de saber quién es el usuario
-            loadHistorialPedidos(); 
-        }
-
+        // Renderiza el header AHORA (no depende del historial)
         renderHeader();
         actualizarIndicadorPedido();
-        
-        // 🟢 CORRECCIÓN CLAVE: Renderiza la vista inicial (del hash)
-        // DESPUÉS de cargar la sesión y el historial.
-        isNavigating = false;
-        setView(initialView || 'home', initialData || null); 
+
+        // 🟢==== ¡CORRECCIÓN CLAVE! ====🟢
+        // 1. Creamos una promesa "base" que se resuelve al instante
+        let dataLoadPromise = Promise.resolve();
+
+        // 2. Si hay usuario, REASIGNAMOS la promesa a la función
+        //    que SÍ tarda tiempo (cargar el historial).
+        if (currentUser) {
+            dataLoadPromise = loadHistorialPedidos();
+        }
+
+        // 3. AHORA SÍ: Le decimos a setView que espere a que
+        //    la promesa (sea la instantánea o la de la BDD) termine.
+        dataLoadPromise.then(() => {
+            // Este código SÓLO se ejecuta después de que loadHistorialPedidos() terminó
+            isNavigating = false;
+            // Si no hay usuario, te redirigirá a 'login' (gracias a la lógica de setView)
+            setView(initialView || 'home', initialData || null); 
+        });
+        // 🟢============================🟢
+
     });
     
     // 3. Manejo de cambios de estado (Login/Logout) - SIN CAMBIOS
@@ -177,6 +190,7 @@ function setupAuthListener() {
         if (currentUser) {
             if (event === 'SIGNED_IN') {
                 if (window.location.hash === '' || window.location.hash === '#home') {
+                    // Aquí también esperamos
                     loadHistorialPedidos().then(() => goToDashboard());
                 } 
             }
@@ -2015,6 +2029,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
