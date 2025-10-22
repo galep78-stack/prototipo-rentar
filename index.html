@@ -285,7 +285,7 @@ function isOfferInPedido(offerId) {
 // ===================================================================
 // 🟢 FUNCIÓN ACTUALIZADA: Manejar Agregar o Quitar (Acción Unidireccional)
 // ===================================================================
-function handlePedido(offerId, providerId, titulo, precio, action) {
+function handlePedido(offerId, providerUserId, titulo, precio, action) {
     // 1. Verificar si es un productor conectado
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
         alert("Debes iniciar sesión como Productor para armar un pedido.");
@@ -294,7 +294,7 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
     }
 
     const precioNum = parseFloat(precio);
-    const itemToAdd = { offerId, providerId, titulo, precio: precioNum };
+    const itemToAdd = { offerId, providerId: providerUserId, titulo, precio: precioNum };
     const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
 
     if (action === 'agregar') {
@@ -1708,7 +1708,7 @@ async function renderOfferListByCategoryView(categoryName) {
                 descripcion,
                 precio,
                 ubicacion,
-                proveedores ( id, nombre_empresa )
+                proveedores ( id, nombre_empresa, user_id ) 
             `)
             .eq('categoria', categoryName);
 
@@ -1717,11 +1717,11 @@ async function renderOfferListByCategoryView(categoryName) {
         if (offers && offers.length > 0) {
             offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
-                const providerId = offer.proveedores ? offer.proveedores.id : null;
-                
+                const providerNumId = offer.proveedores ? offer.proveedores.id : null;
+                const providerUserId = offer.proveedores ? `'${offer.proveedores.user_id}'` : null;
                 // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
-                    <button onclick="handlePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio}, 'quitar')" 
+                    <button onclick="handlePedido('${offer.id}', ${providerUserId}, /*...*/ 'quitar')" 
                         class="bg-accent-blue hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
                         Quitar
                     </button>
@@ -1729,7 +1729,7 @@ async function renderOfferListByCategoryView(categoryName) {
                 
                 // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
                 const addButtonHtml = `
-                    <button onclick="handlePedido('${offer.id}', ${providerId}, '${offer.titulo.replace(/'/g, "\\'")}', ${offer.precio}, 'agregar')" 
+                    <button onclick="handlePedido('${offer.id}', ${providerUserId}, /*...*/ 'agregar')" 
                         class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
                         id="pedido-btn-${offer.id}">
                         Agregar
@@ -2027,6 +2027,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
