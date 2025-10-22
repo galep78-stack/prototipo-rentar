@@ -1249,8 +1249,8 @@ function renderAddOfferView() {
         </div>
     `;
 }
-  // ===================================================================
-// 🟢 FUNCIÓN renderProviderRequestsView (CONSULTA PERSISTENTE ASÍNCRONA)
+// ===================================================================
+// 🟢 FUNCIÓN OPTIMIZADA: renderProviderRequestsView (CONSULTA ÚNICA)
 // ===================================================================
 async function renderProviderRequestsView() {
     if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
@@ -1262,33 +1262,42 @@ async function renderProviderRequestsView() {
     let totalPending = 0;
     
     try {
-        // 1. Cargar TODOS los pedidos del historial (si el RLS lo permite, o todos los que son visibles)
-        // La política RLS de SELECT debe permitir leer los pedidos para que esta consulta funcione.
+        // 1. Consulta directa a Supabase usando JSONB operator (@>)
+        // Esto pide todos los pedidos donde el user_id del proveedor esté presente
+        // en el array items_json como 'providerId'.
         const { data: allPedidos, error } = await supabaseClient
             .from('solicitudes_pedido')
             .select('*')
-            .order('fecha_envio', { ascending: false });
+            .order('fecha_envio', { ascending: false })
+            // 💡 Filtro RLS-compatible: Busca si el UID está en el JSONB
+            .containedBy('items_json', [{ providerId: currentProviderUserId }]); 
+            
+        // NOTA: La política RLS con '@>' debería ser suficiente, pero el filtro .containedBy en JS añade claridad.
+        // Si tienes problemas de rendimiento, confía solo en la política RLS.
+            
 
         if (error) throw error;
         
-        // 2. Iterar y filtrar pedidos relevantes para ESTE proveedor
+        // 2. Iterar y calcular el total pendiente
         (allPedidos || []).forEach(pedido => {
             const items = pedido.items_json || []; // Lista de ítems del pedido
             
-            // Asumimos que item.providerId contiene el user_id del proveedor
+            // Filtra los ítems relevantes para ESTE proveedor (necesario para el detalle de la tabla)
             const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId);
 
             if (itemsForThisProvider.length > 0) {
+                const isPending = pedido.estado === 'Pendiente de Cotización';
+                
                 requestsForProvider.push({
                     codigo: pedido.codigoPedido,
                     fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
-                    fechaInicio: pedido.fecha_inicio || 'N/A', // Usamos las nuevas columnas
-                    fechaFin: pedido.fecha_fin || 'N/A',       // Usamos las nuevas columnas
-                    items: itemsForThisProvider,
+                    fechaInicio: pedido.fecha_inicio || 'N/A',
+                    fechaFin: pedido.fecha_fin || 'N/A',
+                    items: itemsForThisProvider, // Solo los ítems que le corresponden
                     estado: pedido.estado
                 });
                 
-                if (pedido.estado === 'Pendiente de Cotización') {
+                if (isPending) {
                     totalPending++;
                 }
             }
@@ -1300,10 +1309,11 @@ async function renderProviderRequestsView() {
     }
 
 
-    // 3. Renderizado de la Tabla
+    // 3. Renderizado de la Tabla (DE AQUÍ EN ADELANTE, ES EL CÓDIGO DE LA TABLA)
     const tableRows = requestsForProvider.map((pedido, index) => {
         let estadoClass = pedido.estado.includes('Pendiente') ? 'text-yellow-400 bg-yellow-900/50' : 'text-green-400 bg-green-900/50';
 
+        // Muestra el título y precio de CADA ítem que le compete
         const itemsDetail = pedido.items.map(item => `<li class="text-xs text-gray-500 font-sans">${item.titulo} ($${item.precio.toLocaleString('es-AR')})</li>`).join('');
 
         return `
@@ -1327,7 +1337,8 @@ async function renderProviderRequestsView() {
             </tr>
         `;
     }).join('');
-
+    
+    // ... el resto de la estructura HTML de la vista ...
     const content = `
         <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
             <table class="min-w-full divide-y divide-gray-700/50">
@@ -1969,6 +1980,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
