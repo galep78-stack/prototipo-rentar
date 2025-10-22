@@ -330,8 +330,8 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
 
                 currentUser = data.user;
                 alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
-// ✅ LLAMADA DIRECTA (Debe funcionar si la función fue reordenada)
-        goToDashboard();
+// ✅ CORRECCIÓN: Asegurarse de cargar el historial ANTES de ir al dashboard
+                loadHistorialPedidos().then(() => goToDashboard());
                 } catch (error) {
                 alert(`Error al iniciar sesión: ${error.message}`);
                 console.error('Error en Supabase SignIn:', error);
@@ -1962,6 +1962,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
