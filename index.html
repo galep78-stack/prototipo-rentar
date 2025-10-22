@@ -88,6 +88,7 @@
         let selectedRole = null;
         const contentView = document.getElementById('content-view');
         let isNavigating = false; // 🟢 FIX: Para evitar "pantallazos"
+        let isHistorialLoading = false;
 
         // ⚠️ CLAVES (DEBES USAR TUS CLAVES REALES AQUÍ)
         const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
@@ -586,8 +587,13 @@ function handlePedido(offerId, providerId, titulo, precio, action) {
 // 🟢 NUEVA FUNCIÓN: Cargar Historial de Pedidos desde Supabase
 // ===================================================================
 async function loadHistorialPedidos() {
+    // 💡 SOLUCIÓN: Si ya se está ejecutando, ¡salir!
+    if (isHistorialLoading) return;
+    isHistorialLoading = true;
+    
     if (!supabaseClient || !currentUser) {
         historialPedidos = [];
+        isHistorialLoading = false; // Desbloquear si sale temprano
         return;
     }
 
@@ -628,6 +634,9 @@ async function loadHistorialPedidos() {
     } catch (error) {
         console.error("Error al cargar el historial de pedidos:", error.message);
         historialPedidos = [];
+        } finally {
+        // ✅ Desbloquear al finalizar la ejecución, incluso si hay un error
+        isHistorialLoading = false;
     }
 }
 
@@ -1870,7 +1879,6 @@ async function handleSendPedido() {
         actualizarIndicadorPedido();
         
         await loadHistorialPedidos();
-        
         setView('historial_pedidos');
 
     } catch (error) {
@@ -1921,6 +1929,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
