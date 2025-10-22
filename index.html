@@ -1813,7 +1813,7 @@ function renderPedidoActualView() {
             <span class="font-heading text-accent-cyan">TOTAL ESTIMADO:</span>
             <span class="font-heading text-accent-cyan">$${totalPrecio.toLocaleString('es-AR')}</span>
         </div>
-        <button onclick="" class="w-full bg-accent-cyan text-primary-dark py-4 rounded-lg font-bold text-xl hover:bg-white transition">
+        <button onclick="handleSendPedido()" class="w-full bg-accent-cyan text-primary-dark py-4 rounded-lg font-bold text-xl hover:bg-white transition">
             Solicitar Contacto a Proveedores
         </button>
     </div>
@@ -1955,6 +1955,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
