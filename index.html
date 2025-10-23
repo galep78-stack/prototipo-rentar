@@ -1748,7 +1748,7 @@ async function renderOfferListByCategoryView(categoryName) {
             offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerNumId = offer.proveedores ? offer.proveedores.id : null;
-                const providerUserId = offer.proveedores ? `'${offer.proveedores.user_id}'` : null;
+                const providerUserId = offer.proveedores ? offer.proveedores.user_id : null;
                 const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
@@ -1760,7 +1760,7 @@ async function renderOfferListByCategoryView(categoryName) {
                 
                 // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
                 const addButtonHtml = `
-    <button onclick="handlePedido('${offer.id}', ${providerUserId}, '${escapedTitulo}', ${offer.precio}, 'agregar')"
+    <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
             class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
             id="pedido-btn-${offer.id}">
         Agregar
@@ -2067,6 +2067,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
