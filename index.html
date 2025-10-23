@@ -1901,25 +1901,12 @@ async function handleSendPedido() {
         return;
     }
     
-    // --- 1. DEFINICIÓN Y VALIDACIÓN DE VARIABLES CRÍTICAS (MOVIDAS AL INICIO) ---
+    // --- 1. DEFINICIÓN Y VALIDACIÓN DE VARIABLES CRÍTICAS ---
     const fechaInicioElement = document.getElementById('fecha-inicio');
     const fechaFinElement = document.getElementById('fecha-fin');
-// 🟢 PASO 1: Calcular el array de IDs de proveedores únicos
-    const proveedoresIds = pedidoActual.reduce((acc, item) => {
-        // Extrae las cadenas de ID de proveedor únicas del carrito
-        if (item.providerId && !acc.includes(item.providerId)) {
-            acc.push(item.providerId);
-        }
-        return acc;
-    }, []);
     
-    const now = new Date();
-    const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
-    
-    // 🚨 CORRECCIÓN CLAVE: Detener la ejecución si los elementos del DOM no están disponibles.
+    // 🚨 Verifica que los elementos DOM existan
     if (!fechaInicioElement || !fechaFinElement) {
-        // Esto puede ocurrir si se presiona el botón antes de que el DOM esté listo,
-        // o si la vista del pedido no se renderizó correctamente.
         alert("Error de Interfaz: No se encontraron los campos de fecha. Por favor, recarga la página.");
         console.error("DOM Error: Elementos de fecha no encontrados.");
         return;
@@ -1938,32 +1925,52 @@ async function handleSendPedido() {
         return;
     }
     
+    // 🟢 CÁLCULO DE DATOS Y NUEVA COLUMNA
+    const now = new Date(); 
+    const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
     const totalPrecio = pedidoActual.reduce((sum, item) => sum + item.precio, 0);
+
+    const proveedoresIds = pedidoActual.reduce((acc, item) => {
+        if (item.providerId && !acc.includes(item.providerId)) {
+            acc.push(item.providerId);
+        }
+        return acc;
+    }, []);
 
     const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
     // ------------------------------------------------------------------------------------
 
-// 🟢 PASO 2: INSERTAR LOS DATOS EN LA NUEVA COLUMNA
-                proveedores_ids: proveedoresIds, // ¡Esta línea es clave!
-                
-                fecha_envio: now.toISOString(),
-                estado: 'Pendiente de Cotización',
-                fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin
-            });
+    // =========================================================
+    // 2. Guardar en Historial PERSISTENTE (Supabase INSERT)
+    // =========================================================
+    try {
+        const { error } = await supabaseClient
+            .from('solicitudes_pedido')
+            .insert([
+                {
+                    codigoPedido: codigoPedido,
+                    productor_user_id: currentUser.id,
+                    items_json: pedidoActual,
+                    
+                    // ✅ LÍNEA CRÍTICA (proveedores_ids)
+                    proveedores_ids: proveedoresIds, 
+                    
+                    fecha_envio: now.toISOString(),
+                    estado: 'Pendiente de Cotización',
+                    fecha_inicio: fechaInicio,
+                    fecha_fin: fechaFin
+                }
+            ]);
         
         if (error) throw error;
         
-        // El pedido se guardó correctamente en Supabase
+        // El pedido se guardó correctamente
         alert(summary + "\n\n✅ El carrito se vaciará ahora.");
-        
-        // 3. Limpieza y Redirección
         pedidoActual = [];
         actualizarIndicadorPedido();
         
         await loadHistorialPedidos();
         setView('historial_pedidos');
-
     } catch (error) {
         alert(`🚨 Error al guardar el pedido en Supabase: ${error.message}.`);
         console.error('Error en Supabase INSERT para solicitudes_pedido:', error);
@@ -2057,6 +2064,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
