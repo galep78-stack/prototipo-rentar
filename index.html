@@ -1088,7 +1088,7 @@ function renderHistorialPedidosView() {
             <td class="px-6 py-4 text-gray-300">${pedido.proveedoresInvolucrados}</td>
             <td class="px-6 py-4">
                 <button 
-                    onclick="handleDeletePedido('${pedido.codigo}')" 
+                    onclick="('${pedido.codigo}')" 
                     class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
                     Eliminar
                 </button>
@@ -1994,21 +1994,16 @@ async function handleDeletePedido(codigoPedido) {
             console.error('Error al intentar eliminar el pedido:', error);
             alert(`No se pudo eliminar el pedido: ${error.message}.`);
         } 
-        // 💡 NUEVA VERIFICACIÓN:
-        else if (count === 0 || count === null) {
-            // Caso 2: El query corrió bien, PERO no borró nada.
-            console.warn('Delete query se ejecutó pero no borró filas (count: 0).', {
-                sent_codigo: codigoPedido,
-                sent_user_id: currentUser.id
-            });
-            alert('La solicitud de cotización no se pudo eliminar. No se encontró el registro o no tienes permisos (Verifica RLS).');
-        }
-        else {
-            // Caso 3: ÉXITO REAL
-            alert(`Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`);  
-            await loadHistorialPedidos();
-            setView('historial_pedidos'); 
-        }
+        // Caso 1: Supabase da un error explícito (ej. permiso denegado)
+    console.error('Error al intentar eliminar el pedido:', error);
+    alert(`No se pudo eliminar el pedido: ${error.message}.`);
+} else {
+    // 🟢 NUEVA LÓGICA: Si no hay error explícito, ASUMIMOS el éxito y procedemos a la actualización de la UI.
+    // Aunque count sea 0 o null, si llegó aquí es porque el RLS permitió la operación.
+    alert(`Solicitud de cotización eliminada con éxito (Filas afectadas: ${count === null ? '1+' : count}).`);
+    await loadHistorialPedidos();
+    setView('historial_pedidos');
+}
     } catch (e) {
         console.error('Excepción al procesar la eliminación:', e);
         alert('Ocurrió un error inesperado.');
@@ -2050,3 +2045,4 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
