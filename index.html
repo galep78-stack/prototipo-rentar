@@ -1904,15 +1904,16 @@ async function handleSendPedido() {
     // --- 1. DEFINICIÓN Y VALIDACIÓN DE VARIABLES CRÍTICAS (MOVIDAS AL INICIO) ---
     const fechaInicioElement = document.getElementById('fecha-inicio');
     const fechaFinElement = document.getElementById('fecha-fin');
-
-    // 🟢 NUEVA LÓGICA: Extraer IDs únicos de proveedores del carrito (pedidoActual)
-const proveedoresIds = pedidoActual.reduce((acc, item) => {
-    if (item.providerId && !acc.includes(item.providerId)) {
-        acc.push(item.providerId);
-    }
-    return acc;
-}, []);
-    
+// 🟢 PASO 1: Calcular el array de IDs de proveedores únicos
+    const proveedoresIds = pedidoActual.reduce((acc, item) => {
+        // Extrae las cadenas de ID de proveedor únicas del carrito
+        if (item.providerId && !acc.includes(item.providerId)) {
+            acc.push(item.providerId);
+        }
+        return acc;
+    }, []);
+    const now = new Date();
+    const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
     // 🚨 CORRECCIÓN CLAVE: Detener la ejecución si los elementos del DOM no están disponibles.
     if (!fechaInicioElement || !fechaFinElement) {
         // Esto puede ocurrir si se presiona el botón antes de que el DOM esté listo,
@@ -1942,29 +1943,15 @@ const proveedoresIds = pedidoActual.reduce((acc, item) => {
     const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
     // ------------------------------------------------------------------------------------
 
-    // =========================================================
-    // 2. Guardar en Historial PERSISTENTE (Supabase INSERT)
-    // =========================================================
-   // =========================================================
-// 2. Guardar en Historial PERSISTENTE (Supabase INSERT)
-// =========================================================
-try {
-    const { error } = await supabaseClient
-        .from('solicitudes_pedido')
-        .insert({
-            codigoPedido: codigoPedido,
-            productor_user_id: currentUser.id,
-            items_json: pedidoActual, // Se mantiene para el detalle
-            
-            // 🟢 NUEVA COLUMNA A INSERTAR:
-            proveedores_ids: proveedoresIds, // Inserta el array simple
-            
-            fecha_envio: now.toISOString(),
-            estado: 'Pendiente de Cotización',
-            fecha_inicio: fechaInicio,
-            fecha_fin: fechaFin
-        });
-    
+// 🟢 PASO 2: INSERTAR LOS DATOS EN LA NUEVA COLUMNA
+                proveedores_ids: proveedoresIds, // ¡Esta línea es clave!
+                
+                fecha_envio: now.toISOString(),
+                estado: 'Pendiente de Cotización',
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFin
+            });
+        
         if (error) throw error;
         
         // El pedido se guardó correctamente en Supabase
@@ -2070,6 +2057,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
