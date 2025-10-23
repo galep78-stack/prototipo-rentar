@@ -1905,7 +1905,7 @@ async function handleSendPedido() {
     const fechaInicioElement = document.getElementById('fecha-inicio');
     const fechaFinElement = document.getElementById('fecha-fin');
 
-    / 🟢 NUEVA LÓGICA: Extraer IDs únicos de proveedores del carrito (pedidoActual)
+    // 🟢 NUEVA LÓGICA: Extraer IDs únicos de proveedores del carrito (pedidoActual)
 const proveedoresIds = pedidoActual.reduce((acc, item) => {
     if (item.providerId && !acc.includes(item.providerId)) {
         acc.push(item.providerId);
@@ -2070,6 +2070,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
