@@ -1912,8 +1912,10 @@ async function handleSendPedido() {
         }
         return acc;
     }, []);
+    
     const now = new Date();
     const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
+    
     // 🚨 CORRECCIÓN CLAVE: Detener la ejecución si los elementos del DOM no están disponibles.
     if (!fechaInicioElement || !fechaFinElement) {
         // Esto puede ocurrir si se presiona el botón antes de que el DOM esté listo,
@@ -1936,8 +1938,6 @@ async function handleSendPedido() {
         return;
     }
     
-    const now = new Date();
-    const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
     const totalPrecio = pedidoActual.reduce((sum, item) => sum + item.precio, 0);
 
     const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
@@ -2057,6 +2057,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
