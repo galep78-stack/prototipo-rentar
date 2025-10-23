@@ -1748,7 +1748,7 @@ async function renderOfferListByCategoryView(categoryName) {
             offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerNumId = offer.proveedores ? offer.proveedores.id : null;
-                const providerUserId = offer.proveedores ? ${offer.proveedores.user_id} : null;
+                const providerUserId = offer.proveedores ? ´${offer.proveedores.user_id}` : null;
                 const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
@@ -2067,6 +2067,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
