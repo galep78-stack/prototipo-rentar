@@ -794,10 +794,9 @@ async function loadHistorialPedidos() {
                     }
                     isNavigating = false; // 🟢 Desbloqueamos al terminar
                 }).catch(error => {
-                    // 🚨 Este bloque es CRUCIAL. Si renderProviderRequestsView lanza un error (como un rol incorrecto)
-    // Se muestra el error, no te redirige al Home.
+    // Esto mostrará el error de "Acceso Denegado" de la vista de proveedor
     contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
-    isNavigating = false; // 🟢 Desbloqueamos si hay error
+    isNavigating = false;
 });
                 return;
             }
@@ -2026,19 +2025,13 @@ window.onload = () => {
     }
 
     // 3. LISTENERS (hashchange)
-    let firstLoad = true; // 🟢 NUEVA BANDERA
-    window.addEventListener('hashchange', () => {
-    if (firstLoad) {
-        firstLoad = false;
-        return; // Ignoramos el primer evento si ya lo manejó setupAuthListener
-    }
-
-    if (!isNavigating) {
-        const newHash = window.location.hash.replace('#', '');
-        const [viewName, data] = newHash.split('/');
-        setView(viewName || 'home', data || null);
-    }
-});
+   window.addEventListener('hashchange', () => {
+        if (!isNavigating) {
+            const newHash = window.location.hash.replace('#', '');
+            const [viewName, data] = newHash.split('/');
+            setView(viewName || 'home', data || null);
+        }
+    });
 
     // Renderizamos el header (se actualizará en getSession)
     renderHeader();
@@ -2047,6 +2040,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
