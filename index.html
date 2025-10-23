@@ -771,6 +771,7 @@ async function loadHistorialPedidos() {
                                 viewName === 'provider_details' ||
                                 viewName === 'offer_list_by_category'; // 🟢 CORRECCIÓN AÑADIDA
                                 viewName === 'provider_requests';
+            viewName === 'dashboard_proveedor';
 
             if (isAsyncView) {
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
@@ -785,6 +786,8 @@ async function loadHistorialPedidos() {
                                       viewName === 'edit_offer' ? renderEditOfferView(data) :
                                       viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
                                       viewName === 'provider_requests' ? renderProviderRequestsView() :
+                    viewName === 'dashboard_proveedor' ? // <--- NUEVO
+                                      renderProviderDashboard() :        // <--- NUEVO
                                       renderProviderDetailsView(data); // 🟢 CAMBIO
 
                 renderPromise.then(html => {
@@ -979,7 +982,32 @@ async function loadHistorialPedidos() {
                 console.error('Error en handleUpdateOffer:', error); // <- 'content' eliminado
             }
         }
+// 🟢 NUEVA FUNCIÓN: Cargar solicitudes RECIBIDAS por el proveedor
+async function loadProviderRequests() {
+    if (!supabaseClient || !currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
+        return [];
+    }
 
+    try {
+        // Obtenemos los pedidos donde el ID del proveedor está contenido en el items_json
+        const { data: pedidos, error } = await supabaseClient
+            .from('solicitudes_pedido')
+            .select('*')
+            .order('fecha_envio', { ascending: false });
+
+        if (error) throw error;
+
+        // Filtramos en JS solo los que tienen al menos un ítem del proveedor actual
+        return pedidos.filter(pedido => {
+            const items = pedido.items_json || [];
+            return items.some(item => item.providerId === currentUser.id);
+        });
+
+    } catch (e) {
+        console.error("Error al cargar solicitudes recibidas:", e.message);
+        return [];
+    }
+}
 
         async function renderEditOfferView(offerId) {
             if (!supabaseClient || !currentUser || !offerId) return setView('dashboard_proveedor');
@@ -1294,6 +1322,10 @@ async function renderProviderRequestsView() {
         // lanzamos un error que es capturado por setView y devuelve un mensaje en pantalla.
         throw new Error("Acceso denegado. Debes iniciar sesión como proveedor.");
     }
+    // 🟢 Carga directa de la data (usa la nueva función)
+    const requestsForProvider = await loadProviderRequests();
+    // Calcula pendientes para el mensaje
+    const totalPending = requestsForProvider.filter(p => p.estado === 'Pendiente de Cotización').length;
     
     const currentProviderUserId = currentUser.id;
     let requestsForProvider = [];
@@ -1310,11 +1342,17 @@ async function renderProviderRequestsView() {
                         
         // NOTA: La política RLS con '@>' debería ser suficiente, pero el filtro .containedBy en JS añade claridad.
         // Si tienes problemas de rendimiento, confía solo en la política RLS.
-            
-
         if (error) throw error;
         console.log("Supabase returned 'allPedidos':", JSON.stringify(allPedidos));
-        
+
+        // Si la lista está vacía
+    if (requestsForProvider.length === 0) {
+        return `<div class="max-w-6xl mx-auto p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Mis Solicitudes de Pedido</h1>
+            <p class="text-gray-400 mb-6">No tienes solicitudes pendientes. ¡Bien hecho!</p>
+            <div class="text-center py-8 text-gray-500">No hay solicitudes de cotización para tu empresa.</div>
+        </div>`;
+    }
         // 2. Iterar y calcular el total pendiente
         (allPedidos || []).forEach(pedido => {
             const items = pedido.items_json || []; // Lista de ítems del pedido
@@ -1554,35 +1592,67 @@ function renderProducerDashboard() {
        // ==================================================================
 // ✅ FUNCIÓN `renderProviderDashboard` (ACTUALIZADA con Conteo de Solicitudes)
 // ==================================================================
-function renderProviderDashboard() {
+async function renderProviderDashboard() { // <--- ASÍNCRONA
+    if (!currentUser) return renderLoginView(); // Asegura sesión
     let solicitudesPendientes = 0;
-    const currentProviderUserId = currentUser.id;
-
-    // 🟢 Cálculo simulado de solicitudes pendientes (misma lógica que la vista)
-    historialPedidos.forEach(pedido => {
-        const isRelevant = pedido.items.some(item => item.providerId == currentProviderUserId);
-        if (isRelevant && pedido.estado === 'Pendiente de Cotización') {
+   
+    // 🟢 CARGA DE DATOS PARA EL DASHBOARD DE PROVEEDOR
+    const providerRequests = await loadProviderRequests();
+    //const currentProviderUserId = currentUser.id;
+// Cálculo de pendientes
+    providerRequests.forEach(pedido => {
+        if (pedido.estado === 'Pendiente de Cotización') {
             solicitudesPendientes++;
         }
     });
-
-    return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
+    
+    // 🟢 Cálculo simulado de solicitudes pendientes (misma lógica que la vista)
+   //historialPedidos.forEach(pedido => {
+     //   const isRelevant = pedido.items.some(item => item.providerId == currentProviderUserId);
+       // if (isRelevant && pedido.estado === 'Pendiente de Cotización') {
+         //   solicitudesPendientes++;
+    
+   // return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
+      //  <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1>
+   //     <p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p>
+     //   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+       //     <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+         //       <h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3>
+           //     <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
+             //   <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
+           // </div>
+           // <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+             //   <h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3>
+               // <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
+               // <button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button>
+           // </div>
+           // <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
+             //   <h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3>
+               // <p class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
+               // <button onclick="setView('provider_requests')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button>
+           // </div>
+       // </div>
+   // </div>`;
+return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
         <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1>
         <p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3>
-                <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
+           
+[cite: 370]      <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
                 <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
             </div>
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3>
-                <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
+            
+[cite: 371]     <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
                 <button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button>
             </div>
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3>
-                <p class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
+                <p 
+[cite: 372] class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
                 <button onclick="setView('provider_requests')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button>
             </div>
         </div>
@@ -2040,6 +2110,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
