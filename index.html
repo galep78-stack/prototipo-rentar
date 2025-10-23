@@ -637,7 +637,12 @@ async function loadHistorialPedidos() {
         isHistorialLoading = false; // Desbloquear si sale temprano
         return;
     }
-
+// 🟢 NUEVA VERIFICACIÓN DE ROL:
+    if (currentUser.user_metadata.user_role === 'proveedor') {
+        historialPedidos = []; // Limpiamos y salimos. Los proveedores no tienen historial de pedidos salientes.
+        isHistorialLoading = false;
+        return;
+    }
     try {
         // Obtenemos los pedidos del usuario productor actual
         const { data, error } = await supabaseClient
@@ -2050,6 +2055,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
