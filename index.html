@@ -1740,20 +1740,20 @@ async function renderOfferListByCategoryView(categoryName) {
                 const providerUserId = offer.proveedores ? `'${offer.proveedores.user_id}'` : null;
                 // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
-                    <button onclick="handlePedido('${offer.id}', ${providerUserId}, /*...*/ 'quitar')" 
-                        class="bg-accent-blue hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
-                        Quitar
-                    </button>
-                `;
+    <button onclick="handlePedido('${offer.id}', ${providerUserId}, '${escapedTitulo}', ${offer.precio}, 'quitar')"
+            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
+        Quitar
+    </button>
+`; // Nota: Se cambió a color rojo para quitar
                 
                 // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
                 const addButtonHtml = `
-                    <button onclick="handlePedido('${offer.id}', ${providerUserId}, /*...*/ 'agregar')" 
-                        class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
-                        id="pedido-btn-${offer.id}">
-                        Agregar
-                    </button>
-                `;
+    <button onclick="handlePedido('${offer.id}', ${providerUserId}, '${escapedTitulo}', ${offer.precio}, 'agregar')"
+            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
+            id="pedido-btn-${offer.id}">
+        Agregar
+    </button>
+`;
 
                 return `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
@@ -2046,6 +2046,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
