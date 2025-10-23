@@ -146,58 +146,50 @@
 // 🟢 FUNCIÓN setupAuthListener (CORREGIDA V3 - SOLUCIONA F5)
 // ===================================================================
 function setupAuthListener() {
-    if (!supabaseClient) return;
-    
-    // 1. Obtenemos el hash ANTES
-    const currentHash = window.location.hash.replace('#', '');
-    const [initialView, initialData] = currentHash.split('/'); 
-    
-    // 2. Manejo de la sesión inicial
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
-        currentUser = session ? session.user : null;
-        
-        // Renderiza el header AHORA (no depende del historial)
-        ;
-        actualizarIndicadorPedido();
+    if (!supabaseClient) return;
+    const currentHash = window.location.hash.replace('#', '');
+    const [initialView, initialData] = currentHash.split('/');
 
-        // 🟢==== ¡CORRECCIÓN CLAVE! ====🟢
-        // 1. Creamos una promesa "base" que se resuelve al instante
-        let dataLoadPromise = Promise.resolve();
+    supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
+        currentUser = session ? session.user : null;
+        
+        // 🟢 NUEVO: Si hay sesión pero falta el rol, lo recargamos
+        if (currentUser && (!currentUser.user_metadata || !currentUser.user_metadata.user_role)) {
+            const { data: userData } = await supabaseClient.auth.getUser();
+            currentUser = userData.user; // Actualiza con los metadatos completos
+            console.log("FIX: Sesión recargada para obtener user_metadata.");
+        }
+        
+        renderHeader();
+        actualizarIndicadorPedido();
 
-        // 2. Si hay usuario, REASIGNAMOS la promesa a la función
-        //    que SÍ tarda tiempo (cargar el historial).
-        if (currentUser) {
-            dataLoadPromise = loadHistorialPedidos();
-        }
+        let dataLoadPromise = Promise.resolve();
+        if (currentUser) {
+            dataLoadPromise = loadHistorialPedidos();
+        }
 
-        // 3. AHORA SÍ: Le decimos a setView que espere a que
-        //    la promesa (sea la instantánea o la de la BDD) termine.
-        dataLoadPromise.then(() => {
-            // Este código SÓLO se ejecuta después de que loadHistorialPedidos() terminó
-            isNavigating = false;
-            // Si no hay usuario, te redirigirá a 'login' (gracias a la lógica de setView)
-            setView(initialView || 'home', initialData || null); 
-        });
-        // 🟢============================🟢
-
-    });
-    
-    // 3. Manejo de cambios de estado (Login/Logout) - SIN CAMBIOS
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        currentUser = session ? session.user : null;
-        renderHeader();
-        actualizarIndicadorPedido();
-        if (currentUser) {
-            if (event === 'SIGNED_IN') {
-                if (window.location.hash === '' || window.location.hash === '#home') {
-                    // Aquí también esperamos
-                    loadHistorialPedidos().then(() => goToDashboard());
-                } 
-            }
-        } else if (event === 'SIGNED_OUT') {
-            setView('home');
-        }
-    });
+        dataLoadPromise.then(() => {
+            isNavigating = false;
+            // Al eliminar la redirección temprana de setView, esta llamada debería funcionar:
+            setView(initialView || 'home', initialData || null); 
+        });
+    });
+    
+    // El onAuthStateChange (login/logout) se mantiene igual
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        currentUser = session ? session.user : null;
+        renderHeader();
+        actualizarIndicadorPedido();
+        if (currentUser) {
+            if (event === 'SIGNED_IN') {
+                if (window.location.hash === '' || window.location.hash === '#home') {
+                    loadHistorialPedidos().then(() => goToDashboard());
+                }
+            }
+        } else if (event === 'SIGNED_OUT') {
+            setView('home');
+        }
+    });
 }
         // ===================================================================
 // 🟢 FUNCIÓN goToDashboard (FALTANTE)
@@ -2050,6 +2042,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
