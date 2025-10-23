@@ -280,12 +280,12 @@ function isOfferInPedido(offerId) {
     return pedidoActual.some(item => item.offerId === offerId);
 }
 // ===================================================================
-// 🟢 NUEVA FUNCIÓN: Manejar Selección de Ofertas para el Pedido
-// ===================================================================
-// ===================================================================
-// 🟢 FUNCIÓN ACTUALIZADA: Manejar Agregar o Quitar (Acción Unidireccional)
+// FUNCIÓN handlePedido (CON CONSOLE.LOGS PARA DEBUGGING)
 // ===================================================================
 function handlePedido(offerId, providerUserId, titulo, precio, action) {
+    // 🪵 Log 1: Ver qué argumentos recibe la función
+    console.log("handlePedido triggered. Arguments:", { offerId, providerUserId, titulo, precio, action });
+
     // 1. Verificar si es un productor conectado
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
         alert("Debes iniciar sesión como Productor para armar un pedido.");
@@ -294,35 +294,54 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
     }
 
     const precioNum = parseFloat(precio);
-    const itemToAdd = { offerId, providerId: providerUserId, titulo, precio: precioNum };
+    // 🪵 Log 2: Ver el objeto que se va a agregar/quitar
+    const itemToAddOrRemove = { offerId, providerId: providerUserId, titulo, precio: precioNum };
+    console.log("Item object:", itemToAddOrRemove);
+
     const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
 
+    // 🪵 Log 3: Ver el estado del carrito ANTES de la acción
+    console.log("pedidoActual BEFORE:", JSON.stringify(pedidoActual));
+
     if (action === 'agregar') {
-        // LÓGICA DE AGREGAR: Siempre añade el producto.
-        pedidoActual.push(itemToAdd);
+        // LÓGICA DE AGREGAR
+        pedidoActual.push(itemToAddOrRemove);
+        console.log("✅ Item PUSHED to pedidoActual."); // Confirmación de que se agregó
         alert(`"${titulo}" agregado al pedido.`);
     } else if (action === 'quitar') {
-        // LÓGICA DE QUITAR: Solo quita si existe. Quita la primera coincidencia encontrada.
+        // LÓGICA DE QUITAR
         if (indexEnPedido > -1) {
             pedidoActual.splice(indexEnPedido, 1);
+            console.log("🗑️ Item REMOVED from pedidoActual at index:", indexEnPedido); // Confirmación de que se quitó
             alert(`"${titulo}" quitado del pedido.`);
         } else {
+            console.error(`Attempted to remove item, but offerId ${offerId} not found.`); // Error si no se encuentra para quitar
             alert(`Error: "${titulo}" no se encuentra en el pedido actual.`);
         }
+    } else {
+        console.error("Unknown action in handlePedido:", action); // Error si la acción no es 'agregar' ni 'quitar'
     }
 
-    // 2. Actualizar UI
+    // 🪵 Log 4: Ver el estado del carrito DESPUÉS de la acción
+    console.log("pedidoActual AFTER:", JSON.stringify(pedidoActual));
+
+    // 2. Actualizar UI (Indicador del carrito)
+    console.log("Calling actualizarIndicadorPedido...");
     actualizarIndicadorPedido();
-    
-    // 3. Re-renderizar la vista para que el usuario vea el cambio (aunque ambos botones sean permanentes)
+
+    // 3. Re-renderizar la vista actual para reflejar cambios (si aplica)
     if (window.location.hash.includes('offer_list_by_category')) {
         const categoryName = window.location.hash.replace('#offer_list_by_category', '').replace('/', '');
         if (categoryName) {
+            console.log("Re-rendering view 'offer_list_by_category' for:", categoryName);
             setView('offer_list_by_category', categoryName);
+        } else {
+             console.warn("Could not get category name to re-render view.");
         }
+    } else {
+        console.log("Not in category view, UI update relies on indicator only.");
     }
 }
-
             // ===================================================================
         // FUNCIÓN: Manejador de Búsqueda
         // ===================================================================
@@ -2027,6 +2046,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
