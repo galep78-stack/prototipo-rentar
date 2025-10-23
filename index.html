@@ -146,50 +146,58 @@
 // 🟢 FUNCIÓN setupAuthListener (CORREGIDA V3 - SOLUCIONA F5)
 // ===================================================================
 function setupAuthListener() {
-    if (!supabaseClient) return;
-    const currentHash = window.location.hash.replace('#', '');
-    const [initialView, initialData] = currentHash.split('/');
+    if (!supabaseClient) return;
+    
+    // 1. Obtenemos el hash ANTES
+    const currentHash = window.location.hash.replace('#', '');
+    const [initialView, initialData] = currentHash.split('/'); 
+    
+    // 2. Manejo de la sesión inicial
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        currentUser = session ? session.user : null;
+        
+        // Renderiza el header AHORA (no depende del historial)
+        ;
+        actualizarIndicadorPedido();
 
-    supabaseClient.auth.getSession().then(async ({ data: { session } }) => {
-        currentUser = session ? session.user : null;
-        
-        // 🟢 NUEVO: Si hay sesión pero falta el rol, lo recargamos
-        if (currentUser && (!currentUser.user_metadata || !currentUser.user_metadata.user_role)) {
-            const { data: userData } = await supabaseClient.auth.getUser();
-            currentUser = userData.user; // Actualiza con los metadatos completos
-            console.log("FIX: Sesión recargada para obtener user_metadata.");
-        }
-        
-        renderHeader();
-        actualizarIndicadorPedido();
+        // 🟢==== ¡CORRECCIÓN CLAVE! ====🟢
+        // 1. Creamos una promesa "base" que se resuelve al instante
+        let dataLoadPromise = Promise.resolve();
 
-        let dataLoadPromise = Promise.resolve();
-        if (currentUser) {
-            dataLoadPromise = loadHistorialPedidos();
-        }
+        // 2. Si hay usuario, REASIGNAMOS la promesa a la función
+        //    que SÍ tarda tiempo (cargar el historial).
+        if (currentUser) {
+            dataLoadPromise = loadHistorialPedidos();
+        }
 
-        dataLoadPromise.then(() => {
-            isNavigating = false;
-            // Al eliminar la redirección temprana de setView, esta llamada debería funcionar:
-            setView(initialView || 'home', initialData || null); 
-        });
-    });
-    
-    // El onAuthStateChange (login/logout) se mantiene igual
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        currentUser = session ? session.user : null;
-        renderHeader();
-        actualizarIndicadorPedido();
-        if (currentUser) {
-            if (event === 'SIGNED_IN') {
-                if (window.location.hash === '' || window.location.hash === '#home') {
-                    loadHistorialPedidos().then(() => goToDashboard());
-                }
-            }
-        } else if (event === 'SIGNED_OUT') {
-            setView('home');
-        }
-    });
+        // 3. AHORA SÍ: Le decimos a setView que espere a que
+        //    la promesa (sea la instantánea o la de la BDD) termine.
+        dataLoadPromise.then(() => {
+            // Este código SÓLO se ejecuta después de que loadHistorialPedidos() terminó
+            isNavigating = false;
+            // Si no hay usuario, te redirigirá a 'login' (gracias a la lógica de setView)
+            setView(initialView || 'home', initialData || null); 
+        });
+        // 🟢============================🟢
+
+    });
+    
+    // 3. Manejo de cambios de estado (Login/Logout) - SIN CAMBIOS
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        currentUser = session ? session.user : null;
+        renderHeader();
+        actualizarIndicadorPedido();
+        if (currentUser) {
+            if (event === 'SIGNED_IN') {
+                if (window.location.hash === '' || window.location.hash === '#home') {
+                    // Aquí también esperamos
+                    loadHistorialPedidos().then(() => goToDashboard());
+                } 
+            }
+        } else if (event === 'SIGNED_OUT') {
+            setView('home');
+        }
+    });
 }
         // ===================================================================
 // 🟢 FUNCIÓN goToDashboard (FALTANTE)
@@ -771,23 +779,20 @@ async function loadHistorialPedidos() {
                                 viewName === 'provider_details' ||
                                 viewName === 'offer_list_by_category'; // 🟢 CORRECCIÓN AÑADIDA
                                 viewName === 'provider_requests';
-            viewName === 'dashboard_proveedor';
 
             if (isAsyncView) {
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
 // 🚨 Agregar una verificación de usuario para vistas críticas
-  //  if (!currentUser && (viewName.includes('dashboard') || viewName.includes('requests') || viewName.includes('products'))) {
- //       console.warn(`Intento de acceso a ${viewName} sin usuario. Redirigiendo a home.`);
-   //     isNavigating = false;
-     //   return setView('home'); // Redirige a Home si no hay usuario antes de iniciar la promesa.
-   // }
+    if (!currentUser && (viewName.includes('dashboard') || viewName.includes('requests') || viewName.includes('products'))) {
+        console.warn(`Intento de acceso a ${viewName} sin usuario. Redirigiendo a home.`);
+        isNavigating = false;
+        return setView('home'); // Redirige a Home si no hay usuario antes de iniciar la promesa.
+    }
                 const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
                                       viewName === 'my_products' ? renderMyProductsView() :
                                       viewName === 'edit_offer' ? renderEditOfferView(data) :
                                       viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
                                       viewName === 'provider_requests' ? renderProviderRequestsView() :
-                    viewName === 'dashboard_proveedor' ? // <--- NUEVO
-                                      renderProviderDashboard() :        // <--- NUEVO
                                       renderProviderDetailsView(data); // 🟢 CAMBIO
 
                 renderPromise.then(html => {
@@ -797,9 +802,10 @@ async function loadHistorialPedidos() {
                     }
                     isNavigating = false; // 🟢 Desbloqueamos al terminar
                 }).catch(error => {
-    // Esto mostrará el error de "Acceso Denegado" de la vista de proveedor
+                    // 🚨 Este bloque es CRUCIAL. Si renderProviderRequestsView lanza un error (como un rol incorrecto)
+    // Se muestra el error, no te redirige al Home.
     contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
-    isNavigating = false;
+    isNavigating = false; // 🟢 Desbloqueamos si hay error
 });
                 return;
             }
@@ -982,32 +988,7 @@ async function loadHistorialPedidos() {
                 console.error('Error en handleUpdateOffer:', error); // <- 'content' eliminado
             }
         }
-// 🟢 NUEVA FUNCIÓN: Cargar solicitudes RECIBIDAS por el proveedor
-async function loadProviderRequests() {
-    if (!supabaseClient || !currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
-        return [];
-    }
 
-    try {
-        // Obtenemos los pedidos donde el ID del proveedor está contenido en el items_json
-        const { data: pedidos, error } = await supabaseClient
-            .from('solicitudes_pedido')
-            .select('*')
-            .order('fecha_envio', { ascending: false });
-
-        if (error) throw error;
-
-        // Filtramos en JS solo los que tienen al menos un ítem del proveedor actual
-        return pedidos.filter(pedido => {
-            const items = pedido.items_json || [];
-            return items.some(item => item.providerId === currentUser.id);
-        });
-
-    } catch (e) {
-        console.error("Error al cargar solicitudes recibidas:", e.message);
-        return [];
-    }
-}
 
         async function renderEditOfferView(offerId) {
             if (!supabaseClient || !currentUser || !offerId) return setView('dashboard_proveedor');
@@ -1322,10 +1303,6 @@ async function renderProviderRequestsView() {
         // lanzamos un error que es capturado por setView y devuelve un mensaje en pantalla.
         throw new Error("Acceso denegado. Debes iniciar sesión como proveedor.");
     }
-    // 🟢 Carga directa de la data (usa la nueva función)
-    const requestsForProvider = await loadProviderRequests();
-    // Calcula pendientes para el mensaje
-    const totalPending = requestsForProvider.filter(p => p.estado === 'Pendiente de Cotización').length;
     
     const currentProviderUserId = currentUser.id;
     let requestsForProvider = [];
@@ -1342,17 +1319,11 @@ async function renderProviderRequestsView() {
                         
         // NOTA: La política RLS con '@>' debería ser suficiente, pero el filtro .containedBy en JS añade claridad.
         // Si tienes problemas de rendimiento, confía solo en la política RLS.
+            
+
         if (error) throw error;
         console.log("Supabase returned 'allPedidos':", JSON.stringify(allPedidos));
-
-        // Si la lista está vacía
-    if (requestsForProvider.length === 0) {
-        return `<div class="max-w-6xl mx-auto p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-            <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Mis Solicitudes de Pedido</h1>
-            <p class="text-gray-400 mb-6">No tienes solicitudes pendientes. ¡Bien hecho!</p>
-            <div class="text-center py-8 text-gray-500">No hay solicitudes de cotización para tu empresa.</div>
-        </div>`;
-    }
+        
         // 2. Iterar y calcular el total pendiente
         (allPedidos || []).forEach(pedido => {
             const items = pedido.items_json || []; // Lista de ítems del pedido
@@ -1592,67 +1563,35 @@ function renderProducerDashboard() {
        // ==================================================================
 // ✅ FUNCIÓN `renderProviderDashboard` (ACTUALIZADA con Conteo de Solicitudes)
 // ==================================================================
-async function renderProviderDashboard() { // <--- ASÍNCRONA
-    if (!currentUser) return renderLoginView(); // Asegura sesión
+function renderProviderDashboard() {
     let solicitudesPendientes = 0;
-   
-    // 🟢 CARGA DE DATOS PARA EL DASHBOARD DE PROVEEDOR
-    const providerRequests = await loadProviderRequests();
-    //const currentProviderUserId = currentUser.id;
-// Cálculo de pendientes
-    providerRequests.forEach(pedido => {
-        if (pedido.estado === 'Pendiente de Cotización') {
+    const currentProviderUserId = currentUser.id;
+
+    // 🟢 Cálculo simulado de solicitudes pendientes (misma lógica que la vista)
+    historialPedidos.forEach(pedido => {
+        const isRelevant = pedido.items.some(item => item.providerId == currentProviderUserId);
+        if (isRelevant && pedido.estado === 'Pendiente de Cotización') {
             solicitudesPendientes++;
         }
     });
-    
-    // 🟢 Cálculo simulado de solicitudes pendientes (misma lógica que la vista)
-   //historialPedidos.forEach(pedido => {
-     //   const isRelevant = pedido.items.some(item => item.providerId == currentProviderUserId);
-       // if (isRelevant && pedido.estado === 'Pendiente de Cotización') {
-         //   solicitudesPendientes++;
-    
-   // return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
-      //  <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1>
-   //     <p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p>
-     //   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-       //     <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
-         //       <h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3>
-           //     <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
-             //   <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
-           // </div>
-           // <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
-             //   <h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3>
-               // <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
-               // <button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button>
-           // </div>
-           // <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
-             //   <h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3>
-               // <p class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
-               // <button onclick="setView('provider_requests')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button>
-           // </div>
-       // </div>
-   // </div>`;
-return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
+
+    return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
         <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1>
         <p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3>
-           
-[cite: 370]      <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
+                <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
                 <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
             </div>
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3>
-            
-[cite: 371]     <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
+                <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
                 <button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button>
             </div>
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3>
-                <p 
-[cite: 372] class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
+                <p class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
                 <button onclick="setView('provider_requests')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button>
             </div>
         </div>
@@ -2095,13 +2034,14 @@ window.onload = () => {
     }
 
     // 3. LISTENERS (hashchange)
-   window.addEventListener('hashchange', () => {
-        if (!isNavigating) {
-            const newHash = window.location.hash.replace('#', '');
-            const [viewName, data] = newHash.split('/');
-            setView(viewName || 'home', data || null);
-        }
-    });
+    window.addEventListener('hashchange', () => {
+        if (!isNavigating) {
+            const newHash = window.location.hash.replace('#', '');
+            // 🟢 CORRECCIÓN: Parsear data (ej: "offer_list_by_category/Equipos")
+            const [viewName, data] = newHash.split('/');
+            setView(viewName || 'home', data || null);
+        }
+    });
 
     // Renderizamos el header (se actualizará en getSession)
     renderHeader();
@@ -2110,22 +2050,3 @@ window.onload = () => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
