@@ -1322,6 +1322,7 @@ async function renderProviderRequestsView() {
             
 
         if (error) throw error;
+        console.log("Supabase returned 'allPedidos':", JSON.stringify(allPedidos));
         
         // 2. Iterar y calcular el total pendiente
         (allPedidos || []).forEach(pedido => {
@@ -1330,8 +1331,10 @@ async function renderProviderRequestsView() {
             // Filtra los ítems relevantes para ESTE proveedor (necesario para el detalle de la tabla)
             const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId);
 
-            if (itemsForThisProvider.length > 0) {
-                const isPending = pedido.estado === 'Pendiente de Cotización';
+           // 🪵 NUEVO LOG: Ver si encuentra ítems para este proveedor en este pedido
+if (itemsForThisProvider.length > 0) {
+    console.log(`Found ${itemsForThisProvider.length} items for provider ${currentProviderUserId} in pedido ${pedido.codigoPedido}`);
+    const isPending = pedido.estado === 'Pendiente de Cotización';
                 
                 requestsForProvider.push({
                     codigo: pedido.codigoPedido,
@@ -2047,6 +2050,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
