@@ -1333,8 +1333,8 @@ async function renderProviderRequestsView() {
         (allPedidos || []).forEach(pedido => {
             const items = pedido.items_json || []; // Lista de ítems del pedido
             
-            // Filtra los ítems relevantes para ESTE proveedor (necesario para el detalle de la tabla)
-            const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId);
+           // 🟢 CORRECCIÓN: Usar comparación NO estricta (==) para evitar problemas de tipo UUID/String
+    const itemsForThisProvider = items.filter(item => item.providerId == currentProviderUserId);
 
            // 🪵 NUEVO LOG: Ver si encuentra ítems para este proveedor en este pedido
 if (itemsForThisProvider.length > 0) {
@@ -2064,6 +2064,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
