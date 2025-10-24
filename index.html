@@ -1939,7 +1939,10 @@ async function handleSendPedido() {
         }
         return acc;
     }, []);
-
+    
+// 🟢 NUEVA LÍNEA: Obtener el primer proveedor de la lista (para RLS simple)
+    const principalProvider = proveedoresIds.length > 0 ? proveedoresIds[0] : null;
+    
     const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
     // ------------------------------------------------------------------------------------
 
@@ -1957,6 +1960,7 @@ async function handleSendPedido() {
                     
                     // ✅ LÍNEA CRÍTICA (proveedores_ids)
                     proveedores_ids: proveedoresIds, 
+                    proveedor_principal_id: principalProvider,
                     
                     fecha_envio: now.toISOString(),
                     estado: 'Pendiente de Cotización',
@@ -2067,5 +2071,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
