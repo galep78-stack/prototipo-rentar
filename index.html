@@ -1302,14 +1302,15 @@ function renderAddOfferView() {
 // 🟢 FUNCIÓN OPTIMIZADA: renderProviderRequestsView (Línea ~305)
 // ===================================================================
 async function renderProviderRequestsView() {
-    console.log("✅ Entró a renderProviderRequestsView");
-    // 🚨 NOTA: Si estás logueado como Productor y llegas aquí, el código fallará,
-    // pero renderizará el mensaje de error en pantalla en lugar de volver a Home.
+    const currentProviderUserId = currentUser ? currentUser.id : null; 
+let requestsForProvider = [];
+let totalPending = 0;
 
-    const currentProviderUserId = currentUser ? currentUser.id : null;
-    let requestsForProvider = [];
-    let totalPending = 0;
-    
+// 🟢 PRIMER DIAGNÓSTICO (Insertar aquí)
+console.log("--- DIAGNÓSTICO FINAL DE UUIDS ---");
+console.log("UUID del Proveedor Logueado (Session):", currentProviderUserId); 
+console.log("----------------------------------");
+// ---------------------------------
     // Si no hay usuario o no es proveedor, devolvemos un mensaje explícito.
     if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor' || !currentProviderUserId) {
         return `<p class="text-red-500 p-8">Acceso denegado. Debes ser un Proveedor conectado.</p>`;
@@ -1326,12 +1327,17 @@ async function renderProviderRequestsView() {
         
         // 2. Filtrar y Procesar los Pedidos RECIBIDOS
         (allPedidos || []).forEach(pedido => {
-            const items = pedido.items_json || [];
-            
-            // 🟢 SOLUCIÓN CLAVE: Usamos comparación NO estricta (==) para evitar fallos
-            // por tipo de dato (string vs. UUID) en la iteración de JSON.
-            const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId);
+    const items = pedido.items_json || [];
 
+    // 🟢 SEGUNDO DIAGNÓSTICO (Insertar aquí)
+    if (items.length > 0) {
+        console.log("UUID Guardado en Primer Item del Pedido:", items[0].providerId);
+    }
+    // ---------------------------------
+    
+    // 🟢 SOLUCIÓN CLAVE (Recuerda cambiar a '===')
+    // DEBE USAR === si ya has aplicado esa corrección, o usa '==' si quieres testear el código original.
+    const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId); //
             if (itemsForThisProvider.length > 0) {
                 const isPending = pedido.estado === 'Pendiente de Cotización';
                 
@@ -2067,5 +2073,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
