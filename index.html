@@ -2019,16 +2019,14 @@ async function handleDeletePedido(codigoPedido) {
             });
             alert('La solicitud de cotización no se pudo eliminar. No se encontró el registro o no tienes permisos (Verifica RLS).');
         }
+       } 
         else {
-            // 🟢 ASUMIR ÉXITO: Si no hay error explícito, la operación se considera exitosa.
-            const message = count > 0 
-                ? `Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`
-                : 'Solicitud de cotización eliminada con éxito.';
-                
-            alert(message);
-            // 🟢 ESTO ASEGURA EL RECARGA Y LA ACTUALIZACIÓN VISUAL
-            await loadHistorialPedidos(); //
-            setView('historial_pedidos'); //
+            // ASUMIR ÉXITO
+            alert('Solicitud de cotización eliminada con éxito.');
+            
+            // ESTO ASEGURA EL RECARGA Y LA ACTUALIZACIÓN VISUAL
+            await loadHistorialPedidos();
+            setView('historial_pedidos'); 
         }
     } catch (e) {
         console.error('Excepción al procesar la eliminación:', e); //
@@ -2071,4 +2069,5 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
