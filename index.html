@@ -111,7 +111,66 @@
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             return true;
         }
+// ===================================================================
+    // 🟢 FUNCIÓN setView (CORREGIDA: Ahora es ASYNC para permitir await)
+    // ===================================================================
+    async function setView(viewName, data = null) {
+        console.log(`Intentando cargar vista: ${viewName}, data: ${data}`); // Debug log
+        let html = '';
+        isNavigating = true;
 
+        switch (viewName) {
+            case 'home':
+                html = renderHomeView();
+                break;
+            case 'login':
+                html = renderLoginView();
+                break;
+            case 'register':
+                html = renderRegisterView(data);
+                break;
+            case 'dashboard_productor':
+                html = await renderProducerDashboard(data); // Asume que esta función es async si necesita await
+                break;
+            case 'dashboard_proveedor':
+                html = renderProviderDashboard();
+                break;
+            case 'add_offer':
+                html = renderAddOfferView();
+                break;
+            case 'my_products':
+                html = await renderMyProductsView(); // Asume async si necesita
+                break;
+            case 'profile':
+                html = renderProfileView();
+                break;
+            case 'categories_selection':
+                html = renderCategoriesSelectionView();
+                break;
+            case 'offer_list_by_category':
+                html = await renderOfferListByCategoryView(data);
+                break;
+            case 'provider_details':
+                html = await renderProviderDetailsView(data);
+                break;
+            case 'pedido_actual':
+                html = renderPedidoActualView();
+                break;
+            case 'historial_pedidos':
+                html = await renderHistorialPedidosView(); // Asume async si necesita
+                break;
+            case 'provider_requests':
+                console.log('Entrando en case provider_requests'); // Debug log
+                html = await renderProviderRequestsView();
+                break;
+            default:
+                html = renderHomeView();
+                break;
+        }
+
+        contentView.innerHTML = html;
+        isNavigating = false;
+    }
         // ===================================================================
         // 🟢 FUNCIONES DE UTILIDAD (Dropdown)
         // ===================================================================
@@ -2067,6 +2126,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
