@@ -782,7 +782,7 @@ async function loadHistorialPedidos() {
                                 viewName === 'my_products' ||
                                 viewName === 'edit_offer' ||
                                 viewName === 'provider_details' ||
-                                viewName === 'offer_list_by_category'; // 🟢 CORRECCIÓN AÑADIDA
+                                viewName === 'offer_list_by_category' // 🟢 CORRECCIÓN AÑADIDA
                                 viewName === 'provider_requests';
 
             if (isAsyncView) {
@@ -1299,54 +1299,48 @@ function renderAddOfferView() {
     `;
 }
 // ===================================================================
-// 🟢 FUNCIÓN OPTIMIZADA: renderProviderRequestsView (CONSULTA ÚNICA)
+// 🟢 FUNCIÓN OPTIMIZADA: renderProviderRequestsView (Línea ~305)
 // ===================================================================
 async function renderProviderRequestsView() {
-   // 🚨 1. Verificación estricta de rol. Si falla, el usuario no tiene acceso.
-    if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
-        // En lugar de llamar a una vista de login, que puede forzar la redirección,
-        // lanzamos un error que es capturado por setView y devuelve un mensaje en pantalla.
-        throw new Error("Acceso denegado. Debes iniciar sesión como proveedor.");
-    }
-    
-    const currentProviderUserId = currentUser.id;
+    console.log("✅ Entró a renderProviderRequestsView");
+    // 🚨 NOTA: Si estás logueado como Productor y llegas aquí, el código fallará,
+    // pero renderizará el mensaje de error en pantalla en lugar de volver a Home.
+
+    const currentProviderUserId = currentUser ? currentUser.id : null;
     let requestsForProvider = [];
     let totalPending = 0;
     
+    // Si no hay usuario o no es proveedor, devolvemos un mensaje explícito.
+    if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor' || !currentProviderUserId) {
+        return `<p class="text-red-500 p-8">Acceso denegado. Debes ser un Proveedor conectado.</p>`;
+    }
+
     try {
-        // 1. Consulta directa a Supabase usando JSONB operator (@>)
-        // Esto pide todos los pedidos donde el user_id del proveedor esté presente
-        // en el array items_json como 'providerId'.
+        // 1. Consulta a Supabase. Si la RLS está bien, solo recibirá los pedidos relevantes.
         const { data: allPedidos, error } = await supabaseClient
             .from('solicitudes_pedido')
             .select('*')
-            .order('fecha_envio', { ascending: false })
-                        
-        // NOTA: La política RLS con '@>' debería ser suficiente, pero el filtro .containedBy en JS añade claridad.
-        // Si tienes problemas de rendimiento, confía solo en la política RLS.
-            
-
-        if (error) throw error;
-        console.log("Supabase returned 'allPedidos':", JSON.stringify(allPedidos));
+            .order('fecha_envio', { ascending: false });
         
-        // 2. Iterar y calcular el total pendiente
+        if (error) throw error;
+        
+        // 2. Filtrar y Procesar los Pedidos RECIBIDOS
         (allPedidos || []).forEach(pedido => {
-            const items = pedido.items_json || []; // Lista de ítems del pedido
+            const items = pedido.items_json || [];
             
-            // Filtra los ítems relevantes para ESTE proveedor (necesario para el detalle de la tabla)
-            const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId);
+            // 🟢 SOLUCIÓN CLAVE: Usamos comparación NO estricta (==) para evitar fallos
+            // por tipo de dato (string vs. UUID) en la iteración de JSON.
+            const itemsForThisProvider = items.filter(item => item.providerId == currentProviderUserId);
 
-           // 🪵 NUEVO LOG: Ver si encuentra ítems para este proveedor en este pedido
-if (itemsForThisProvider.length > 0) {
-    console.log(`Found ${itemsForThisProvider.length} items for provider ${currentProviderUserId} in pedido ${pedido.codigoPedido}`);
-    const isPending = pedido.estado === 'Pendiente de Cotización';
+            if (itemsForThisProvider.length > 0) {
+                const isPending = pedido.estado === 'Pendiente de Cotización';
                 
                 requestsForProvider.push({
                     codigo: pedido.codigoPedido,
                     fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
                     fechaInicio: pedido.fecha_inicio || 'N/A',
                     fechaFin: pedido.fecha_fin || 'N/A',
-                    items: itemsForThisProvider, // Solo los ítems que le corresponden
+                    items: itemsForThisProvider, 
                     estado: pedido.estado
                 });
                 
@@ -1355,18 +1349,35 @@ if (itemsForThisProvider.length > 0) {
                 }
             }
         });
-
+        
     } catch (e) {
         console.error("Error al cargar solicitudes para proveedor:", e.message);
-        return `<p class="text-red-500 p-8">Error al cargar solicitudes. Verifica la política RLS de SELECT en 'solicitudes_pedido'.</p>`;
+        // Retorna un mensaje de error claro en pantalla, EVITANDO la redirección al Home.
+        return `<p class="text-red-500 p-8">Error al cargar solicitudes. Verifica la configuración RLS y el tipo de dato de proveedores_ids: ${e.message}</p>`; 
+    }
+    
+    // 3. Renderizado de la Tabla
+    
+    const header = `
+        <div class="mb-6">
+            <h2 class="text-3xl font-bold text-accent-cyan font-heading mb-2">📄 Solicitudes Recibidas</h2>
+            <p class="text-gray-400">Tienes <strong class="text-accent-cyan">${totalPending}</strong> solicitudes <strong class="text-yellow-400">pendientes</strong> de respuesta.</p>
+        </div>
+    `;
+
+    if (requestsForProvider.length === 0) {
+        return `
+            <div class="max-w-6xl mx-auto p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+                <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Mis Solicitudes de Pedido</h1>
+                <div class="p-6 bg-primary-dark/50 border border-accent-blue/50 rounded-xl text-center">
+                    <p class="text-xl text-gray-400 font-semibold mb-3">No hay solicitudes de cotización para tu empresa.</p>
+                </div>
+            </div>
+        `;
     }
 
-
-    // 3. Renderizado de la Tabla (DE AQUÍ EN ADELANTE, ES EL CÓDIGO DE LA TABLA)
-    const tableRows = requestsForProvider.map((pedido, index) => {
+    const tableRows = requestsForProvider.map((pedido) => {
         let estadoClass = pedido.estado.includes('Pendiente') ? 'text-yellow-400 bg-yellow-900/50' : 'text-green-400 bg-green-900/50';
-
-        // Muestra el título y precio de CADA ítem que le compete
         const itemsDetail = pedido.items.map(item => `<li class="text-xs text-gray-500 font-sans">${item.titulo} ($${item.precio.toLocaleString('es-AR')})</li>`).join('');
 
         return `
@@ -1374,14 +1385,8 @@ if (itemsForThisProvider.length > 0) {
                 <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
                 <td class="px-6 py-4 text-gray-300">${pedido.fechaEnvio}</td>
                 <td class="px-6 py-4 text-gray-300">${pedido.fechaInicio} al ${pedido.fechaFin}</td>
-                <td class="px-6 py-4">
-                    <ul class="list-disc list-inside space-y-1 max-w-sm">${itemsDetail}</ul>
-                </td>
-                <td class="px-6 py-4">
-                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
-                        ${pedido.estado}
-                    </span>
-                </td>
+                <td class="px-6 py-4"><ul class="list-disc list-inside space-y-1 max-w-sm">${itemsDetail}</ul></td>
+                <td class="px-6 py-4"><span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">${pedido.estado}</span></td>
                 <td class="px-6 py-4">
                     <button onclick="alert('Funcionalidad de Contacto Implementada: Aquí puedes contactar al Productor para enviar tu cotización.')" class="bg-accent-cyan text-primary-dark text-xs py-1 px-3 rounded-lg hover:bg-white">
                         Responder
@@ -1391,7 +1396,6 @@ if (itemsForThisProvider.length > 0) {
         `;
     }).join('');
     
-    // ... el resto de la estructura HTML de la vista ...
     const content = `
         <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
             <table class="min-w-full divide-y divide-gray-700/50">
@@ -1406,7 +1410,7 @@ if (itemsForThisProvider.length > 0) {
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-700/50">
-                    ${tableRows.length > 0 ? tableRows : `<tr><td colspan="6" class="text-center py-8 text-gray-500">No hay solicitudes de cotización para tu empresa.</td></tr>`}
+                    ${tableRows}
                 </tbody>
             </table>
         </div>
@@ -1414,8 +1418,7 @@ if (itemsForThisProvider.length > 0) {
 
     return `
         <div class="max-w-6xl mx-auto p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-            <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Mis Solicitudes de Pedido</h1>
-            <p class="text-gray-400 mb-6">Tienes <strong class="text-accent-cyan">${totalPending}</strong> solicitudes <strong class="text-yellow-400">pendientes</strong> de respuesta.</p>
+            ${header}
             ${content}
         </div>
     `;
@@ -1745,7 +1748,7 @@ async function renderOfferListByCategoryView(categoryName) {
             offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerNumId = offer.proveedores ? offer.proveedores.id : null;
-                const providerUserId = offer.proveedores ? `'${offer.proveedores.user_id}'` : null;
+                const providerUserId = offer.proveedores ? offer.proveedores.user_id : null;
                 const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
@@ -1757,7 +1760,7 @@ async function renderOfferListByCategoryView(categoryName) {
                 
                 // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
                 const addButtonHtml = `
-    <button onclick="handlePedido('${offer.id}', ${providerUserId}, '${escapedTitulo}', ${offer.precio}, 'agregar')"
+    <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
             class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
             id="pedido-btn-${offer.id}">
         Agregar
