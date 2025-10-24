@@ -1330,7 +1330,7 @@ async function renderProviderRequestsView() {
             
             // 🟢 SOLUCIÓN CLAVE: Usamos comparación NO estricta (==) para evitar fallos
             // por tipo de dato (string vs. UUID) en la iteración de JSON.
-            const itemsForThisProvider = items.filter(item => item.providerId == currentProviderUserId);
+            const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId);
 
             if (itemsForThisProvider.length > 0) {
                 const isPending = pedido.estado === 'Pendiente de Cotización';
@@ -2067,4 +2067,5 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
