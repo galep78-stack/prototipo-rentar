@@ -283,26 +283,25 @@ function isOfferInPedido(offerId) {
 // FUNCIÓN handlePedido (CON CONSOLE.LOGS PARA DEBUGGING)
 // ===================================================================
 function handlePedido(offerId, providerUserId, titulo, precio, action) {
-    // 🪵 Log 1: Ver qué argumentos recibe la función
-    console.log("handlePedido triggered. Arguments:", { offerId, providerUserId, titulo, precio, action });
+    // 🟢 NUEVA LÍNEA DE DIAGNÓSTICO
+    console.log("DIAGNÓSTICO UUID - Valor de providerUserId recibido:", providerUserId, " Tipo:", typeof providerUserId);
 
     // 1. Verificar si es un productor conectado
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
-        alert("Debes iniciar sesión como Productor para armar un pedido.");
-        setView('login');
-        return;
+        // ...
     }
-
-    const precioNum = parseFloat(precio);
-    // 🪵 Log 2: Ver el objeto que se va a agregar/quitar
-    const itemToAddOrRemove = { offerId, providerId: providerUserId, titulo, precio: precioNum };
-    console.log("Item object:", itemToAddOrRemove);
-
-    const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
-
-    // 🪵 Log 3: Ver el estado del carrito ANTES de la acción
-    console.log("pedidoActual BEFORE:", JSON.stringify(pedidoActual));
-
+    // ...
+    
+    // 🪵 Log 2: Ver el objeto que se va a agregar/quitar (Aproximadamente Línea 60)
+    // Asegúrate de que este objeto reciba el UUID completo
+    const itemToAddOrRemove = { 
+        offerId, 
+        providerId: providerUserId, // <-- ESTE DEBE SER EL UUID STRING
+        titulo, 
+        precio: precioNum 
+    };
+    // ...
+}
     if (action === 'agregar') {
         // LÓGICA DE AGREGAR
         pedidoActual.push(itemToAddOrRemove);
@@ -2067,5 +2066,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
