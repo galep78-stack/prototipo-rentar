@@ -283,25 +283,26 @@ function isOfferInPedido(offerId) {
 // FUNCIÓN handlePedido (CON CONSOLE.LOGS PARA DEBUGGING)
 // ===================================================================
 function handlePedido(offerId, providerUserId, titulo, precio, action) {
-    // 🟢 NUEVA LÍNEA DE DIAGNÓSTICO
-    console.log("DIAGNÓSTICO UUID - Valor de providerUserId recibido:", providerUserId, " Tipo:", typeof providerUserId);
+    // 🪵 Log 1: Ver qué argumentos recibe la función
+    console.log("handlePedido triggered. Arguments:", { offerId, providerUserId, titulo, precio, action });
 
     // 1. Verificar si es un productor conectado
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
-        // ...
+        alert("Debes iniciar sesión como Productor para armar un pedido.");
+        setView('login');
+        return;
     }
-    // ...
-    
-    // 🪵 Log 2: Ver el objeto que se va a agregar/quitar (Aproximadamente Línea 60)
-    // Asegúrate de que este objeto reciba el UUID completo
-    const itemToAddOrRemove = { 
-        offerId, 
-        providerId: providerUserId, // <-- ESTE DEBE SER EL UUID STRING
-        titulo, 
-        precio: precioNum 
-    };
-    // ...
-}
+
+    const precioNum = parseFloat(precio);
+    // 🪵 Log 2: Ver el objeto que se va a agregar/quitar
+    const itemToAddOrRemove = { offerId, providerId: providerUserId, titulo, precio: precioNum };
+    console.log("Item object:", itemToAddOrRemove);
+
+    const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
+
+    // 🪵 Log 3: Ver el estado del carrito ANTES de la acción
+    console.log("pedidoActual BEFORE:", JSON.stringify(pedidoActual));
+
     if (action === 'agregar') {
         // LÓGICA DE AGREGAR
         pedidoActual.push(itemToAddOrRemove);
@@ -1747,7 +1748,7 @@ async function renderOfferListByCategoryView(categoryName) {
             offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerNumId = offer.proveedores ? offer.proveedores.id : null;
-                const providerUserId = offer.user_id;
+                const providerUserId = offer.proveedores ? offer.proveedores.user_id : null;
                 const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
@@ -2066,6 +2067,4 @@ window.onload = () => {
     </script>
 </body>
 </html>
-
-
 
