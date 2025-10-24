@@ -834,9 +834,7 @@ async function loadHistorialPedidos() {
                 case 'categories_selection': return renderCategoriesSelectionView(); // 🟢 CORRECCIÓN AÑADIDA
                 case 'pedido_actual': return renderPedidoActualView();
                 case 'historial_pedidos': return renderHistorialPedidosView(); // 🟢 NUEVO: Caso para la vista de Historial
-               case 'provider_requests':
-    html = await renderProviderRequestsView();
-    break;
+               
                 default: return renderHomeView();
             }
         }
@@ -2069,6 +2067,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
