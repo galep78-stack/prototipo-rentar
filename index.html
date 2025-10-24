@@ -78,86 +78,96 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // ==================================================================
-        // == CÓDIGO FINAL Y ESTABLE (TODOS LOS CAMBIOS CONSOLIDADOS) ==
-        // ==================================================================
+   // ==================================================================
+// == CÓDIGO FINAL Y ESTABLE (TODOS LOS CAMBIOS CONSOLIDADOS) ==
+// ==================================================================
 
-        // VARIABLES GLOBALES
-        let currentUser = null;
-        let selectedRole = null;
-        const contentView = document.getElementById('content-view');
-        let isNavigating = false; // 🟢 FIX: Para evitar "pantallazos"
-        let isHistorialLoading = false;
+// VARIABLES GLOBALES
+let currentUser 
+[cite_start]// [cite: 22] = null;
+= null;
+let selectedRole = null;
+const contentView = document.getElementById('content-view');
+let isNavigating = false;
+[cite_start]// [cite: 23] // 🟢 FIX: Para evitar "pantallazos"
+let isHistorialLoading = false;
+[cite_start]// [cite: 24] // ⚠️ CLAVES (DEBES USAR TUS CLAVES REALES AQUÍ)
+const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
+[cite_start]// [cite: 25] const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk';
+let supabaseClient = null;
 
-        // ⚠️ CLAVES (DEBES USAR TUS CLAVES REALES AQUÍ)
-        const SUPABASE_URL = 'https://nqdxsapbkkecckjehybx.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xZHhzYXBia2tlY2NramVoeWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2MDIwMzYsImV4cCI6MjA3NjE3ODAzNn0.GvvYnAoerud9bzHlF4nvAVGRMhVhUtr25m4zrdrAnkk';
-        let supabaseClient = null;
+// 🟢 NUEVA: Variable para resultados de búsqueda de proveedores
+let providerResults = [];
+[cite_start]// [cite: 26] let pedidoActual = [];
+let pedidoActual = [];
+let historialPedidos = [];
+// ===================================================================
+// 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
+// ===================================================================
 
-        // 🟢 NUEVA: Variable para resultados de búsqueda de proveedores
-        let providerResults = [];
-        let pedidoActual = [];
-        let historialPedidos = [];
-        // ===================================================================
-        // 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
-        // ===================================================================
-
-        function initializeSupabase() {
-            if (typeof supabase.createClient !== 'function') {
-                console.error("Error: Librería de Supabase no cargada.");
-                return false;
-            }
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            return true;
-        }
-
-        // ===================================================================
-        // 🟢 FUNCIONES DE UTILIDAD (Dropdown)
-        // ===================================================================
-
-        function toggleDropdown(id) {
-            event.stopPropagation(); // Evita que el click se propague al 'window'
-            const dropdown = document.getElementById(id);
-            if (dropdown) {
-                // Cierra otros dropdowns si estuvieran abiertos
-                closeAllDropdowns(id);
-                dropdown.classList.toggle('hidden');
-            }
-        }
-
-        function closeAllDropdowns(exceptId = null) {
-            const dropdowns = document.querySelectorAll('.dropdown-menu');
-            dropdowns.forEach(dropdown => {
-                if (dropdown.id !== exceptId && !dropdown.classList.contains('hidden')) {
-                    dropdown.classList.add('hidden');
-                }
-            });
-        }
-
-        // Cierra los dropdowns si se hace click fuera
-        window.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown-toggle')) {
-                closeAllDropdowns();
-            }
-        });
+function initializeSupabase() {
+    if (typeof supabase.createClient !== 'function') {
+        // console.error("Error: Librería de Supabase no cargada."); // REMOVED
+[cite_start]// [cite: 27] return false;
+return false;
+    }
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return true;
+[cite_start]// [cite: 28] }
+}
 
 // ===================================================================
+// 🟢 FUNCIONES DE UTILIDAD (Dropdown)
+// ===================================================================
+
+function toggleDropdown(id) {
+    event.stopPropagation();
+[cite_start]// [cite: 29] // Evita que el click se propague al 'window'
+// Evita que el click se propague al 'window'
+    const dropdown = document.getElementById(id);
+[cite_start]// [cite: 30] if (dropdown) {
+if (dropdown) {
+        // Cierra otros dropdowns si estuvieran abiertos
+        closeAllDropdowns(id);
+[cite_start]// [cite: 31] dropdown.classList.toggle('hidden');
+dropdown.classList.toggle('hidden');
+    }
+}
+
+function closeAllDropdowns(exceptId = null) {
+    const dropdowns = document.querySelectorAll('.dropdown-menu');
+[cite_start]// [cite: 32] dropdowns.forEach(dropdown => {
+dropdowns.forEach(dropdown => {
+        if (dropdown.id !== exceptId && !dropdown.classList.contains('hidden')) {
+            dropdown.classList.add('hidden');
+        }
+    });
+[cite_start]// [cite: 33] }
+}
+
+// Cierra los dropdowns si se hace click fuera
+window.addEventListener('click', function(e) {
+    if (!e.target.closest('.dropdown-toggle')) {
+        closeAllDropdowns();
+    }
+});
+[cite_start]// [cite: 34] // ===================================================================
 // 🟢 FUNCIÓN setupAuthListener (CORREGIDA V3 - SOLUCIONA F5)
 // ===================================================================
 function setupAuthListener() {
     if (!supabaseClient) return;
-    
+[cite_start]// [cite: 35] // 1. Obtenemos el hash ANTES
     // 1. Obtenemos el hash ANTES
     const currentHash = window.location.hash.replace('#', '');
-    const [initialView, initialData] = currentHash.split('/'); 
-    
+    const [initialView, initialData] = currentHash.split('/');
+[cite_start]// [cite: 36] // 2. Manejo de la sesión inicial
     // 2. Manejo de la sesión inicial
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
         currentUser = session ? session.user : null;
         
         // Renderiza el header AHORA (no depende del historial)
-        ;
+        renderHeader(); // <--- Llamada añadida
         actualizarIndicadorPedido();
 
         // 🟢==== ¡CORRECCIÓN CLAVE! ====🟢
@@ -165,7 +175,9 @@ function setupAuthListener() {
         let dataLoadPromise = Promise.resolve();
 
         // 2. Si hay usuario, REASIGNAMOS la promesa a la función
-        //    que SÍ tarda tiempo (cargar el historial).
+        //    
+[cite_start]// [cite: 37] que SÍ tarda tiempo (cargar el historial).
+// que SÍ tarda tiempo (cargar el historial).
         if (currentUser) {
             dataLoadPromise = loadHistorialPedidos();
         }
@@ -175,10 +187,13 @@ function setupAuthListener() {
         dataLoadPromise.then(() => {
             // Este código SÓLO se ejecuta después de que loadHistorialPedidos() terminó
             isNavigating = false;
-            // Si no hay usuario, te redirigirá a 'login' (gracias a la lógica de setView)
+            // Si no hay usuario, te redirigirá 
+[cite_start]// [cite: 38] a 'login' (gracias a la lógica de setView)
+// a 'login' (gracias a la lógica de setView)
             setView(initialView || 'home', initialData || null); 
         });
-        // 🟢============================🟢
+[cite_start]// [cite: 39] // 🟢============================🟢
+// 🟢============================🟢
 
     });
     
@@ -192,12 +207,14 @@ function setupAuthListener() {
                 if (window.location.hash === '' || window.location.hash === '#home') {
                     // Aquí también esperamos
                     loadHistorialPedidos().then(() => goToDashboard());
-                } 
-            }
+            
+[cite_start]// [cite: 40]     } 
+                }
         } else if (event === 'SIGNED_OUT') {
             setView('home');
         }
     });
+[cite_start]// [cite: 41] }
 }
         // ===================================================================
 // 🟢 FUNCIÓN goToDashboard (FALTANTE)
@@ -206,20 +223,23 @@ function goToDashboard() {
     if (currentUser) {
         // Revisa el rol del usuario guardado en los metadatos
         const userRole = currentUser.user_metadata.user_role;
-
-        if (userRole === 'proveedor') {
+[cite_start]// [cite: 42] if (userRole === 'proveedor') {
+if (userRole === 'proveedor') {
             setView('dashboard_proveedor');
-        } else if (userRole === 'productor') {
+[cite_start]// [cite: 43] } else if (userRole === 'productor') {
+} else if (userRole === 'productor') {
             setView('dashboard_productor');
-        } else {
+[cite_start]// [cite: 44] } else {
+} else {
             // Fallback si el usuario no tiene rol
-            console.warn("Usuario conectado pero sin rol. Yendo a home.");
-            setView('home');
+            // console.warn("Usuario conectado pero sin rol. Yendo a home."); // REMOVED
+[cite_start]// [cite: 45] setView('home');
+setView('home');
         }
     } else {
         // Si no hay usuario, va a la home
         setView('home');
-    }
+[cite_start]// [cite: 46] }
 }
         // ===================================================================
 // 🟢 FUNCIÓN handleLogout CORREGIDA con LIMPIEZA FORZADA
@@ -228,17 +248,18 @@ async function handleLogout() {
     try {
         // Intenta cerrar la sesión en el servidor de Supabase
         const { error } = await supabaseClient.auth.signOut();
-        
-        if (error) {
+[cite_start]// [cite: 47] if (error) {
+if (error) {
             // No lanzamos el error aquí para que la limpieza local se ejecute,
             // pero lo registramos.
-            console.error('Error del servidor Supabase al cerrar sesión:', error.message);
+[cite_start]// [cite: 48] console.error('Error del servidor Supabase al cerrar sesión:', error.message); // REMOVED
         }
         
     } catch (error) {
         // Captura errores de red o de cliente y los reporta
-        console.error('Error general durante signOut (catch):', error.message);
-    }
+        // console.error('Error general durante signOut (catch):', error.message); // REMOVED
+[cite_start]// [cite: 49] }
+}
     
     // =============================================================
     // LIMPIEZA LOCAL FORZADA: Esto resuelve "Auth session missing"
@@ -246,31 +267,39 @@ async function handleLogout() {
     
     // 1. Limpia el estado de la aplicación
     currentUser = null;
-    pedidoActual = []; // Limpia el carrito al desconectar
+[cite_start]// [cite: 50] pedidoActual = []; // Limpia el carrito al desconectar
+pedidoActual = []; // Limpia el carrito al desconectar
     
     // 2. Limpia el Local Storage (donde Supabase guarda los tokens)
     // Esto asegura que no queden tokens antiguos o expirados
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key.startsWith('sb-')) {
+[cite_start]// [cite: 51] if (key.startsWith('sb-')) {
+if (key.startsWith('sb-')) {
             localStorage.removeItem(key);
-        }
+[cite_start]// [cite: 52] }
+}
     }
     
     // 3. Actualiza la UI
     alert("Sesión cerrada correctamente (Limpieza local completa).");
-    renderHeader(); // Asegura que los botones cambien
-    setView('home'); // Vuelve a la página de inicio
+[cite_start]// [cite: 53] renderHeader(); // Asegura que los botones cambien
+renderHeader(); // Asegura que los botones cambien
+    setView('home');
+[cite_start]// [cite: 54] // Vuelve a la página de inicio
+// Vuelve a la página de inicio
 }
 
         // FUNCIÓN PARA EL BOTÓN 'PUBLICAR OFERTA' EN HOME
         function handlePublishOfferClick() {
             if (currentUser) {
                 // Si el usuario está conectado, va directamente a la vista de agregar oferta.
-                setView('add_offer');
+[cite_start]// [cite: 55] setView('add_offer');
+setView('add_offer');
             } else {
                 // Si NO está conectado, va a la vista de inicio de sesión.
-                setView('login');
+[cite_start]// [cite: 56] setView('login');
+setView('login');
             }
         }
         // ===================================================================
@@ -278,111 +307,131 @@ async function handleLogout() {
 // ===================================================================
 function isOfferInPedido(offerId) {
     return pedidoActual.some(item => item.offerId === offerId);
+[cite_start]// [cite: 57] }
 }
 // ===================================================================
 // FUNCIÓN handlePedido (CON CONSOLE.LOGS PARA DEBUGGING)
 // ===================================================================
 function handlePedido(offerId, providerUserId, titulo, precio, action) {
     // 🪵 Log 1: Ver qué argumentos recibe la función
-    console.log("handlePedido triggered. Arguments:", { offerId, providerUserId, titulo, precio, action });
-
+    // console.log("handlePedido triggered. Arguments:", { offerId, providerUserId, titulo, precio, action }); // REMOVED
+[cite_start]// [cite: 58] // 1. Verificar si es un productor conectado
     // 1. Verificar si es un productor conectado
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
         alert("Debes iniciar sesión como Productor para armar un pedido.");
-        setView('login');
+[cite_start]// [cite: 59] setView('login');
+setView('login');
         return;
     }
 
     const precioNum = parseFloat(precio);
+[cite_start]// [cite: 60] // 🪵 Log 2: Ver el objeto que se va a agregar/quitar
     // 🪵 Log 2: Ver el objeto que se va a agregar/quitar
     const itemToAddOrRemove = { offerId, providerId: providerUserId, titulo, precio: precioNum };
-    console.log("Item object:", itemToAddOrRemove);
+[cite_start]// [cite: 61] console.log("Item object:", itemToAddOrRemove); // REMOVED
 
     const indexEnPedido = pedidoActual.findIndex(item => item.offerId === offerId);
-
-    // 🪵 Log 3: Ver el estado del carrito ANTES de la acción
-    console.log("pedidoActual BEFORE:", JSON.stringify(pedidoActual));
-
-    if (action === 'agregar') {
+[cite_start]// [cite: 62] // 🪵 Log 3: Ver el estado del carrito ANTES de la acción
+    // console.log("pedidoActual BEFORE:", JSON.stringify(pedidoActual)); // REMOVED
+[cite_start]// [cite: 63] if (action === 'agregar') {
+if (action === 'agregar') {
         // LÓGICA DE AGREGAR
         pedidoActual.push(itemToAddOrRemove);
-        console.log("✅ Item PUSHED to pedidoActual."); // Confirmación de que se agregó
+[cite_start]// [cite: 64] console.log("✅ Item PUSHED to pedidoActual."); // REMOVED
         alert(`"${titulo}" agregado al pedido.`);
-    } else if (action === 'quitar') {
+[cite_start]// [cite: 65] } else if (action === 'quitar') {
+} else if (action === 'quitar') {
         // LÓGICA DE QUITAR
         if (indexEnPedido > -1) {
             pedidoActual.splice(indexEnPedido, 1);
-            console.log("🗑️ Item REMOVED from pedidoActual at index:", indexEnPedido); // Confirmación de que se quitó
+[cite_start]// [cite: 66] console.log("🗑️ Item REMOVED from pedidoActual at index:", indexEnPedido); // REMOVED
             alert(`"${titulo}" quitado del pedido.`);
-        } else {
-            console.error(`Attempted to remove item, but offerId ${offerId} not found.`); // Error si no se encuentra para quitar
+[cite_start]// [cite: 67] } else {
+} else {
+            // console.error(`Attempted to remove item, but offerId ${offerId} not found.`); // REMOVED
+[cite_start]// [cite: 68] // Error si no se encuentra para quitar
+// Error si no se encuentra para quitar
             alert(`Error: "${titulo}" no se encuentra en el pedido actual.`);
-        }
+[cite_start]// [cite: 69] }
+}
     } else {
-        console.error("Unknown action in handlePedido:", action); // Error si la acción no es 'agregar' ni 'quitar'
+        // console.error("Unknown action in handlePedido:", action); // REMOVED
+[cite_start]// [cite: 70] // Error si la acción no es 'agregar' ni 'quitar'
+// Error si la acción no es 'agregar' ni 'quitar'
     }
 
     // 🪵 Log 4: Ver el estado del carrito DESPUÉS de la acción
-    console.log("pedidoActual AFTER:", JSON.stringify(pedidoActual));
-
+    // console.log("pedidoActual AFTER:", JSON.stringify(pedidoActual)); // REMOVED
+[cite_start]// [cite: 71] // 2. Actualizar UI (Indicador del carrito)
     // 2. Actualizar UI (Indicador del carrito)
-    console.log("Calling actualizarIndicadorPedido...");
+    // console.log("Calling actualizarIndicadorPedido..."); // REMOVED
     actualizarIndicadorPedido();
-
+[cite_start]// [cite: 72] // 3. Re-renderizar la vista actual para reflejar cambios (si aplica)
     // 3. Re-renderizar la vista actual para reflejar cambios (si aplica)
     if (window.location.hash.includes('offer_list_by_category')) {
         const categoryName = window.location.hash.replace('#offer_list_by_category', '').replace('/', '');
-        if (categoryName) {
-            console.log("Re-rendering view 'offer_list_by_category' for:", categoryName);
-            setView('offer_list_by_category', categoryName);
+[cite_start]// [cite: 73] if (categoryName) {
+if (categoryName) {
+            // console.log("Re-rendering view 'offer_list_by_category' for:", categoryName); // REMOVED
+[cite_start]// [cite: 74] setView('offer_list_by_category', categoryName);
+setView('offer_list_by_category', categoryName);
         } else {
-             console.warn("Could not get category name to re-render view.");
-        }
+             // console.warn("Could not get category name to re-render view."); // REMOVED
+[cite_start]// [cite: 75] }
+}
     } else {
-        console.log("Not in category view, UI update relies on indicator only.");
-    }
+        // console.log("Not in category view, UI update relies on indicator only."); // REMOVED
+[cite_start]// [cite: 76] }
 }
             // ===================================================================
         // FUNCIÓN: Manejador de Búsqueda
         // ===================================================================
         async function handleSearch() {
             const inputElement = document.getElementById('search-input');
-            const searchTerm = inputElement ? inputElement.value : '';
+[cite_start]// [cite: 77] const searchTerm = inputElement ? inputElement.value : '';
+const searchTerm = inputElement ? inputElement.value : '';
             // Carga los proveedores (filtrados por el término de búsqueda en sus ofertas)
             await loadProvidersByOfferSearch(searchTerm);
+[cite_start]// [cite: 78] // Muestra el dashboard con los resultados
             // Muestra el dashboard con los resultados
             setView('dashboard_productor');
-        }
+[cite_start]// [cite: 79] }
+}
 
         async function handleLogin(event) {
             event.preventDefault();
-            if (!supabaseClient) return alert("Error de conexión a la BDD.");
+[cite_start]// [cite: 80] if (!supabaseClient) return alert("Error de conexión a la BDD.");
+if (!supabaseClient) return alert("Error de conexión a la BDD.");
 
             const form = event.target;
             const email = form.email.value;
-            const password = form.password.value;
+[cite_start]// [cite: 81] const password = form.password.value;
+const password = form.password.value;
 
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
-
-                if (error) throw error;
+[cite_start]// [cite: 82] if (error) throw error;
+if (error) throw error;
 
                 currentUser = data.user;
                 alert(`¡Inicio de sesión exitoso! Bienvenido, ${currentUser.email}.`);
+[cite_start]// [cite: 83] // ✅ CORRECCIÓN: Asegurarse de cargar el historial ANTES de ir al dashboard
 // ✅ CORRECCIÓN: Asegurarse de cargar el historial ANTES de ir al dashboard
                 loadHistorialPedidos().then(() => goToDashboard());
-                } catch (error) {
+[cite_start]// [cite: 84] } catch (error) {
+} catch (error) {
                 alert(`Error al iniciar sesión: ${error.message}`);
-                console.error('Error en Supabase SignIn:', error);
+[cite_start]// [cite: 85] console.error('Error en Supabase SignIn:', error); // REMOVED
             }
         }
 
         function updateRegisterForm(role) {
             selectedRole = role;
-            setView('register');
+[cite_start]// [cite: 86] setView('register');
+setView('register');
         }
 
         // ==================================================================
@@ -390,102 +439,130 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
         // ==================================================================
         async function handleRegister(event) {
             event.preventDefault();
-            if (!supabaseClient) return alert("Error de conexión a la BDD.");
+[cite_start]// [cite: 87] if (!supabaseClient) return alert("Error de conexión a la BDD.");
+if (!supabaseClient) return alert("Error de conexión a la BDD.");
 
             const form = event.target;
             const email = form.email.value;
-            const password = form.password.value;
+[cite_start]// [cite: 88] const password = form.password.value;
+const password = form.password.value;
             const roleToRegister = selectedRole || 'productor';
 
             const nombreCompleto = form.nombre ? form.nombre.value : null;
-            const nombreEmpresa = form.empresa ? form.empresa.value : null;
+[cite_start]// [cite: 89] const nombreEmpresa = form.empresa ? form.empresa.value : null;
+const nombreEmpresa = form.empresa ? form.empresa.value : null;
             const displayName = nombreEmpresa || nombreCompleto;
-
-            try {
+[cite_start]// [cite: 90] try {
+try {
                 const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
                     options: {
-                        data: {
+           
+[cite_start]// [cite: 91]              data: {
+             data: {
                             user_role: roleToRegister,
                             display_name: displayName
                         }
-                    }
+    
+[cite_start]// [cite: 92]                 }
+}
                 });
+[cite_start]// [cite: 93] if (authError) throw authError; // Manejar error de autenticación primero
+if (authError) throw authError; // Manejar error de autenticación primero
 
-                if (authError) throw authError; // Manejar error de autenticación primero
-
-                const user = authData.user || authData.session?.user;
+                const user = authData.user ||
+[cite_start]// [cite: 94] authData.session?.user;
+authData.session?.user;
                 if (!user) throw new Error("No se pudo crear el usuario.");
-
-                if (roleToRegister === 'proveedor') {
+[cite_start]// [cite: 95] if (roleToRegister === 'proveedor') {
+if (roleToRegister === 'proveedor') {
                     // Lógica de Proveedor
                     const { error: dbError } = await supabaseClient
                         .from('proveedores')
-                        .insert([
+                      
+[cite_start]//[cite: 96].insert([
+   .insert([
                             {
                                 user_id: user.id,
                                 nombre_empresa: nombreEmpresa,
-                                cuit: form.cuit.value,
+    
+[cite_start]// [cite: 97]                             cuit: form.cuit.value,
+                             cuit: form.cuit.value,
                                 direccion: form.direccion.value,
-                                email_contacto: email // Columna correcta para proveedor
+                                email_contacto: email // Columna correcta para 
+[cite_start]// [cite: 98] proveedor
+// proveedor
                             }
-                        ]); // <- Aquí estaba la línea vacía, ya eliminada
+                        ]);
+[cite_start]// [cite: 99] // <- Aquí estaba la línea vacía, ya eliminada
+                    // <- Aquí estaba la línea vacía, ya eliminada
                     if (dbError) throw dbError;
-
-                } else if (roleToRegister === 'productor') {
+[cite_start]// [cite: 100] } else if (roleToRegister === 'productor') {
+} else if (roleToRegister === 'productor') {
                     // Lógica corregida para Productor
                     const { error: dbError } = await supabaseClient
                         .from('productores')
-                        .insert([
+                   
+[cite_start]//[cite: 101].insert([
+      .insert([
                             {
                                 user_id: user.id,
-                                nombre_completo: nombreCompleto, // Columna correcta
+                                nombre_completo: nombreCompleto, 
+[cite_start]// [cite: 102] // Columna correcta
+// Columna correcta
                                 direccion: form.direccion.value,
                                 dni: form.dni.value,
-                                email: email // Columna correcta
+                                
+[cite_start]// [cite: 103] email: email // Columna correcta
+email: email // Columna correcta
                             }
                         ]);
-                    if (dbError) throw dbError;
+[cite_start]// [cite: 104] if (dbError) throw dbError;
+if (dbError) throw dbError;
                 }
 
                 alert("¡Registro exitoso! Revisa tu correo electrónico para confirmar tu cuenta y poder iniciar sesión. 📧");
-                setView('login');
+[cite_start]// [cite: 105] setView('login');
+setView('login');
 
             } catch (error) {
                 alert(`Error en el registro: ${error.message}`);
-                console.error('Error en Supabase SignUp/Insert:', error);
+[cite_start]// [cite: 106] console.error('Error en Supabase SignUp/Insert:', error); // REMOVED
             }
         }
 
         async function handleAddOffer(event) {
             event.preventDefault();
-            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
+[cite_start]// [cite: 107] if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
+if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
 
             const form = event.target;
-
-            const offerData = {
+[cite_start]// [cite: 108] const offerData = {
+const offerData = {
                 user_id: currentUser.id,
                 titulo: form.titulo.value,
                 descripcion: form.descripcion.value,
                 categoria: form.categoria.value,
                 precio: parseFloat(form.precio.value),
-                ubicacion: form.ubicacion.value
+            
+[cite_start]// [cite: 109]     ubicacion: form.ubicacion.value
+    ubicacion: form.ubicacion.value
             };
-
-            try {
+[cite_start]// [cite: 110] try {
+try {
                 const { error } = await supabaseClient
                     .from('ofertas')
                     .insert([offerData]);
-
-                if (error) throw error;
+[cite_start]// [cite: 111] if (error) throw error;
+if (error) throw error;
 
                 alert("¡Oferta publicada con éxito!");
                 setView('dashboard_proveedor');
 
             } catch (error) {
                 alert(`Error al publicar la oferta: ${error.message}.`);
-                console.error('Error en handleAddOffer:', error);
+[cite_start]// [cite: 112] console.error('Error en handleAddOffer:', error); // REMOVED
             }
         }
 
@@ -494,52 +571,63 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
         // ==================================================================
         async function handleProfileUpdate(event) {
             event.preventDefault();
-            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
+[cite_start]// [cite: 113] if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
+if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para actualizar tu perfil.");
 
             const form = event.target;
             const userRole = currentUser.user_metadata.user_role;
-            const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores';
+[cite_start]// [cite: 114] const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores';
+const tableName = userRole === 'proveedor' ? 'proveedores' : 'productores';
 
             let updateData = {};
             const nuevoNombre = form.nombre_update.value;
-            const nuevaDireccion = form.direccion_update.value;
+[cite_start]// [cite: 115] const nuevaDireccion = form.direccion_update.value;
+const nuevaDireccion = form.direccion_update.value;
 
             if (userRole === 'proveedor') {
                 updateData = {
                     nombre_empresa: nuevoNombre,
                     direccion: nuevaDireccion,
                     cuit: form.cuit_update.value
-                };
+           
+[cite_start]// [cite: 116]      };
+     };
             } else if (userRole === 'productor') {
                 updateData = {
                     nombre_completo: nuevoNombre, // Columna correcta
                     direccion: nuevaDireccion,
                     dni: form.dni_update.value // Columna correcta
-                };
-            }
+ 
+[cite_start]// [cite: 117]                };
+};
+[cite_start]// [cite: 118] }
+}
 
             try {
                 const { error: dbError } = await supabaseClient
                     .from(tableName)
                     .update(updateData)
                     .eq('user_id', currentUser.id);
-
-                if (dbError) throw dbError;
+[cite_start]// [cite: 119] if (dbError) throw dbError;
+if (dbError) throw dbError;
 
                 // Actualizamos el nombre en 'auth' para que el header cambie
                 await supabaseClient.auth.updateUser({
                     data: { display_name: nuevoNombre }
                 });
-                // Actualiza el objeto 'currentUser' localmente
+[cite_start]// [cite: 120] // Actualiza el objeto 'currentUser' localmente
+// Actualiza el objeto 'currentUser' localmente
                 currentUser.user_metadata.display_name = nuevoNombre;
-                renderHeader(); // Re-renderiza el header con el nuevo nombre
+[cite_start]// [cite: 121] renderHeader(); // Re-renderiza el header con el nuevo nombre
+renderHeader(); // Re-renderiza el header con el nuevo nombre
 
                 alert(`¡Perfil de ${userRole} actualizado con éxito!`);
-                setView(userRole === 'proveedor' ? 'dashboard_proveedor' : 'dashboard_productor');
+[cite_start]// [cite: 122] setView(userRole === 'proveedor' ? 'dashboard_proveedor' : 'dashboard_productor');
+setView(userRole === 'proveedor' ? 'dashboard_proveedor' : 'dashboard_productor');
 
             } catch (error) {
                 alert(`Error al actualizar perfil: ${error.message}. Asegúrate de tener permiso de UPDATE RLS.`);
-                console.error('Error en handleProfileUpdate:', error);
+[cite_start]// [cite: 123] console.error('Error en handleProfileUpdate:', error); // REMOVED
             }
         }
 
@@ -552,76 +640,99 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
         // ✅ FUNCIÓN `loadProvidersByOfferSearch` (Búsqueda Correcta v3)
         // ==================================================================
         async function loadProvidersByOfferSearch(searchTerm = '') {
-            if (!supabaseClient) return;
+          
+[cite_start]// [cite: 124]   if (!supabaseClient) return;
+  if (!supabaseClient) return;
 
             providerResults = []; // Start fresh
 
             try {
                 let providerUserIds = [];
-
-                // 1. Si hay término de búsqueda, buscamos en OFERTAS primero
+[cite_start]// [cite: 125] // 1. Si hay término de búsqueda, buscamos en OFERTAS primero
+// 1. Si hay término de búsqueda, buscamos en OFERTAS primero
                 if (searchTerm) {
-                    console.log(`Buscando ofertas con término: "${searchTerm}"`); // Debug log
+                    // console.log(`Buscando ofertas con término: "${searchTerm}"`); // REMOVED
+[cite_start]// [cite: 126] // Debug log
+// Debug log
                     let { data: offers, error: offersError } = await supabaseClient
                         .from('ofertas')
                         .select('user_id') // Solo necesitamos los user_id
-                        .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
+                
+[cite_start]//[cite: 127].or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
+          .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
 
                     if (offersError){
-                        console.error("Error buscando en ofertas:", offersError);
-                        throw offersError;
+                        // console.error("Error buscando en ofertas:", offersError); // REMOVED
+[cite_start]// [cite: 128] throw offersError;
+throw offersError;
                     }
 
                     if (offers && offers.length > 0) {
                         // Obtenemos una lista única de IDs de usuarios proveedores que tienen esas ofertas
                         providerUserIds = [...new Set(offers.map(o => o.user_id))];
-                        console.log("User IDs encontrados:", providerUserIds); // Debug log
+[cite_start]// [cite: 129] console.log("User IDs encontrados:", providerUserIds); // REMOVED
                     } else {
-                        console.log("No se encontraron ofertas para el término."); // Debug log
+                        // console.log("No se encontraron ofertas para el término."); // REMOVED
+[cite_start]// [cite: 130] // Debug log
+// Debug log
                         // Si no hay ofertas, no habrá proveedores que mostrar.
-                        providerResults = [];
+[cite_start]// [cite: 131] providerResults = [];
+providerResults = [];
                         // Re-render si ya estamos en el dashboard
                         if (window.location.hash.includes('dashboard_productor')) {
                              contentView.innerHTML = renderProducerDashboard();
-                        }
-                        return; // Salimos temprano
+[cite_start]// [cite: 132] }
+}
+                        return;
+[cite_start]// [cite: 133] // Salimos temprano
+// Salimos temprano
                     }
                 }
 
                 // 2. Buscamos en PROVEEDORES
                 let query = supabaseClient
                     .from('proveedores')
-                    .select('id, nombre_empresa, direccion, user_id'); // Traemos todos los datos necesarios
+   
+[cite_start]//[cite: 134].select('id, nombre_empresa, direccion, user_id');
+ .select('id, nombre_empresa, direccion, user_id');
+[cite_start]// [cite: 135] // Traemos todos los datos necesarios
+// Traemos todos los datos necesarios
 
                 // Si se encontraron IDs de la búsqueda de ofertas, filtramos por esos IDs
                 if (searchTerm && providerUserIds.length > 0) {
                     query = query.in('user_id', providerUserIds);
-                    console.log("Filtrando proveedores por User IDs."); // Debug log
+[cite_start]// [cite: 136] console.log("Filtrando proveedores por User IDs."); // REMOVED
                 }
                 // Si searchTerm está vacío, no se aplica filtro .in() y trae todos.
-
-                 const { data: providers, error: providersError } = await query;
-
-                if (providersError) {
-                    console.error("Error al buscar proveedores:", providersError);
-                    throw providersError;
+[cite_start]// [cite: 137] const { data: providers, error: providersError } = await query;
+const { data: providers, error: providersError } = await query;
+[cite_start]// [cite: 138] if (providersError) {
+if (providersError) {
+                    // console.error("Error al buscar proveedores:", providersError); // REMOVED
+[cite_start]// [cite: 139] throw providersError;
+throw providersError;
                 }
-                providerResults = providers || [];
-                console.log("Proveedores encontrados:", providerResults); // Debug log
+                providerResults = providers ||
+[cite_start]// [cite: 140] [];
+[];
+                // console.log("Proveedores encontrados:", providerResults); // REMOVED
 
 
                 // 3. Re-renderizamos el dashboard si es la vista actual
                 if (window.location.hash.includes('dashboard_productor')) {
                     contentView.innerHTML = renderProducerDashboard();
-                }
+[cite_start]// [cite: 141] }
+}
 
             } catch (error) {
-                console.error('Error general en loadProvidersByOfferSearch:', error.message);
-                providerResults = []; // Resetea en caso de error
+                // console.error('Error general en loadProvidersByOfferSearch:', error.message); // REMOVED
+[cite_start]// [cite: 142] providerResults = []; // Resetea en caso de error
+providerResults = []; // Resetea en caso de error
                  // Re-renderizamos incluso en error para mostrar el mensaje "No se encontraron..."
                 if (window.location.hash.includes('dashboard_productor')) {
                     contentView.innerHTML = renderProducerDashboard();
-                }
+[cite_start]// [cite: 143] }
+}
             }
         }
 // ===================================================================
@@ -629,61 +740,81 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
 // ===================================================================
 async function loadHistorialPedidos() {
     // 💡 SOLUCIÓN: Si ya se está ejecutando, ¡salir!
-    if (isHistorialLoading) return;
+[cite_start]// [cite: 144] if (isHistorialLoading) return;
+if (isHistorialLoading) return;
     isHistorialLoading = true;
     
     if (!supabaseClient || !currentUser) {
         historialPedidos = [];
-        isHistorialLoading = false; // Desbloquear si sale temprano
+[cite_start]// [cite: 145] isHistorialLoading = false; // Desbloquear si sale temprano
+isHistorialLoading = false; // Desbloquear si sale temprano
         return;
-    }
+[cite_start]// [cite: 146] }
+}
 // 🟢 NUEVA VERIFICACIÓN DE ROL:
     if (currentUser.user_metadata.user_role === 'proveedor') {
-        historialPedidos = []; // Limpiamos y salimos. Los proveedores no tienen historial de pedidos salientes.
+        historialPedidos = [];
+[cite_start]// [cite: 147] // Limpiamos y salimos. Los proveedores no tienen historial de pedidos salientes.
+// Limpiamos y salimos. Los proveedores no tienen historial de pedidos salientes.
         isHistorialLoading = false;
         return;
-    }
+[cite_start]// [cite: 148] }
+}
     try {
         // Obtenemos los pedidos del usuario productor actual
         const { data, error } = await supabaseClient
             .from('solicitudes_pedido')
             .select('*')
             .eq('productor_user_id', currentUser.id)
-            .order('fecha_envio', { ascending: false }); // Ordenamos por fecha más reciente
+            .order('fecha_envio', { ascending: false });
+[cite_start]// [cite: 149] // Ordenamos por fecha más reciente
+// Ordenamos por fecha más reciente
 
         if (error) throw error;
-        
-        if (data && data.length > 0) {
+[cite_start]// [cite: 150] if (data && data.length > 0) {
+if (data && data.length > 0) {
             // Mapeamos los datos de Supabase a la estructura local que usa renderHistorialPedidosView
             historialPedidos = data.map(pedido => ({
                 codigo: pedido.codigoPedido,
                 fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
-                fechaInicio: pedido.fecha_inicio || 'N/A', // Asumiendo que agregaste estas columnas
+                fechaInicio: pedido.fecha_inicio || 
+[cite_start]// [cite: 151] 'N/A', // Asumiendo que agregaste estas columnas
+'N/A', // Asumiendo que agregaste estas columnas
                 fechaFin: pedido.fecha_fin || 'N/A',     // Asumiendo que agregaste estas columnas
                 productorId: pedido.productor_user_id,
                 items: pedido.items_json || [], // Los items están en el campo JSONB
-                proveedoresInvolucrados: (pedido.items_json || []).reduce((acc, item) => {
+                proveedoresInvolucrados: (pedido.items_json || []).reduce((acc, item) 
+[cite_start]// [cite: 152] => {
+=> {
                     if (item.providerId && !acc.includes(item.providerId)) {
                         acc.push(item.providerId);
                     }
                     return acc;
-                }, []).length,
-                totalEstimado: (pedido.items_json || []).reduce((sum, item) => sum + (item.precio || 0), 0),
+          
+[cite_start]// [cite: 153]       }, []).length,
+}, []).length,
+                totalEstimado: (pedido.items_json ||
+[cite_start]// [cite: 154] []).reduce((sum, item) => sum + (item.precio || 0), 0),
+[]).reduce((sum, item) => sum + (item.precio || 0), 0),
                 estado: pedido.estado
             }));
-        } else {
+[cite_start]// [cite: 155] } else {
+} else {
             historialPedidos = [];
-        }
+[cite_start]// [cite: 156] }
+}
 
-        console.log("Historial de pedidos cargado desde BDD:", historialPedidos.length);
-
-    } catch (error) {
-        console.error("Error al cargar el historial de pedidos:", error.message);
-        historialPedidos = [];
+        // console.log("Historial de pedidos cargado desde BDD:", historialPedidos.length); // REMOVED
+[cite_start]// [cite: 157] } catch (error) {
+} catch (error) {
+        // console.error("Error al cargar el historial de pedidos:", error.message); // REMOVED
+[cite_start]// [cite: 158] historialPedidos = [];
+historialPedidos = [];
         } finally {
         // ✅ Desbloquear al finalizar la ejecución, incluso si hay un error
         isHistorialLoading = false;
-    }
+[cite_start]// [cite: 159] }
+}
 }
 
         // ==================================================================
@@ -691,57 +822,74 @@ async function loadHistorialPedidos() {
         // ==================================================================
         async function getProfileData(userId, role) {
             if (!supabaseClient || !userId) return null;
-
-            try {
+[cite_start]// [cite: 160] try {
+try {
                 let profileData = {};
-
-                if (role === 'proveedor') {
+[cite_start]// [cite: 161] if (role === 'proveedor') {
+if (role === 'proveedor') {
                     const { data, error } = await supabaseClient
                         .from('proveedores')
                         .select('nombre_empresa, cuit, direccion') // Columnas de Proveedor
-                        .eq('user_id', userId)
+               
+[cite_start]//[cite: 162].eq('user_id', userId)
+          .eq('user_id', userId)
                         .single();
-
-                    if (error) throw error;
+[cite_start]// [cite: 163] if (error) throw error;
+if (error) throw error;
                     if (!data) throw new Error("Perfil de proveedor no encontrado.");
-
-                    profileData = {
+[cite_start]// [cite: 164] profileData = {
+profileData = {
                         nombre: data.nombre_empresa,
-                        cuit: data.cuit || '',
-                        direccion: data.direccion || '',
+                        cuit: data.cuit ||
+[cite_start]// [cite: 165] '',
+'',
+                        direccion: data.direccion ||
+[cite_start]// [cite: 166] '',
+'',
                         dni: '' // Proveedor no tiene DNI
                     };
-
-                } else if (role === 'productor') {
+[cite_start]// [cite: 167] } else if (role === 'productor') {
+} else if (role === 'productor') {
                     const { data, error } = await supabaseClient
                         .from('productores')
                         .select('nombre_completo, dni, direccion') // Columnas de Productor
-                        .eq('user_id', userId)
+             
+[cite_start]//[cite: 168].eq('user_id', userId)
+           .eq('user_id', userId)
                         .single();
-
-                    if (error) throw error;
+[cite_start]// [cite: 169] if (error) throw error;
+if (error) throw error;
                     if (!data) throw new Error("Perfil de productor no encontrado.");
-
-                    profileData = {
+[cite_start]// [cite: 170] profileData = {
+profileData = {
                         nombre: data.nombre_completo,
-                        dni: data.dni || '',
-                        direccion: data.direccion || '',
+                        dni: data.dni ||
+[cite_start]// [cite: 171] '',
+'',
+                        direccion: data.direccion ||
+[cite_start]// [cite: 172] '',
+'',
                         cuit: '' // Productor no tiene CUIT
                     };
-                }
+[cite_start]// [cite: 173] }
+}
 
                 return profileData;
-
-            } catch (e) {
-                console.warn(`Error al obtener datos de perfil: ${e.message}. Usando fallback.`);
-                // Fallback genérico si la consulta falla o no encuentra perfil
+[cite_start]// [cite: 174] } catch (e) {
+} catch (e) {
+                // console.warn(`Error al obtener datos de perfil: ${e.message}. Usando fallback.`); // REMOVED
+[cite_start]// [cite: 175] // Fallback genérico si la consulta falla o no encuentra perfil
+// Fallback genérico si la consulta falla o no encuentra perfil
                 return {
-                    nombre: currentUser.user_metadata.display_name || 'Usuario (sin perfil)',
+                    nombre: currentUser.user_metadata.display_name ||
+[cite_start]// [cite: 176] 'Usuario (sin perfil)',
+'Usuario (sin perfil)',
                     direccion: '',
                     cuit: '',
                     dni: ''
                 };
-            }
+[cite_start]// [cite: 177] }
+}
         }
 
 
@@ -750,15 +898,21 @@ async function loadHistorialPedidos() {
         // ==================================================================
        function showProviderOnMap(address) {
     const iframe = document.getElementById('map-iframe');
-    if (iframe && address) {
+[cite_start]// [cite: 178] if (iframe && address) {
+if (iframe && address) {
         const encodedAddress = encodeURIComponent(address);
-        // 🟢 CORRECCIÓN: URL estándar de Google Maps Embed
-        const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
-        iframe.src = mapUrl;
+[cite_start]// [cite: 179] // 🟢 CORRECCIÓN: URL estándar de Google Maps Embed
+// 🟢 CORRECCIÓN: URL estándar de Google Maps Embed
+        const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${SUPABASE_ANON_KEY}&q=${encodedAddress}`; // <--- CORRECCIÓN MANUAL DE URL
+        // const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`; // Original
+[cite_start]// [cite: 180] iframe.src = mapUrl;
+iframe.src = mapUrl;
     } else if (iframe) {
         // Muestra un mapa general de Argentina si no hay dirección
-        iframe.src = `https://maps.google.com/maps?q=Argentina&output=embed&z=4`;
-    }
+        // iframe.src = `https://maps.google.com/maps?q=Argentina&output=embed&z=4`; // Original
+        iframe.src = `https://www.google.com/maps/embed/v1/place?key=${SUPABASE_ANON_KEY}&q=Argentina`; // <--- CORRECCIÓN MANUAL DE URL
+[cite_start]// [cite: 181] }
+}
 }
 
         // ===================================================================
@@ -770,73 +924,105 @@ async function loadHistorialPedidos() {
         // ==================================================================
         function setView(viewName, data = null) {
             // 🟢 Si ya estamos navegando (por la llamada original),
-            // ignoramos la llamada duplicada del hashchange.
-            if (isNavigating) return;
+ 
+[cite_start]// [cite: 182]            // ignoramos la llamada duplicada del hashchange.
+// ignoramos la llamada duplicada del hashchange.
+[cite_start]// [cite: 183] if (isNavigating) return;
+if (isNavigating) return;
 
             isNavigating = true; // 🟢 Bloqueamos la navegación
 
             window.location.hash = viewName;
-
-            // 🟢 CAMBIO: 'provider_details' y 'offer_list_by_category' son asíncronas
+[cite_start]// [cite: 184] // 🟢 CAMBIO: 'provider_details' y 'offer_list_by_category' son asíncronas
+// 🟢 CAMBIO: 'provider_details' y 'offer_list_by_category' son asíncronas
             const isAsyncView = viewName === 'profile_edit' ||
-                                viewName === 'my_products' ||
+[cite_start]// [cite: 185] viewName === 'my_products' ||
+viewName === 'my_products' ||
                                 viewName === 'edit_offer' ||
                                 viewName === 'provider_details' ||
-                                viewName === 'offer_list_by_category' // 🟢 CORRECCIÓN AÑADIDA
+[cite_start]// [cite: 186] viewName === 'offer_list_by_category' // 🟢 CORRECCIÓN AÑADIDA
+viewName === 'offer_list_by_category' || // 🟢 CORRECCIÓN AÑADIDA
                                 viewName === 'provider_requests';
-
-            if (isAsyncView) {
+[cite_start]// [cite: 187] if (isAsyncView) {
+if (isAsyncView) {
                 contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
+[cite_start]// [cite: 188] // 🚨 Agregar una verificación de usuario para vistas críticas
 // 🚨 Agregar una verificación de usuario para vistas críticas
     if (!currentUser && (viewName.includes('dashboard') || viewName.includes('requests') || viewName.includes('products'))) {
-        console.warn(`Intento de acceso a ${viewName} sin usuario. Redirigiendo a home.`);
-        isNavigating = false;
+        // console.warn(`Intento de acceso a ${viewName} sin usuario. Redirigiendo a home.`); // REMOVED
+[cite_start]// [cite: 189] isNavigating = false;
+isNavigating = false;
         return setView('home'); // Redirige a Home si no hay usuario antes de iniciar la promesa.
-    }
-                const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
-                                      viewName === 'my_products' ? renderMyProductsView() :
-                                      viewName === 'edit_offer' ? renderEditOfferView(data) :
-                                      viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
-                                      viewName === 'provider_requests' ? renderProviderRequestsView() :
-                                      renderProviderDetailsView(data); // 🟢 CAMBIO
+[cite_start]// [cite: 190] }
+}
+                const renderPromise = viewName === 'profile_edit' ?
+[cite_start]// [cite: 191] renderProfileEditView() :
+renderProfileEditView() :
+                                      viewName === 'my_products' ?
+[cite_start]// [cite: 192] renderMyProductsView() :
+renderMyProductsView() :
+                                      viewName === 'edit_offer' ?
+[cite_start]// [cite: 193] renderEditOfferView(data) :
+renderEditOfferView(data) :
+                                      viewName === 'offer_list_by_category' ?
+[cite_start]// [cite: 194] renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
+renderOfferListByCategoryView(data) : // 🟢 CORRECCIÓN AÑADIDA
+                                      viewName === 'provider_requests' ?
+[cite_start]// [cite: 195] renderProviderRequestsView() :
+renderProviderRequestsView() :
+                                      renderProviderDetailsView(data);
+[cite_start]// [cite: 196] // 🟢 CAMBIO
+// 🟢 CAMBIO
 
                 renderPromise.then(html => {
                     // Solo actualiza si el hash no cambió mientras cargaba
                     if (window.location.hash === `#${viewName}`) {
                         contentView.innerHTML = html;
-                    }
+ 
+[cite_start]// [cite: 197]                    }
+}
                     isNavigating = false; // 🟢 Desbloqueamos al terminar
                 }).catch(error => {
                     // 🚨 Este bloque es CRUCIAL. Si renderProviderRequestsView lanza un error (como un rol incorrecto)
-    // Se muestra el error, no te redirige al Home.
+  
+[cite_start]// [cite: 198]   // Se muestra el error, no te redirige al Home.
     contentView.innerHTML = `<p class="text-red-500 font-sans">Error al cargar la vista: ${error.message}</p>`;
     isNavigating = false; // 🟢 Desbloqueamos si hay error
 });
-                return;
+[cite_start]// [cite: 199] return;
+return;
             }
 
             contentView.innerHTML = renderView(viewName, data);
-            isNavigating = false; // 🟢 Desbloqueamos para vistas normales
+            isNavigating = false;
+[cite_start]// [cite: 200] // 🟢 Desbloqueamos para vistas normales
+// 🟢 Desbloqueamos para vistas normales
         }
 
 
         function renderView(viewName, data) {
             switch (viewName) {
                 case 'home': return renderHomeView();
-                case 'login': return renderLoginView();
+[cite_start]// [cite: 201] case 'login': return renderLoginView();
+case 'login': return renderLoginView();
                 case 'register': return renderRegisterView();
                 case 'dashboard_productor': return renderProducerDashboard();
                 case 'dashboard_proveedor': return renderProviderDashboard();
                 case 'provider_details': return renderProviderDetailsView(data);
-                case 'info': return renderInfoView(data);
+[cite_start]// [cite: 202] case 'info': return renderInfoView(data);
+case 'info': return renderInfoView(data);
                 case 'add_offer': return renderAddOfferView();
                 case 'como_funciona': return renderComoFuncionaView();
-                case 'categories_selection': return renderCategoriesSelectionView(); // 🟢 CORRECCIÓN AÑADIDA
+                case 'categories_selection': return renderCategoriesSelectionView();
+[cite_start]// [cite: 203] // 🟢 CORRECCIÓN AÑADIDA
+// 🟢 CORRECCIÓN AÑADIDA
                 case 'pedido_actual': return renderPedidoActualView();
-                case 'historial_pedidos': return renderHistorialPedidosView(); // 🟢 NUEVO: Caso para la vista de Historial
+[cite_start]// [cite: 204] case 'historial_pedidos': return renderHistorialPedidosView(); // 🟢 NUEVO: Caso para la vista de Historial
+case 'historial_pedidos': return renderHistorialPedidosView(); // 🟢 NUEVO: Caso para la vista de Historial
                
                 default: return renderHomeView();
-            }
+[cite_start]// [cite: 205] }
+}
         }
 
         // ==================================================================
@@ -844,207 +1030,268 @@ async function loadHistorialPedidos() {
         // ==================================================================
         async function renderProfileEditView() {
             if (!currentUser) return renderLoginView();
-
-            const userRole = currentUser.user_metadata.user_role;
+[cite_start]// [cite: 206] const userRole = currentUser.user_metadata.user_role;
+const userRole = currentUser.user_metadata.user_role;
             const isProvider = userRole === 'proveedor';
             const dashboardView = isProvider ? 'dashboard_proveedor' : 'dashboard_productor';
-
-            // getProfileData ya está corregido y devuelve el objeto correcto
+[cite_start]// [cite: 207] // getProfileData ya está corregido y devuelve el objeto correcto
+// getProfileData ya está corregido y devuelve el objeto correcto
             const profileData = await getProfileData(currentUser.id, userRole);
-
-            const currentNombre = profileData.nombre || (isProvider ? 'Nombre de la Empresa' : 'Nombre Completo');
+[cite_start]// [cite: 208] const currentNombre = profileData.nombre || (isProvider ? 'Nombre de la Empresa' : 'Nombre Completo');
+const currentNombre = profileData.nombre || (isProvider ? 'Nombre de la Empresa' : 'Nombre Completo');
             const currentCuit = profileData.cuit || '';
-            const currentDni = profileData.dni || ''; // Leemos el DNI
-            const currentDireccion = profileData.direccion || '';
+[cite_start]// [cite: 209] const currentDni = profileData.dni || ''; // Leemos el DNI
+const currentDni = profileData.dni || ''; // Leemos el DNI
+            const currentDireccion = profileData.direccion ||
+[cite_start]// [cite: 210] '';
+'';
 
             // Genera el campo dinámico (CUIT o DNI)
-            const extraFieldHtml = isProvider ? `
+            const extraFieldHtml = isProvider ?
+[cite_start]// [cite: 211] `
+`
                 <label class="block text-sm font-medium text-gray-700">CUIT</label>
                 <input type="text" name="cuit_update"
                        value="${currentCuit}" required class="w-full p-3 border rounded-lg">
             ` : `
-                <label class="block text-sm font-medium text-gray-700">DNI</label>
+                <label class="block text-sm font-medium 
+[cite_start]// [cite: 212] text-gray-700">DNI</label>
+text-gray-700">DNI</label>
                 <input type="text" name="dni_update"
                        value="${currentDni}" required class="w-full p-3 border rounded-lg">
-            `; // Campo DNI para productor
+            `;
+[cite_start]// [cite: 213] // Campo DNI para productor
+// Campo DNI para productor
 
             return `
                 <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
                     <button onclick="setView('${dashboardView}')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
                     <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Perfil (${userRole})</h2>
+ 
+[cite_start]// [cite: 214]                    <p class="text-gray-600 mb-6 text-center">
                     <p class="text-gray-600 mb-6 text-center">
                         Estás conectado como: <strong>${currentUser.email}</strong>
                     </p>
                     <form onsubmit="handleProfileUpdate(event)" class="space-y-4">
-                        <h3 class="text-xl font-bold mb-3 border-b pb-2">Información de ${isProvider ? 'Empresa' : 'Usuario'}</h3>
+         
+[cite_start]// [cite: 215]                <h3 class="text-xl font-bold mb-3 border-b pb-2">Información de ${isProvider ?
+             <h3 class="text-xl font-bold mb-3 border-b pb-2">Información de ${isProvider ?
+[cite_start]// [cite: 216] 'Empresa' : 'Usuario'}</h3>
+'Empresa' : 'Usuario'}</h3>
 
                         <label class="block text-sm font-medium text-gray-700">Nombre / Empresa</label>
                         <input type="text" name="nombre_update"
                                value="${currentNombre}" required class="w-full p-3 border rounded-lg">
 
-                        <label class="block text-sm font-medium text-gray-700">Dirección</label>
+      
+[cite_start]// [cite: 217]                   <label class="block text-sm font-medium text-gray-700">Dirección</label>
+                   <label class="block text-sm font-medium text-gray-700">Dirección</label>
                         <input type="text" name="direccion_update"
                                value="${currentDireccion}" required class="w-full p-3 border rounded-lg">
 
-                        ${extraFieldHtml} <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+                
+[cite_start]// [cite: 218]         ${extraFieldHtml} <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+         ${extraFieldHtml} <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
                         <button type="button" onclick="setView('${dashboardView}')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Volver al Dashboard</button>
                     </form>
                 </div>
             `;
-        }
+[cite_start]// [cite: 219] }
+}
 
 
         async function renderMyProductsView() {
             if (!currentUser) return renderLoginView();
-
-            let productListHtml = `<p class="text-gray-400">Cargando productos...</p>`;
+[cite_start]// [cite: 220] let productListHtml = `<p class="text-gray-400">Cargando productos...</p>`;
+let productListHtml = `<p class="text-gray-400">Cargando productos...</p>`;
 
             try {
                 // Obtener las ofertas del usuario actual
                 const { data: offers, error } = await supabaseClient
                     .from('ofertas')
-                    .select('id, titulo, categoria, ubicacion, precio, descripcion') // ✅ Pide ID explícito
+                    .select('id, titulo, categoria, ubicacion, precio, descripcion') // 
+[cite_start]// [cite: 221] ✅ Pide ID explícito
+✅ Pide ID explícito
                     .eq('user_id', currentUser.id);
-
-                if (error) throw error;
+[cite_start]// [cite: 222] if (error) throw error;
+if (error) throw error;
 
                 if (offers.length > 0) {
                     productListHtml = offers.map(offer => `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
                             <div>
-                                <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+       
+[cite_start]// [cite: 223]                          <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+                         <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
                                 <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion}</p>
-                                <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
+                                <p class="text-lg text-accent-cyan 
+[cite_start]// [cite: 224] font-bold">$${offer.precio}</p>
+font-bold">$${offer.precio}</p>
                             </div>
                             <div class="flex-shrink-0 flex gap-2">
                                 <button onclick="setView('edit_offer', '${offer.id}')" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Editar</button>
+ 
+[cite_start]// [cite: 225]                                <button onclick="handleRemoveOffer('${offer.id}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold">Eliminar</button>
                                 <button onclick="handleRemoveOffer('${offer.id}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold">Eliminar</button>
                             </div>
                         </div>
-                    `).join('');
-                } else {
+        
+[cite_start]// [cite: 226]             `).join('');
+            `).join('');
+[cite_start]// [cite: 227] } else {
+} else {
                     productListHtml = `<p class="text-gray-400">Aún no has publicado ninguna oferta.</p>`;
-                }
+[cite_start]// [cite: 228] }
+}
 
             } catch (error) {
                 productListHtml = `<p class="text-red-400">Error cargando tus productos: ${error.message}</p>`;
-                console.error('Error cargando ofertas:', error);
+[cite_start]// [cite: 229] console.error('Error cargando ofertas:', error); // REMOVED
             }
 
             return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
                     <h1 class="text-4xl font-bold mb-6 text-accent-cyan font-heading">Mis Productos Publicados</h1>
-                    <div class="space-y-4">${productListHtml}</div>
+      
+[cite_start]// [cite: 230]               <div class="space-y-4">${productListHtml}</div>
+               <div class="space-y-4">${productListHtml}</div>
                 </div>`;
-        }
+[cite_start]// [cite: 231] }
+}
 
         // Función de eliminación
         async function handleRemoveOffer(offerId) {
              if (!supabaseClient || !currentUser || !confirm("¿Estás seguro de que quieres eliminar esta oferta?")) return;
-
-            try {
+[cite_start]// [cite: 232] try {
+try {
                 const { error } = await supabaseClient
                     .from('ofertas')
                     .delete()
                     .eq('id', offerId)
-                    .eq('user_id', currentUser.id); // Seguridad: solo el dueño puede borrar
+                
+[cite_start]//[cite: 233].eq('user_id', currentUser.id); // Seguridad: solo el dueño puede borrar
+    .eq('user_id', currentUser.id); // Seguridad: solo el dueño puede borrar
 
                 if (error) throw error;
-
-                alert("Oferta eliminada con éxito.");
+[cite_start]// [cite: 234] alert("Oferta eliminada con éxito.");
+alert("Oferta eliminada con éxito.");
                 // Recarga la vista para actualizar la lista
                 setView('my_products');
-            } catch (error) {
+[cite_start]// [cite: 235] } catch (error) {
+} catch (error) {
                 alert(`Error al eliminar la oferta: ${error.message}.`);
-                console.error('Error en handleRemoveOffer:', error);
+[cite_start]// [cite: 236] console.error('Error en handleRemoveOffer:', error); // REMOVED
             }
         }
 
         // Función de edición
         async function handleUpdateOffer(event, offerId) {
             event.preventDefault();
-            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión.");
+[cite_start]// [cite: 237] if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión.");
+if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión.");
 
             const form = event.target;
-
-            const updateData = {
+[cite_start]// [cite: 238] const updateData = {
+const updateData = {
                 titulo: form.titulo.value,
                 descripcion: form.descripcion.value,
                 categoria: form.categoria.value,
                 precio: parseFloat(form.precio.value),
                 ubicacion: form.ubicacion.value
-            };
+            
+[cite_start]// [cite: 239] };
+};
 
             try {
                 const { error } = await supabaseClient
                     .from('ofertas')
                     .update(updateData)
                     .eq('id', offerId)
-                    .eq('user_id', currentUser.id); // Seguridad
+               
+[cite_start]//[cite: 240].eq('user_id', currentUser.id); // Seguridad
+      .eq('user_id', currentUser.id); // Seguridad
 
-                if (error) throw error; // <- 'description' eliminado
+                if (error) throw error;
+[cite_start]// [cite: 241] // <- 'description' eliminado
+// <- 'description' eliminado
 
                 alert("¡Oferta actualizada con éxito!");
-                setView('my_products');
+[cite_start]// [cite: 242] setView('my_products');
+setView('my_products');
 
             } catch (error) {
                 alert(`Error al actualizar la oferta: ${error.message}.`);
-                console.error('Error en handleUpdateOffer:', error); // <- 'content' eliminado
+[cite_start]// [cite: 243] console.error('Error en handleUpdateOffer:', error); // REMOVED
             }
         }
 
 
         async function renderEditOfferView(offerId) {
             if (!supabaseClient || !currentUser || !offerId) return setView('dashboard_proveedor');
-
-            let offer = null;
+[cite_start]// [cite: 244] let offer = null;
+let offer = null;
             try {
                 // Carga la oferta por ID
                 const { data, error } = await supabaseClient
                     .from('ofertas')
                     .select('*')
-                    .eq('id', offerId)
+           
+[cite_start]//[cite: 245].eq('id', offerId)
+          .eq('id', offerId)
                     .single();
-
-                if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
+[cite_start]// [cite: 246] if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
+if (error || !data) throw new Error("Oferta no encontrada o acceso denegado.");
 
                 offer = data;
-            } catch (error) {
+[cite_start]// [cite: 247] } catch (error) {
+} catch (error) {
                 return `<div class="p-8 text-red-500 font-sans">Error al cargar la oferta: ${error.message}</div>`;
-            }
+[cite_start]// [cite: 248] }
+}
 
             const categories = ["Equipos", "Locacion", "Servicio"];
-            const categoryOptions = categories.map(cat =>
+[cite_start]// [cite: 249] const categoryOptions = categories.map(cat =>
+const categoryOptions = categories.map(cat =>
                 `<option value="${cat}" ${offer.categoria === cat ? 'selected' : ''}>${cat}</option>`
             ).join('');
-
-            return `
+[cite_start]// [cite: 250] return `
+return `
                 <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
                     <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Oferta: ${offer.titulo}</h2>
 
                     <form onsubmit="handleUpdateOffer(event, '${offer.id}')" class="space-y-6">
 
-                        <input type="text" name="titulo" value="${offer.titulo}" required class="w-full p-3 border rounded-lg">
+                        <input 
+[cite_start]// [cite: 251] type="text" name="titulo" value="${offer.titulo}" required class="w-full p-3 border rounded-lg">
+type="text" name="titulo" value="${offer.titulo}" required class="w-full p-3 border rounded-lg">
 
                         <textarea name="descripcion" rows="4" required class="w-full p-3 border rounded-lg">${offer.descripcion}</textarea>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <select name="categoria" required class="w-full p-3 border rounded-lg">
+                            <select name="categoria" required class="w-full p-3 border 
+[cite_start]// [cite: 252] rounded-lg">
+rounded-lg">
                                 <option value="">Seleccionar Categoría</option>
                                 ${categoryOptions}
                             </select>
 
-                            <input type="number" name="precio" placeholder="Precio por Día/Servicio" value="${offer.precio}" required class="w-full p-3 border rounded-lg">
+      
+[cite_start]// [cite: 253]                       <input type="number" name="precio" placeholder="Precio por Día/Servicio" value="${offer.precio}" required class="w-full p-3 border rounded-lg">
+                      <input type="number" name="precio" placeholder="Precio por Día/Servicio" value="${offer.precio}" required class="w-full p-3 border rounded-lg">
                         </div>
 
                         <input type="text" name="ubicacion" value="${offer.ubicacion}" required class="w-full p-3 border rounded-lg">
 
-                        <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+           
+[cite_start]// [cite: 254]              <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
+             <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Guardar Cambios</button>
                         <button type="button" onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold mt-2">Cancelar Edición</button>
                     </form>
                 </div>
-            `;
+          
+[cite_start]// [cite: 255]   `;
+    `;
         }
 // ===================================================================
 // 🟢 FUNCIÓN NUEVA: Vista de Historial de Pedidos Realizados
@@ -1056,20 +1303,25 @@ function renderHistorialPedidosView() {
             <p class="text-gray-400">Listado de todos los pedidos de equipamiento enviados a los proveedores.</p>
         </div>
     `;
-
-    if (historialPedidos.length === 0) {
+[cite_start]// [cite: 256] if (historialPedidos.length === 0) {
+if (historialPedidos.length === 0) {
         return `
             <div class="max-w-4xl mx-auto p-4 md:p-8">
                 ${header}
                 <div class="p-6 bg-primary-dark/50 border border-accent-blue/50 rounded-xl text-center">
                     <p class="text-xl text-gray-400 font-semibold mb-3">No has realizado ninguna solicitud de cotización todavía.</p>
-                    <button onclick="setView('categories_selection')" class="bg-accent-blue hover:bg-accent-blue/80 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+  
+[cite_start]// [cite: 257]                   <button onclick="setView('categories_selection')" class="bg-accent-blue hover:bg-accent-blue/80 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                   <button onclick="setView('categories_selection')" class="bg-accent-blue hover:bg-accent-blue/80 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
                         Comenzar Nueva Producción
                     </button>
                 </div>
-            </div>
+          
+[cite_start]// [cite: 258]   </div>
+    </div>
         `;
-    }
+[cite_start]// [cite: 259] }
+}
 
     const tableRows = historialPedidos.map((pedido, index) => {
         // Estilos para el estado
@@ -1079,7 +1331,9 @@ function renderHistorialPedidosView() {
         } else if (pedido.estado.includes('Cotizado')) {
             estadoClass = 'text-green-400 bg-green-900/50';
         } else {
-            estadoClass = 'text-gray-400 bg-gray-700/50';
+     
+[cite_start]// [cite: 260]        estadoClass = 'text-gray-400 bg-gray-700/50';
+       estadoClass = 'text-gray-400 bg-gray-700/50';
         }
 
         return `
@@ -1087,19 +1341,24 @@ function renderHistorialPedidosView() {
             <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
             <td class="px-6 py-4 text-gray-300">${pedido.fechaEnvio || pedido.fecha}</td>
             <td class="px-6 py-4 text-gray-300">
-                ${pedido.fechaInicio || 'N/A'} al ${pedido.fechaFin || 'N/A'}
+          
+[cite_start]// [cite: 261]       ${pedido.fechaInicio || 'N/A'} al ${pedido.fechaFin || 'N/A'}
+       ${pedido.fechaInicio || 'N/A'} al ${pedido.fechaFin || 'N/A'}
             </td>
             <td class="px-6 py-4 text-gray-300">${pedido.items.length} ítems</td>
             <td class="px-6 py-4 text-gray-300">${pedido.proveedoresInvolucrados}</td>
             <td class="px-6 py-4">
                 <button 
-                    onclick="handleDeletePedido('${pedido.codigo}')" 
+              
+[cite_start]// [cite: 262]       onclick="handleDeletePedido('${pedido.codigo}')" 
+       onclick="handleDeletePedido('${pedido.codigo}')" 
                     class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
                     Eliminar
                 </button>
             </td>
             </tr>
     `;
+[cite_start]// [cite: 263] }).join('');
 }).join('');
 
   const content = `
@@ -1110,7 +1369,8 @@ function renderHistorialPedidosView() {
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Envío</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fechas de Uso</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
+            
+[cite_start]// [cite: 264]         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Proveedores</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
                 </tr>
@@ -1119,7 +1379,9 @@ function renderHistorialPedidosView() {
                 ${tableRows}
             </tbody>
         </table>
-    </div>
+  
+[cite_start]// [cite: 265]   </div>
+  </div>
 `;
 
     return `
@@ -1128,6 +1390,7 @@ function renderHistorialPedidosView() {
             ${content}
         </div>
     `;
+[cite_start]// [cite: 266] }
 }
         
        // Función auxiliar para el header
@@ -1135,43 +1398,60 @@ function renderHistorialPedidosView() {
 // Función auxiliar para el header
 function renderHeader() {
     const header = document.getElementById('main-header');
-    if (!header) return;
+[cite_start]// [cite: 267] if (!header) return;
+if (!header) return;
 
     const isLoggedIn = !!currentUser;
     const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
-    const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
-
-    // Iconos SVG para usar en móviles
+[cite_start]// [cite: 268] const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
+const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
+[cite_start]// [cite: 269] // Iconos SVG para usar en móviles
+// Iconos SVG para usar en móviles
     const userIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
-    const logoutIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
-    const loginIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
-    const registerIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
-
-    // Botones de Autenticación
+[cite_start]// [cite: 270] const logoutIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
+const logoutIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
+[cite_start]// [cite: 271] const loginIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
+const loginIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
+[cite_start]// [cite: 272] const registerIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
+const registerIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
+[cite_start]// [cite: 273] // Botones de Autenticación
+// Botones de Autenticación
     const authButtons = isLoggedIn
-        ? // Estado: CONECTADO
+        ?
+[cite_start]// [cite: 274] // Estado: CONECTADO
+// Estado: CONECTADO
         `<div class="flex space-x-2 sm:space-x-3 items-center">
             <span class="text-sm font-sans text-gray-300 mr-1 hidden md:block">
                 Hola, <strong class="text-accent-cyan">${displayName}</strong>
             </span>
 
             <div class="relative">
-                <button onclick="toggleDropdown('account-dropdown')" class="dropdown-toggle btn-secondary text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center">
+                <button onclick="toggleDropdown('account-dropdown')" class="dropdown-toggle btn-secondary text-sm sm:text-base px-3 py-1.5 sm:px-4 
+[cite_start]// [cite: 275] sm:py-2 rounded-lg font-semibold flex items-center">
+sm:py-2 rounded-lg font-semibold flex items-center">
                     <span class="hidden sm:inline">Mi Cuenta</span>
                     <span class="inline sm:hidden">${userIcon}</span>
                     <svg class="w-4 h-4 ml-1 hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
+             
+[cite_start]// [cite: 276]    </button>
+   </button>
 
                 <div id="account-dropdown" class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                    <a href="javascript:void(0);" onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+                    <a href="javascript:void(0);"
+[cite_start]// [cite: 277] onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
                         Mi Dashboard
                     </a>
-                    <a href="javascript:void(0);" onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+                    <a href="javascript:void(0);"
+[cite_start]// [cite: 278] onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
                         Editar Perfil
                     </a>
                 </div>
             </div>
-            <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
+            <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 transition text-white text-sm sm:text-base 
+[cite_start]// [cite: 279] px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
+px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
                 <span class="hidden sm:inline">Cerrar Sesión</span>
                 <span class="inline sm:hidden">${logoutIcon}</span>
             </button>
@@ -1179,47 +1459,63 @@ function renderHeader() {
         : // Estado: DESCONECTADO
         `<div class="flex space-x-2">
             <button onclick="setView('login')" 
+[cite_start]// [cite: 280] 
                 class="bg-accent-blue text-white text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
                 <span class="hidden sm:inline">Iniciar Sesión</span>
                 <span class="inline sm:hidden">${loginIcon}</span>
             </button>
             <button onclick="setView('register')" 
-                class="btn-secondary text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
+         
+[cite_start]// [cite: 281]        class="btn-secondary text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
+        class="btn-secondary text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
                 <span class="hidden sm:inline">Registrar</span>
                 <span class="inline sm:hidden">${registerIcon}</span>
             </button>
         </div>`;
-
-    header.innerHTML = `
+[cite_start]// [cite: 282] header.innerHTML = `
+header.innerHTML = `
         <div class="container mx-auto px-4">
             <nav class="flex justify-between items-center py-4">
                 <a href="#" onclick="setView('home')" class="flex items-center transition hover:opacity-80">
                     <img src="isoblancosolido.png" alt="Rent.Ar Logo" class="h-8 mr-2">
                     <span class="logo-text-header text-accent-cyan">Rent.Ar</span>
-                </a>
+  
+[cite_start]// [cite: 283]               </a>
+               </a>
 
                 <div class="hidden md:flex flex-grow justify-center">
                     <button onclick="setView('como_funciona')"
                             class="bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">
-                        ¿Cómo funciona?
-                    </button>
+            
+[cite_start]// [cite: 284]             ¿Cómo funciona?
+             ¿Cómo funciona?
+[cite_start]// [cite: 285] </button>
+</button>
                 </div>
                 
                 <div class="flex items-center space-x-2">
                     <div id="pedido-indicator" class="relative ${isLoggedIn && userRole === 'productor' ? '' : 'hidden'}">
-                        <button onclick="setView('pedido_actual')" class="text-accent-cyan hover:text-white transition p-1 rounded-full">
+                  
+[cite_start]// [cite: 286]       <button onclick="setView('pedido_actual')" class="text-accent-cyan hover:text-white transition p-1 rounded-full">
+        <button onclick="setView('pedido_actual')" class="text-accent-cyan hover:text-white transition p-1 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17 18a2 2 0 1 1 0 4a2 2 0 0 1 0-4Zm-10 0a2 2 0 1 1 0 4a2 2 0 0 1 0-4ZM1 3h3.27l.94 2H22l-4 8H7.21L5.27 3H1V1h4.73l.27.64l.94 2.11L6.73 6H21.4l-3.2 6.4H7.83l-.27-.64L4.27 4H1zm18 10H7.83l1.83 4H18.17l.83-4Z"/>
+                                <path d="M17 18a2 2 0 1 1 0 4a2 2 0 0 1 0-4ZM-10 0a2 2 0 1 1 0 
+[cite_start]// [cite: 287] 4a2 2 0 0 1 0-4ZM1 3h3.27l.94 2H22l-4 8H7.21L5.27 3H1V1h4.73l.27.64l.94 2.11L6.73 6H21.4l-3.2 6.4H7.83l-.27-.64L4.27 4H1zm18 10H7.83l1.83 4H18.17l.83-4Z"/>
+4a2 2 0 0 1 0-4ZM1 3h3.27l.94 2H22l-4 8H7.21L5.27 3H1V1h4.73l.27.64l.94 2.11L6.73 6H21.4l-3.2 6.4H7.83l-.27-.64L4.27 4H1zm18 10H7.83l1.83 4H18.17l.83-4Z"/>
                             </svg>
                             <span id="pedido-count" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-xs rounded-full px-1 py-0.5">0</span>
-                        </button>
+                   
+[cite_start]// [cite: 288]      </button>
+      </button>
                     </div>
                     
                     ${authButtons}
                 </div>
 
             </nav>
-        </div>
+       
+[cite_start]// [cite: 289]  </div>
+ </div>
     `;
 }
 
@@ -1228,36 +1524,55 @@ function renderHeader() {
         // ==================================================================
         function renderHomeView() {
             // Carga los proveedores sin filtro por si el usuario vuelve a la home y luego al dashboard
-            loadProvidersByOfferSearch(); // Mantenemos la carga inicial
+            loadProvidersByOfferSearch();
+[cite_start]// [cite: 290] // Mantenemos la carga inicial
+// Mantenemos la carga inicial
 
             return `<section class="min-h-[50vh] flex items-center justify-center p-8 mb-16 rounded-xl" style="background: linear-gradient(135deg, #061637, #29007a);">
                         <div class="text-center max-w-4xl">
                             <h1 class="text-4xl md:text-6xl font-extrabold text-accent-cyan mb-4">Encontrá el recurso, servicio o locación perfecta para tu próxima producción</h1>
-                            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+   
+[cite_start]// [cite: 291]                          <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+                         <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
                                 <input type="text" id="search-input" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark">
 
-                                <button onclick="handleSearch()" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button>
+                        
+[cite_start]// [cite: 292]         <button onclick="handleSearch()" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button>
+         <button onclick="handleSearch()" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button>
                             </div>
                         </div>
                     </section>
-                    <section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark">
+            
+[cite_start]// [cite: 293]         <section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark">
+         <section class="p-8 md:p-16 rounded-xl bg-accent-cyan text-primary-dark">
                         <h2 class="text-3xl font-extrabold text-center mb-10">¿Qué necesitás hacer hoy?</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div class="bg-white p-8 rounded-xl shadow-lg">
+                            
+[cite_start]// [cite: 294] <div class="bg-white p-8 rounded-xl shadow-lg">
+<div class="bg-white p-8 rounded-xl shadow-lg">
                                 <h3 class="text-2xl font-bold mb-3">Soy productor</h3>
                                 <p class="text-gray-600 mb-6">Buscá equipos y servicios por categoría.</p>
-                                <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar por Categoría</button>
+                     
+[cite_start]// [cite: 295]            <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar por Categoría</button>
+            <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar por Categoría</button>
                             </div>
                             <div class="bg-white p-8 rounded-xl shadow-lg">
-                                <h3 class="text-2xl font-bold mb-3">Soy proveedor</h3>
+                    
+[cite_start]// [cite: 296]             <h3 class="text-2xl font-bold mb-3">Soy proveedor</h3>
+             <h3 class="text-2xl font-bold mb-3">Soy proveedor</h3>
                                 <p class="text-gray-600 mb-6">Publicá tu inventario.</p>
                                 <button onclick="handlePublishOfferClick()" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button>
-                            </div>
+        
+[cite_start]// [cite: 297]                     </div>
+                    </div>
                         </div>
                     </section>`;
-        }
+[cite_start]// [cite: 298] }
+}
         function renderLoginView() {
-            return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta? <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`;
+            return `<div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark"><h2 class="text-3xl font-bold text-center mb-6 text-accent-blue">Iniciar Sesión</h2><form onsubmit="handleLogin(event)"><div class="mb-4"><label for="email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="email" name="email" required class="mt-1 block w-full p-3 border rounded-lg"></div><div class="mb-6"><label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label><input type="password" id="password" name="password" required class="mt-1 block w-full p-3 border rounded-lg"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Acceder</button></form><p class="mt-6 text-center text-sm text-gray-600">¿No tenés cuenta?
+[cite_start]// [cite: 299] <a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`;
+<a href="#" onclick="setView('register')" class="text-accent-blue hover:underline">Registrate</a></p></div>`;
         }
 // ===================================================================
 // 🟢 FUNCIÓN NUEVA: Renderizar el Formulario para Agregar Oferta
@@ -1266,101 +1581,122 @@ function renderAddOfferView() {
     // Control de acceso: solo proveedores logueados pueden ver esta vista
     if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor') {
         alert("Debes iniciar sesión como Proveedor para publicar una oferta.");
-        return renderLoginView(); 
+[cite_start]// [cite: 300] return renderLoginView(); 
+return renderLoginView(); 
     }
 
     const categories = ["Equipos", "Locacion", "Servicio"];
     const categoryOptions = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-
-    // La función handleAddOffer (línea 312) ya maneja el submit.
-    return `
+[cite_start]// [cite: 301] // La función handleAddOffer (línea 312) ya maneja el submit.
+// La función handleAddOffer (línea 312) ya maneja el submit.
+[cite_start]// [cite: 302] return `
+return `
         <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
             <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
 
             <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
             
             <form onsubmit="handleAddOffer(event)" class="space-y-6">
-                <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Sony FX9)" required class="w-full p-3 border rounded-lg">
+               
+[cite_start]// [cite: 303]  <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Sony FX9)" required class="w-full p-3 border rounded-lg">
+  <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Sony FX9)" required class="w-full p-3 border rounded-lg">
                 <textarea name="descripcion" rows="4" placeholder="Descripción detallada del producto o servicio" required class="w-full p-3 border rounded-lg"></textarea>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select name="categoria" required class="w-full p-3 border rounded-lg">
+                   
+[cite_start]// [cite: 304]  <select type="text" name="categoria" required class="w-full p-3 border rounded-lg">
+  <select name="categoria" required class="w-full p-3 border rounded-lg">
                         <option value="">Seleccionar Categoría</option>
                         ${categoryOptions}
                     </select>
-                    <input type="number" name="precio" placeholder="Precio por Día/Servicio" required class="w-full p-3 border rounded-lg">
+                    <input type="number" name="precio" 
+[cite_start]// [cite: 305] placeholder="Precio por Día/Servicio" required class="w-full p-3 border rounded-lg">
+placeholder="Precio por Día/Servicio" required class="w-full p-3 border rounded-lg">
                 </div>
                 
                 <input type="text" name="ubicacion" placeholder="Ubicación (Ej: CABA, Villa Crespo)" required class="w-full p-3 border rounded-lg">
                 
-                <button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Publicar Oferta</button>
+                <button 
+[cite_start]// [cite: 306] type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Publicar Oferta</button>
+type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Publicar Oferta</button>
             </form>
         </div>
     `;
+[cite_start]// [cite: 307] }
 }
 // ===================================================================
 // 🟢 FUNCIÓN OPTIMIZADA: renderProviderRequestsView (Línea ~305)
 // ===================================================================
 async function renderProviderRequestsView() {
-    const currentProviderUserId = currentUser ? currentUser.id : null; 
-let requestsForProvider = [];
-let totalPending = 0;
-
-// 🟢 PRIMER DIAGNÓSTICO (Insertar aquí)
-console.log("--- DIAGNÓSTICO FINAL DE UUIDS ---");
-console.log("UUID del Proveedor Logueado (Session):", currentProviderUserId); 
-console.log("----------------------------------");
-// ---------------------------------
-    // Si no hay usuario o no es proveedor, devolvemos un mensaje explícito.
-    if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor' || !currentProviderUserId) {
-        return `<p class="text-red-500 p-8">Acceso denegado. Debes ser un Proveedor conectado.</p>`;
+    // console.log("✅ Entró a renderProviderRequestsView"); // REMOVED
+[cite_start]// [cite: 308] // 🚨 NOTA: Si estás logueado como Productor y llegas aquí, el código fallará,
+    // 🚨 NOTA: Si estás logueado como Productor y llegas aquí, el código fallará,
+    // pero renderizará el mensaje de error en pantalla en lugar de volver a Home.
+[cite_start]// [cite: 309] const currentProviderUserId = currentUser ? currentUser.id : null;
+const currentProviderUserId = currentUser ? currentUser.id : null;
+    let requestsForProvider = [];
+    let totalPending = 0;
+[cite_start]// [cite: 310] // Si no hay usuario o no es proveedor, devolvemos un mensaje explícito.
+// Si no hay usuario o no es proveedor, devolvemos un mensaje explícito.
+[cite_start]// [cite: 311] if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor' || !currentProviderUserId) {
+if (!currentUser || currentUser.user_metadata.user_role !== 'proveedor' || !currentProviderUserId) {
+        return `<p class="text-red-500 p-8">Acceso denegado.
+[cite_start]// [cite: 312] Debes ser un Proveedor conectado.</p>`;
+Debes ser un Proveedor conectado.</p>`;
     }
 
     try {
-        // 1. Consulta a Supabase. Si la RLS está bien, solo recibirá los pedidos relevantes.
-        const { data: allPedidos, error } = await supabaseClient
+        // 1. Consulta a Supabase.
+[cite_start]// [cite: 313] Si la RLS está bien, solo recibirá los pedidos relevantes.
+// Si la RLS está bien, solo recibirá los pedidos relevantes.
+[cite_start]// [cite: 314] const { data: allPedidos, error } = await supabaseClient
+const { data: allPedidos, error } = await supabaseClient
             .from('solicitudes_pedido')
             .select('*')
             .order('fecha_envio', { ascending: false });
-        
-        if (error) throw error;
+[cite_start]// [cite: 315] if (error) throw error;
+if (error) throw error;
         
         // 2. Filtrar y Procesar los Pedidos RECIBIDOS
         (allPedidos || []).forEach(pedido => {
-    const items = pedido.items_json || [];
+            const items = pedido.items_json || [];
+            
+            // 🟢 SOLUCIÓN CLAVE: Cambiar a comparación estricta (===) para UUIDs
+ 
+[cite_start]// [cite: 316]            const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId); // CORRECCIÓN
+            const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId); // CORRECCIÓN
 
-    // 🟢 SEGUNDO DIAGNÓSTICO (Insertar aquí)
-    if (items.length > 0) {
-        console.log("UUID Guardado en Primer Item del Pedido:", items[0].providerId);
-    }
-    // ---------------------------------
-    
-    // 🟢 SOLUCIÓN CLAVE (Recuerda cambiar a '===')
-    // DEBE USAR === si ya has aplicado esa corrección, o usa '==' si quieres testear el código original.
-    const itemsForThisProvider = items.filter(item => item.providerId === currentProviderUserId); //
             if (itemsForThisProvider.length > 0) {
                 const isPending = pedido.estado === 'Pendiente de Cotización';
                 
                 requestsForProvider.push({
-                    codigo: pedido.codigoPedido,
+           
+[cite_start]// [cite: 317]          codigo: pedido.codigoPedido,
+         codigo: pedido.codigoPedido,
                     fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
                     fechaInicio: pedido.fecha_inicio || 'N/A',
                     fechaFin: pedido.fecha_fin || 'N/A',
                     items: itemsForThisProvider, 
+[cite_start]// [cite: 318] 
+ 
                     estado: pedido.estado
                 });
-                
-                if (isPending) {
+[cite_start]// [cite: 319] if (isPending) {
+if (isPending) {
                     totalPending++;
-                }
+[cite_start]// [cite: 320] }
+}
             }
         });
-        
-    } catch (e) {
-        console.error("Error al cargar solicitudes para proveedor:", e.message);
-        // Retorna un mensaje de error claro en pantalla, EVITANDO la redirección al Home.
-        return `<p class="text-red-500 p-8">Error al cargar solicitudes. Verifica la configuración RLS y el tipo de dato de proveedores_ids: ${e.message}</p>`; 
-    }
+[cite_start]// [cite: 321] } catch (e) {
+} catch (e) {
+        // console.error("Error al cargar solicitudes para proveedor:", e.message); // REMOVED
+[cite_start]// [cite: 322] // Retorna un mensaje de error claro en pantalla, EVITANDO la redirección al Home.
+// Retorna un mensaje de error claro en pantalla, EVITANDO la redirección al Home.
+[cite_start]// [cite: 323] return `<p class="text-red-500 p-8">Error al cargar solicitudes. Verifica la configuración RLS y el tipo de dato de proveedores_ids: ${e.message}</p>`;
+return `<p class="text-red-500 p-8">Error al cargar solicitudes. Verifica la configuración RLS y el tipo de dato de proveedores_ids: ${e.message}</p>`;
+[cite_start]// [cite: 324] }
+}
     
     // 3. Renderizado de la Tabla
     
@@ -1370,17 +1706,20 @@ console.log("----------------------------------");
             <p class="text-gray-400">Tienes <strong class="text-accent-cyan">${totalPending}</strong> solicitudes <strong class="text-yellow-400">pendientes</strong> de respuesta.</p>
         </div>
     `;
-
-    if (requestsForProvider.length === 0) {
+[cite_start]// [cite: 325] if (requestsForProvider.length === 0) {
+if (requestsForProvider.length === 0) {
         return `
             <div class="max-w-6xl mx-auto p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                 <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Mis Solicitudes de Pedido</h1>
                 <div class="p-6 bg-primary-dark/50 border border-accent-blue/50 rounded-xl text-center">
-                    <p class="text-xl text-gray-400 font-semibold mb-3">No hay solicitudes de cotización para tu empresa.</p>
+                    <p 
+[cite_start]// [cite: 326] class="text-xl text-gray-400 font-semibold mb-3">No hay solicitudes de cotización para tu empresa.</p>
+class="text-xl text-gray-400 font-semibold mb-3">No hay solicitudes de cotización para tu empresa.</p>
                 </div>
             </div>
         `;
-    }
+[cite_start]// [cite: 327] }
+}
 
     const tableRows = requestsForProvider.map((pedido) => {
         let estadoClass = pedido.estado.includes('Pendiente') ? 'text-yellow-400 bg-yellow-900/50' : 'text-green-400 bg-green-900/50';
@@ -1389,83 +1728,121 @@ console.log("----------------------------------");
         return `
             <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
                 <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
-                <td class="px-6 py-4 text-gray-300">${pedido.fechaEnvio}</td>
+            
+[cite_start]// [cite: 328]     <td class="px-6 py-4 text-gray-300">${pedido.fechaEnvio}</td>
+    <td class="px-6 py-4 text-gray-300">${pedido.fechaEnvio}</td>
                 <td class="px-6 py-4 text-gray-300">${pedido.fechaInicio} al ${pedido.fechaFin}</td>
                 <td class="px-6 py-4"><ul class="list-disc list-inside space-y-1 max-w-sm">${itemsDetail}</ul></td>
                 <td class="px-6 py-4"><span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">${pedido.estado}</span></td>
                 <td class="px-6 py-4">
-                    <button onclick="alert('Funcionalidad de Contacto Implementada: Aquí puedes contactar al Productor para enviar tu cotización.')" class="bg-accent-cyan text-primary-dark text-xs py-1 px-3 rounded-lg hover:bg-white">
+       
+[cite_start]// [cite: 329]              <button onclick="alert('Funcionalidad de Contacto Implementada: Aquí puedes contactar al Productor para enviar tu cotización.')" class="bg-accent-cyan text-primary-dark text-xs py-1 px-3 rounded-lg hover:bg-white">
+             <button onclick="alert('Funcionalidad de Contacto Implementada: Aquí puedes contactar al Productor para enviar tu cotización.')" class="bg-accent-cyan text-primary-dark text-xs py-1 px-3 rounded-lg hover:bg-white">
                         Responder
                     </button>
                 </td>
-            </tr>
+       
+[cite_start]// [cite: 330]      </tr>
+      </tr>
         `;
     }).join('');
-    
-    const content = `
+[cite_start]// [cite: 331] const content = `
+const content = `
         <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
             <table class="min-w-full divide-y divide-gray-700/50">
                 <thead class="bg-primary-dark/50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código de Pedido</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 
+[cite_start]// [cite: 332] uppercase tracking-wider">Código de Pedido</th>
+uppercase tracking-wider">Código de Pedido</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Solicitud</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fechas de Uso</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems Solicitados</th>
+                        <th scope="col" class="px-6 
+[cite_start]// [cite: 333] py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems Solicitados</th>
+py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems Solicitados</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acción</th>
                     </tr>
-                </thead>
+       
+[cite_start]// [cite: 334]          </thead>
+</thead>
                 <tbody class="divide-y divide-gray-700/50">
                     ${tableRows}
                 </tbody>
             </table>
         </div>
     `;
-
-    return `
+[cite_start]// [cite: 335] return `
+return `
         <div class="max-w-6xl mx-auto p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             ${header}
             ${content}
         </div>
     `;
+[cite_start]// [cite: 336] }
 }
 function renderComoFuncionaView() {
-    return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1. Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2. Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3. Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`;
+    return `<div class="p-4 md:p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20 text-center"><h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">¿Cómo Funciona Rent.Ar?</h1><p class="text-lg text-gray-300 mb-12 font-sans max-w-2xl mx-auto">Encontrá todo lo que necesitás para tu producción en tres simples pasos.</p><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">1.
+[cite_start]// [cite: 337] Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2.
+[cite_start]// [cite: 338] Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3.
+[cite_start]// [cite: 339] Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`;
+Buscá y Encontrá</h3><p class="text-gray-400 font-sans">Usá nuestra barra de búsqueda o explorá el mapa para encontrar equipos, locaciones y servicios profesionales en toda Argentina.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">2.
+Contactá y Cotizá</h3><p class="text-gray-400 font-sans">Comunicate directamente con los proveedores a través de la plataforma para resolver dudas y pedir cotizaciones.</p></div><div class="p-6 bg-primary-dark/50 rounded-lg border border-accent-cyan/10"><div class="flex justify-center mb-4"><svg class="w-16 h-16 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg></div><h3 class="text-2xl font-bold mb-2 font-heading">3.
+Producí y Calificá</h3><p class="text-gray-400 font-sans">Una vez finalizado el trabajo, calificá tu experiencia para ayudar a otros miembros de la comunidad a tomar mejores decisiones.</p></div></div></div>`;
+[cite_start]// [cite: 340] }
 }
         function renderRegisterView() {
-            const productorActive = selectedRole === 'productor' ? 'active' : '';
+            const productorActive = selectedRole === 'productor' ?
+[cite_start]// [cite: 341] 'active' : '';
+'active' : '';
             const proveedorActive = selectedRole === 'proveedor' ? 'active' : '';
             let formHtml = '';
-
-            if (selectedRole === 'productor') {
+[cite_start]// [cite: 342] if (selectedRole === 'productor') {
+if (selectedRole === 'productor') {
                 formHtml = renderProductorForm();
-            } else if (selectedRole === 'proveedor') {
+[cite_start]// [cite: 343] } else if (selectedRole === 'proveedor') {
+} else if (selectedRole === 'proveedor') {
                 formHtml = renderProveedorForm();
-            } else {
+[cite_start]// [cite: 344] } else {
+} else {
                 formHtml = '<p class="text-center text-gray-500 font-sans">Selecciona tu rol para continuar con el registro.</p>';
-            }
+[cite_start]// [cite: 345] }
+}
 
             return `
                 <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
                     <h2 class="text-3xl font-bold text-center mb-8 text-accent-blue font-heading">Crear Cuenta</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                        <div onclick="updateRegisterForm('productor')" class="role-selector ${productorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
+            
+[cite_start]// [cite: 346]             <div onclick="updateRegisterForm('productor')" class="role-selector ${productorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
+             <div onclick="updateRegisterForm('productor')" class="role-selector ${productorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
                             <h3 class="font-bold text-lg font-heading">Soy Productor/a 🎬</h3>
                             <p class="text-sm text-gray-600 font-sans">Busco recursos y servicios.</p>
-                        </div>
+          
+[cite_start]// [cite: 347]               </div>
+               </div>
                         <div onclick="updateRegisterForm('proveedor')" class="role-selector ${proveedorActive} p-4 rounded-xl border-2 border-gray-300 cursor-pointer transition hover:border-accent-blue/50 text-center">
                             <h3 class="font-bold text-lg font-heading">Soy Proveedor/a 🛠️</h3>
-                            <p class="text-sm text-gray-600 font-sans">Ofrezco equipos o locaciones.</p>
+                  
+[cite_start]// [cite: 348]           <p class="text-sm text-gray-600 font-sans">Ofrezco equipos o locaciones.</p>
+          <p class="text-sm text-gray-600 font-sans">Ofrezco equipos o locaciones.</p>
                         </div>
                     </div>
                     ${formHtml}
-                    <p class="mt-6 text-center text-sm text-gray-600 font-sans">¿Ya tenés cuenta? <a href="#" onclick="setView('login')" class="text-accent-blue hover:underline">Iniciá Sesión</a></p>
+                    
+[cite_start]// [cite: 349] <p class="mt-6 text-center text-sm text-gray-600 font-sans">¿Ya tenés cuenta? <a href="#" onclick="setView('login')" class="text-accent-blue hover:underline">Iniciá Sesión</a></p>
+<p class="mt-6 text-center text-sm text-gray-600 font-sans">¿Ya tenés cuenta? <a href="#" onclick="setView('login')" class="text-accent-blue hover:underline">Iniciá Sesión</a></p>
                 </div>
             `;
-        }
+[cite_start]// [cite: 350] }
+}
 
-        function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección Principal (Ej: Calle Falsa 123)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
-        function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+        function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección Principal (Ej: Calle Falsa 123)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`;
+[cite_start]// [cite: 351] }
+}
+        function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button 
+[cite_start]// [cite: 352] type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
+type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
 
         // ==================================================================
         // 🟢 NUEVA: Función auxiliar para simular ratings
@@ -1473,25 +1850,31 @@ function renderComoFuncionaView() {
         function renderRating() {
             // Genera un rating simulado de 3 a 5 "plays"
             const simulatedRating = Math.floor(Math.random() * 3) + 3;
-            return Array.from({length: 5}, (_, i) =>
+[cite_start]// [cite: 353] return Array.from({length: 5}, (_, i) =>
+return Array.from({length: 5}, (_, i) =>
                 `<span class="text-2xl ${i < simulatedRating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`
             ).join('');
-        }
+[cite_start]// [cite: 354] }
+}
 // ===================================================================
 // 🟢 NUEVA FUNCIÓN: Actualizar contador del header
 // ===================================================================
 function actualizarIndicadorPedido() {
     const countElement = document.getElementById('pedido-count');
-    const indicatorElement = document.getElementById('pedido-indicator');
+[cite_start]// [cite: 355] const indicatorElement = document.getElementById('pedido-indicator');
+const indicatorElement = document.getElementById('pedido-indicator');
     const esProductor = currentUser && currentUser.user_metadata.user_role === 'productor';
-
-    if (countElement && indicatorElement) {
+[cite_start]// [cite: 356] if (countElement && indicatorElement) {
+if (countElement && indicatorElement) {
         if (esProductor) {
             indicatorElement.classList.remove('hidden');
-            countElement.textContent = pedidoActual.length;
+[cite_start]// [cite: 357] countElement.textContent = pedidoActual.length;
+countElement.textContent = pedidoActual.length;
             countElement.classList.toggle('hidden', pedidoActual.length === 0); // Oculta el número si es 0
         } else {
-            indicatorElement.classList.add('hidden'); // Oculta todo si no es productor
+            indicatorElement.classList.add('hidden');
+[cite_start]// [cite: 358] // Oculta todo si no es productor
+// Oculta todo si no es productor
         }
     }
 }
@@ -1500,7 +1883,8 @@ function actualizarIndicadorPedido() {
 // ==================================================================
 function renderProducerDashboard() {
     let resultsHtml = '';
-    const searchTerm = document.getElementById('search-input')?.value || ''; // Para saber si hay una búsqueda activa
+[cite_start]// [cite: 359] const searchTerm = document.getElementById('search-input')?.value || ''; // Para saber si hay una búsqueda activa
+const searchTerm = document.getElementById('search-input')?.value || ''; // Para saber si hay una búsqueda activa
 
     if (providerResults.length > 0) {
         // 🟢 CAMBIO: Iteramos sobre 'providerResults' (proveedores)
@@ -1508,28 +1892,38 @@ function renderProducerDashboard() {
 
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
+                
+[cite_start]// [cite: 360] <div>
+<div>
                     <h4 class="font-bold text-lg font-heading text-accent-cyan">${provider.nombre_empresa}</h4>
 
                     <div class="my-2">${renderRating()}</div>
 
                     <p class="text-sm text-gray-400 font-sans mt-1">
                         Ubicación: ${provider.direccion || 'No especificada'}
-                    </p>
+   
+[cite_start]// [cite: 361]                  </p>
+</p>
                 </div>
                 <div class="flex-shrink-0 flex w-full sm:w-auto gap-2">
                     <button onclick="showProviderOnMap('${provider.direccion || ''}')" class="flex-1 sm:flex-auto bg-accent-cyan text-primary-dark px-3 py-2 rounded-lg font-semibold">Ver en Mapa</button>
-                    <button onclick="setView('provider_details', ${provider.id})" class="flex-1 sm:flex-auto bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>
+             
+[cite_start]// [cite: 362]        <button onclick="setView('provider_details', ${provider.id})" class="flex-1 sm:flex-auto bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>
+        <button onclick="setView('provider_details', ${provider.id})" class="flex-1 sm:flex-auto bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>
                 </div>
             </div>`;
-        }).join('');
+[cite_start]// [cite: 363] }).join('');
+}).join('');
     } else if (searchTerm) {
         // Mensaje si la búsqueda no arroja resultados
-        resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda. Intenta con otro término.</p>';
+        resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">No se encontraron proveedores para tu búsqueda.
+[cite_start]// [cite: 364] Intenta con otro término.</p>';
+Intenta con otro término.</p>';
     } else {
          // Mensaje si no hay filtro de búsqueda activo
         resultsHtml = '<p class="text-center text-gray-400 font-sans py-8">Utiliza el campo de búsqueda de arriba para encontrar proveedores de equipos y servicios.</p>';
-    }
+[cite_start]// [cite: 365] }
+}
 
     // 🟢 NUEVA SECCIÓN DE CONTROL DE PRODUCCIÓN
     const controlSection = `
@@ -1537,49 +1931,63 @@ function renderProducerDashboard() {
             <div class="p-4 rounded-xl bg-primary-dark/50 border border-accent-blue/50 text-center">
                 <h3 class="text-xl font-bold mb-2 font-heading">Buscar Recursos</h3>
                 <p class="text-gray-400 text-sm mb-3">Empieza una nueva búsqueda por categoría.</p>
-                <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-2 rounded-lg font-semibold">
+      
+[cite_start]// [cite: 366]           <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-2 rounded-lg font-semibold">
+           <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-2 rounded-lg font-semibold">
                     🎬 Nueva Producción
                 </button>
             </div>
             <div class="p-4 rounded-xl bg-primary-dark/50 border border-accent-blue/50 text-center">
-                <h3 class="text-xl font-bold mb-2 font-heading">Pedido Actual</h3>
+               
+[cite_start]// [cite: 367]  <h3 class="text-xl font-bold mb-2 font-heading">Pedido Actual</h3>
+  <h3 class="text-xl font-bold mb-2 font-heading">Pedido Actual</h3>
                 <p class="text-gray-400 text-sm mb-3">Tienes <strong class="text-accent-cyan">${pedidoActual.length}</strong> ítems en tu lista.</p>
                 <button onclick="setView('pedido_actual')" class="w-full bg-accent-cyan text-primary-dark py-2 rounded-lg font-semibold">
                     Revisar Pedido
                 </button>
-            </div>
+         
+[cite_start]// [cite: 368]    </div>
+</div>
             <div class="p-4 rounded-xl bg-primary-dark/50 border border-accent-blue/50 text-center">
                 <h3 class="text-xl font-bold mb-2 font-heading">Historial</h3>
                 <p class="text-gray-400 text-sm mb-3">Revisa las solicitudes de cotización enviadas.</p>
                 <button onclick="setView('historial_pedidos')" class="w-full btn-secondary py-2 rounded-lg font-semibold">
-                    📄 Ver Pedidos Realizados
+             
+[cite_start]// [cite: 369]        📄 Ver Pedidos Realizados
+        📄 Ver Pedidos Realizados
                 </button>
             </div>
         </div>
     `;
-
-    return `
+[cite_start]// [cite: 370] return `
+return `
         <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <h1 class="text-4xl font-bold mb-4 text-accent-cyan font-heading">Dashboard de Productor</h1>
             
             ${controlSection}
             
             <h2 class="text-3xl font-bold mt-8 mb-6 text-accent-cyan font-heading">
-                ${searchTerm ? `Resultados para "${searchTerm}"` : 'Proveedores Destacados (Sin Filtro)'}
+             
+[cite_start]// [cite: 371]    ${searchTerm ? `Resultados para "${searchTerm}"` : 'Proveedores Destacados (Sin Filtro)'}
+    ${searchTerm ? `Resultados para "${searchTerm}"` : 'Proveedores Destacados (Sin Filtro)'}
             </h2>
             <div class="w-full h-[300px] rounded-lg border-4 border-accent-blue/50 overflow-hidden mb-6">
-                <iframe id="map-iframe" src="https://www.google.com/maps?q=Argentina&output=embed&z=5" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                <iframe id="map-iframe" src="https://www.google.com/maps?q=Argentina&output=embed&z=5" width="100%" height="100%" style="border:0;"
+[cite_start]// [cite: 372] allowfullscreen="" loading="lazy"></iframe>
+allowfullscreen="" loading="lazy"></iframe>
             </div>
 
             <div class="space-y-4">${resultsHtml}</div>
         </div>`;
+[cite_start]// [cite: 373] }
 }
        // ==================================================================
 // ✅ FUNCIÓN `renderProviderDashboard` (ACTUALIZADA con Conteo de Solicitudes)
 // ==================================================================
 function renderProviderDashboard() {
     let solicitudesPendientes = 0;
-    const currentProviderUserId = currentUser.id;
+[cite_start]// [cite: 374] const currentProviderUserId = currentUser.id;
+const currentProviderUserId = currentUser.id;
 
     // 🟢 Cálculo simulado de solicitudes pendientes (misma lógica que la vista)
     historialPedidos.forEach(pedido => {
@@ -1588,36 +1996,43 @@ function renderProviderDashboard() {
             solicitudesPendientes++;
         }
     });
-
-    return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
+[cite_start]// [cite: 375] return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
+return `<div class="p-8 rounded-xl bg-primary-dark/80 border-secondary-dark shadow-xl border-l-4">
         <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Dashboard de Proveedor</h1>
         <p class="text-xl text-gray-300 mb-8 font-sans">Gestiona tus publicaciones y solicitudes.</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Crear Nueva Oferta</h3>
-                <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
+           
+[cite_start]// [cite: 376]      <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
+     <p class="text-gray-600 mb-4 font-sans">Agrega un nuevo servicio a tu catálogo.</p>
                 <button onclick="setView('add_offer')" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Agregar Producto</button>
             </div>
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Mis Productos</h3>
-                <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
+            
+[cite_start]// [cite: 377]     <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
+    <p class="text-gray-600 mb-4 font-sans">Gestiona tu inventario publicado.</p>
                 <button onclick="setView('my_products')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Publicaciones</button>
             </div>
             <div class="p-6 rounded-xl bg-white text-primary-dark shadow-lg">
                 <h3 class="text-2xl font-bold mb-4 font-heading">Mis Solicitudes</h3>
-                <p class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
+                <p 
+[cite_start]// [cite: 378] class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
+class="text-gray-600 mb-4 font-sans">Tienes <strong>${solicitudesPendientes} solicitudes</strong> sin revisar.</p>
                 <button onclick="setView('provider_requests')" class="w-full btn-secondary py-3 rounded-lg font-semibold">Ver Pedidos</button>
             </div>
         </div>
     </div>`;
+[cite_start]// [cite: 379] }
 }
         // ==================================================================
 // ✅ FUNCIÓN `renderProviderDetailsView` (ACTUALIZADA para mostrar Ofertas)
 // ==================================================================
 async function renderProviderDetailsView(providerId) {
     if (!providerId) return `<p class="text-red-500">Error: No se recibió ID de proveedor.</p>`;
-
-    let providerData;
+[cite_start]// [cite: 380] let providerData;
+let providerData;
     let offers = []; // Variable para guardar las ofertas
 
     try {
@@ -1626,59 +2041,80 @@ async function renderProviderDetailsView(providerId) {
             .from('proveedores')
             // 🟢 PEDIMOS TAMBIÉN EL user_id PARA BUSCAR OFERTAS
             .select('nombre_empresa, direccion, user_id')
-            .eq('id', providerId)
+  
+[cite_start]//[cite: 381].eq('id', providerId)
+          .eq('id', providerId)
             .single();
-
-        if (providerError || !providerResult) throw new Error("Proveedor no encontrado.");
-        providerData = providerResult; // Guardamos todos los datos del proveedor
+[cite_start]// [cite: 382] if (providerError || !providerResult) throw new Error("Proveedor no encontrado.");
+if (providerError || !providerResult) throw new Error("Proveedor no encontrado.");
+        providerData = providerResult;
+[cite_start]// [cite: 383] // Guardamos todos los datos del proveedor
+// Guardamos todos los datos del proveedor
 
         // 2. Busca las ofertas asociadas a ESE proveedor usando su user_id
         const { data: offersResult, error: offersError } = await supabaseClient
             .from('ofertas')
             .select('id, titulo, descripcion, precio, categoria, ubicacion')
-            .eq('user_id', providerData.user_id); // 🟢 Filtramos por el user_id del proveedor
+            .eq('user_id', providerData.user_id);
+[cite_start]// [cite: 384] // 🟢 Filtramos por el user_id del proveedor
+// 🟢 Filtramos por el user_id del proveedor
 
         if (offersError) throw new Error(`Error al buscar ofertas: ${offersError.message}`);
-        offers = offersResult || []; // Guardamos las ofertas encontradas (o un array vacío)
+[cite_start]// [cite: 385] offers = offersResult || []; // Guardamos las ofertas encontradas (o un array vacío)
+offers = offersResult || []; // Guardamos las ofertas encontradas (o un array vacío)
 
     } catch (error) {
         return `<p class="text-red-500">Error al cargar datos del proveedor o sus ofertas: ${error.message}</p>`;
-    }
+[cite_start]// [cite: 386] }
+}
 
     // --- Renderizado de la información del proveedor (igual que antes) ---
     const provider = {
         nombre: providerData.nombre_empresa,
         tipo: 'Empresa',
-        ubicacion: providerData.direccion || 'Ubicación no definida'
+        ubicacion: providerData.direccion ||
+[cite_start]// [cite: 387] 'Ubicación no definida'
+'Ubicación no definida'
     };
 
     // --- 🟢 NUEVO: Renderizado de la lista de ofertas ---
     let offersHtml = '<p class="text-gray-400 font-sans">Este proveedor no tiene ofertas publicadas actualmente.</p>';
-    if (offers.length > 0) {
+[cite_start]// [cite: 388] if (offers.length > 0) {
+if (offers.length > 0) {
         offersHtml = offers.map(offer => `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
                 <div class="flex justify-between items-start">
                     <div>
                         <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
-                        <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion || 'Sin ubicación'}</p>
+ 
+[cite_start]// [cite: 389]                        <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion || 'Sin ubicación'}</p>
+                       <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion || 'Sin ubicación'}</p>
                     </div>
                     <p class="text-lg text-accent-cyan font-bold flex-shrink-0 ml-4">$${offer.precio}</p>
                 </div>
-                <p class="text-gray-300 font-sans mt-2 text-sm">${offer.descripcion || 'Sin descripción.'}</p>
+        
+[cite_start]// [cite: 390]         <p class="text-gray-300 font-sans mt-2 text-sm">${offer.descripcion || 'Sin descripción.'}</p>
+         <p class="text-gray-300 font-sans mt-2 text-sm">${offer.descripcion || 'Sin descripción.'}</p>
                 
                 </div>
         `).join('');
-    }
+[cite_start]// [cite: 391] }
+}
 
     // --- Renderizado de opiniones (igual que antes) ---
     const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join('');
-    const opinions = [ // Simulación
-        { user: 'Productor A', rating: 5, comment: 'Excelente equipo, entregado a tiempo.' },
-        { user: 'Estudio Z', rating: 4, comment: 'La locación era perfecta, buen servicio al cliente.' }
+[cite_start]// [cite: 392] const opinions = [ // Simulación
+const opinions = [ // Simulación
+        { user: 'Productor A', rating: 5, comment: 'Excelente equipo, entregado a tiempo.'
+[cite_start]// [cite: 393] },
+},
+        { user: 'Estudio Z', rating: 4, comment: 'La locación era perfecta, buen servicio al cliente.'
+[cite_start]// [cite: 394] }
+}
     ];
     let opinionsHtml = opinions.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join('');
-
-    // --- HTML Final Combinado ---
+[cite_start]// [cite: 395] // --- HTML Final Combinado ---
+// --- HTML Final Combinado ---
     return `
         <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
@@ -1687,12 +2123,17 @@ async function renderProviderDetailsView(providerId) {
             <p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
 
             
-            <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
+         
+[cite_start]// [cite: 396]    <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
+    <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
             <div class="space-y-4 mb-10">${offersHtml}</div>
 
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2>
-            <div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div>
+            <div class="space-y-4">${opinionsHtml.length > 0 ?
+[cite_start]// [cite: 397] opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div>
+opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div>
         </div>`;
+[cite_start]// [cite: 398] }
 }
         // ===================================================================
         // 🟢🟢 INICIO DE NUEVAS FUNCIONES (CATEGORÍAS) 🟢🟢
@@ -1701,116 +2142,156 @@ async function renderProviderDetailsView(providerId) {
         // 🟢 NUEVA VISTA: Selector de categorías
         function renderCategoriesSelectionView() {
             const categories = [
-                { name: 'Equipos', emoji: '🎥', desc: 'Cámaras, luces, sonido, etc.' },
-                { name: 'Locacion', emoji: '🏠', desc: 'Estudios, casas, exteriores.' },
-                { name: 'Servicio', emoji: '🎬', desc: 'Post, catering, vestuario.' }
+                { name: 'Equipos', emoji: '🎥', desc: 'Cámaras, luces, sonido, etc.'
+[cite_start]// [cite: 399] },
+},
+                { name: 'Locacion', emoji: '🏠', desc: 'Estudios, casas, exteriores.'
+[cite_start]// [cite: 400] },
+},
+                { name: 'Servicio', emoji: '🎬', desc: 'Post, catering, vestuario.'
+[cite_start]// [cite: 401] }
+}
             ];
-
-            let categoriesHtml = categories.map(cat => `
+[cite_start]// [cite: 402] let categoriesHtml = categories.map(cat => `
+let categoriesHtml = categories.map(cat => `
                 <div onclick="setView('offer_list_by_category', '${cat.name}')"
                      class="p-8 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg cursor-pointer transition transform hover:scale-105 hover:border-accent-cyan">
                     <span class="text-4xl" role="img" aria-label="${cat.name}">${cat.emoji}</span>
-                    <h3 class="text-2xl font-bold mt-4 font-heading text-accent-cyan">${cat.name}</h3>
+                    <h3 class="text-2xl font-bold mt-4 
+[cite_start]// [cite: 403] font-heading text-accent-cyan">${cat.name}</h3>
+font-heading text-accent-cyan">${cat.name}</h3>
                     <p class="text-gray-400 font-sans">${cat.desc}</p>
                 </div>
             `).join('');
-
-            return `
+[cite_start]// [cite: 404] return `
+return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <button onclick="setView('home')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Inicio</button>
                     <h1 class="text-4xl font-bold mb-8 text-center text-accent-cyan font-heading">Explorar Categorías</h1>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+[cite_start]// [cite: 405] <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         ${categoriesHtml}
                     </div>
                 </div>
             `;
-        }
+[cite_start]// [cite: 406] }
+}
 
        // 🟢 NUEVA VISTA ASÍNCRONA: Lista de ofertas
 async function renderOfferListByCategoryView(categoryName) {
     if (!categoryName) {
         return '<p class="text-red-500">Error: No se especificó una categoría.</p>';
-    }
+[cite_start]// [cite: 407] }
+}
 
     let offersHtml = `<p class="text-gray-400">Buscando ofertas para "${categoryName}"...</p>`;
-
-    try {
+[cite_start]// [cite: 408] try {
+try {
         // Hacemos un JOIN para obtener el nombre de la empresa proveedora.
-        const { data: offers, error } = await supabaseClient
+[cite_start]// [cite: 409] const { data: offers, error } = await supabaseClient
+const { data: offers, error } = await supabaseClient
             .from('ofertas')
             .select(`
                 id,
                 titulo,
                 descripcion,
                 precio,
-                ubicacion,
+    
+[cite_start]// [cite: 410]             ubicacion,
+            ubicacion,
                 proveedores ( id, nombre_empresa, user_id ) 
             `)
             .eq('categoria', categoryName);
-
-        if (error) throw error;
+[cite_start]// [cite: 411] if (error) throw error;
+if (error) throw error;
 
         if (offers && offers.length > 0) {
             offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerNumId = offer.proveedores ? offer.proveedores.id : null;
-                const providerUserId = offer.proveedores ? offer.proveedores.user_id : null;
-                const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                
+                // 🟢 CORRECCIÓN: Obtener el UUID directamente de la OFERTA, no de la relación (evita nulls)
+                const providerUserId = offer.user_id; // CORRECCIÓN CLAVE
+    
+[cite_start]// [cite: 412]             const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
+             const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
                 // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
                 const removeButtonHtml = `
-    <button onclick="handlePedido('${offer.id}', ${providerUserId}, '${escapedTitulo}', ${offer.precio}, 'quitar')"
+    <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'quitar')"
             class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
-        Quitar
+        
+[cite_start]// [cite: 413] Quitar
+Quitar
     </button>
 `; // Nota: Se cambió a color rojo para quitar
                 
                 // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
                 const addButtonHtml = `
     <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
-            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
+            class="bg-secondary-dark hover:opacity-80 
+[cite_start]// [cite: 414] text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
+text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
             id="pedido-btn-${offer.id}">
         Agregar
     </button>
 `;
-
-                return `
+[cite_start]// [cite: 415] return `
+return `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
                             <div>
                                 <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
-                                <p class="text-sm text-gray-400 font-sans">${offer.ubicacion}</p>
+  
+[cite_start]// [cite: 416]                               <p class="text-sm text-gray-400 font-sans">${offer.ubicacion}</p>
+                              <p class="text-sm text-gray-400 font-sans">${offer.ubicacion}</p>
                                 <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
-                                <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
+                                
+[cite_start]// [cite: 417] <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
+<p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
                             </div>
                             <div class="flex-shrink-0 text-left sm:text-right">
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
-                                <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
+   
+[cite_start]// [cite: 418]                              <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
+                             <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 
                                 ${removeButtonHtml}
-                                ${addButtonHtml}
+    
+[cite_start]// [cite: 419]                             ${addButtonHtml}
+                            ${addButtonHtml}
                                 
-                                ${providerNumId ? `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
+                                ${providerNumId ?
+[cite_start]// [cite: 420] `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
+`<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
                         </div>
                         `;
-            }).join('');
+[cite_start]// [cite: 421] }).join('');
+}).join('');
         } else {
             offersHtml = `<p class="text-gray-400 text-center py-8">No se encontraron ofertas publicadas en la categoría "${categoryName}".</p>`;
-        }
+[cite_start]// [cite: 422] }
+}
 
     } catch (error) {
-        console.error('Error fetching offers by category:', error);
-        offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
-    }
+        // console.error('Error fetching offers by category:', error); // REMOVED
+[cite_start]// [cite: 423] offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
+offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
+[cite_start]// [cite: 424] }
+}
 
     return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <button onclick="setView('categories_selection')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver a Categorías</button>
                     <h1 class="text-4xl font-bold mb-8 text-accent-cyan font-heading">Ofertas en: ${categoryName}</h1>
-                    <div class="space-y-4">
+                
+[cite_start]// [cite: 425]     <div class="space-y-4">
+    <div class="space-y-4">
                         ${offersHtml}
                     </div>
                 </div>
             `;
+[cite_start]// [cite: 426] }
 }
      // ===================================================================
 // 🟢 NUEVA VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView)
@@ -1818,61 +2299,77 @@ async function renderOfferListByCategoryView(categoryName) {
 function renderPedidoActualView() {
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
         return renderLoginView();
-    }
+[cite_start]// [cite: 427] }
+}
 
     const totalItems = pedidoActual.length;
     let totalPrecio = 0;
-    
-    // Calcula el total del pedido
+[cite_start]// [cite: 428] // Calcula el total del pedido
+// Calcula el total del pedido
     pedidoActual.forEach(item => {
         totalPrecio += item.precio;
     });
-
-    let itemsHtml = '';
+[cite_start]// [cite: 429] let itemsHtml = '';
+let itemsHtml = '';
 
     if (totalItems === 0) {
         itemsHtml = `
             <div class="text-center py-10">
-                <p class="text-gray-400 text-lg">Tu lista de pedido está vacía. 🛒</p>
+                <p class="text-gray-400 text-lg">Tu lista de pedido está vacía.
+[cite_start]// [cite: 430] 🛒</p>
+🛒</p>
                 <p class="text-gray-500 mt-2">Busca equipos o locaciones para empezar a armarla.</p>
                 <button onclick="setView('categories_selection')" class="mt-4 bg-accent-blue text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">
                     Explorar Categorías
                 </button>
-            </div>`;
+            
+[cite_start]// [cite: 431] </div>`;
+</div>`;
     } else {
         // Genera el HTML de la lista de ítems
         itemsHtml = pedidoActual.map((item, index) => `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
                 <div>
                     <h4 class="font-bold text-lg font-heading">${item.titulo}</h4>
-                    <p class="text-sm text-gray-400 font-sans">Proveedor ID: ${item.providerId}</p>
+        
+[cite_start]// [cite: 432]             <p class="text-sm text-gray-400 font-sans">Proveedor ID: ${item.providerId}</p>
+            <p class="text-sm font-sans text-gray-400">Proveedor ID: ${item.providerId}</p>
                     <p class="text-lg text-accent-cyan font-bold">$${item.precio.toLocaleString('es-AR')}</p>
                 </div>
                 <button onclick="handleRemoveItemFromPedido(${index}, '${item.titulo.replace(/'/g, "\\'")}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0">
-                    Quitar (1)
+                
+[cite_start]// [cite: 433]     Quitar (1)
+    Quitar (1)
                 </button>
             </div>
         `).join('');
-    }
+[cite_start]// [cite: 434] }
+}
 
     return `
         <div class="max-w-3xl mx-auto p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
             <h1 class="text-4xl font-bold mb-6 text-accent-cyan font-heading">Mi Lista de Pedido (${totalItems} ítems)</h1>
-            ${totalItems > 0 ? `
+            ${totalItems > 0 ?
+[cite_start]// [cite: 435] `
+`
     <div class="bg-primary-dark p-6 rounded-lg border border-accent-cyan/20">
         <h3 class="text-xl font-bold mb-3 text-accent-cyan font-heading border-b border-gray-700 pb-2">Fechas de Producción</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-primary-dark">
             <div>
                 <label for="fecha-inicio" class="block text-sm font-medium text-gray-400 mb-1">Inicio del Alquiler</label>
-                <input type="date" id="fecha-inicio" required class="w-full p-3 rounded-lg border text-primary-dark">
+                <input type="date" id="fecha-inicio" required class="w-full p-3 rounded-lg 
+[cite_start]// [cite: 436] border text-primary-dark">
+border text-primary-dark">
             </div>
             <div>
                 <label for="fecha-fin" class="block text-sm font-medium text-gray-400 mb-1">Fin del Alquiler</label>
                 <input type="date" id="fecha-fin" required class="w-full p-3 rounded-lg border text-primary-dark">
             </div>
         </div>
-        <div class="flex justify-between items-center text-2xl font-bold mb-4">
+       
+[cite_start]// [cite: 437]  <div class="flex justify-between items-center text-2xl font-bold mb-4">
+  <div class="flex justify-between items-center text-2xl font-bold mb-4">
             <span class="font-heading text-accent-cyan">TOTAL ESTIMADO:</span>
             <span class="font-heading text-accent-cyan">$${totalPrecio.toLocaleString('es-AR')}</span>
         </div>
@@ -1883,6 +2380,7 @@ function renderPedidoActualView() {
 ` : ''}
 
         </div>`;
+[cite_start]// [cite: 438] }
 }
 
 // ===================================================================
@@ -1891,13 +2389,15 @@ function renderPedidoActualView() {
 // ===================================================================
 function handleRemoveItemFromPedido(index, titulo) {
     if (!confirm(`¿Estás seguro de que deseas quitar "${titulo}" de tu pedido?`)) return;
-    
-    // Remueve 1 elemento en la posición 'index'
+[cite_start]// [cite: 439] // Remueve 1 elemento en la posición 'index'
+// Remueve 1 elemento en la posición 'index'
     pedidoActual.splice(index, 1);
     
     actualizarIndicadorPedido();
-    // Re-renderiza la vista para que el cambio sea visible
+[cite_start]// [cite: 440] // Re-renderiza la vista para que el cambio sea visible
+// Re-renderiza la vista para que el cambio sea visible
     setView('pedido_actual');
+[cite_start]// [cite: 441] }
 }
 
 // ===================================================================
@@ -1906,48 +2406,54 @@ function handleRemoveItemFromPedido(index, titulo) {
 async function handleSendPedido() {
     if (!supabaseClient || !currentUser) {
         alert("Debes iniciar sesión para realizar un pedido.");
-        setView('login');
+[cite_start]// [cite: 442] setView('login');
+setView('login');
         return;
     }
     
     // --- 1. DEFINICIÓN Y VALIDACIÓN DE VARIABLES CRÍTICAS ---
     const fechaInicioElement = document.getElementById('fecha-inicio');
-    const fechaFinElement = document.getElementById('fecha-fin');
+[cite_start]// [cite: 443] const fechaFinElement = document.getElementById('fecha-fin');
+const fechaFinElement = document.getElementById('fecha-fin');
     
     // 🚨 Verifica que los elementos DOM existan
     if (!fechaInicioElement || !fechaFinElement) {
         alert("Error de Interfaz: No se encontraron los campos de fecha. Por favor, recarga la página.");
-        console.error("DOM Error: Elementos de fecha no encontrados.");
+[cite_start]// [cite: 444] console.error("DOM Error: Elementos de fecha no encontrados."); // REMOVED
         return;
     }
 
     const fechaInicio = fechaInicioElement.value;
     const fechaFin = fechaFinElement.value;
-
-    if (!fechaInicio || !fechaFin || fechaInicio > fechaFin) {
+[cite_start]// [cite: 445] if (!fechaInicio || !fechaFin || fechaInicio > fechaFin) {
+if (!fechaInicio || !fechaFin || fechaInicio > fechaFin) {
         alert("Por favor, selecciona un rango de fechas de alquiler válido.");
-        return;
+[cite_start]// [cite: 446] return;
+return;
     }
 
     if (pedidoActual.length === 0) {
         alert("Tu pedido está vacío. Agrega ítems antes de solicitar la cotización.");
-        return;
+[cite_start]// [cite: 447] return;
+return;
     }
     
     // 🟢 CÁLCULO DE DATOS Y NUEVA COLUMNA
-    const now = new Date(); 
-    const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
+    const now = new Date();
+[cite_start]// [cite: 448] const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
+const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
     const totalPrecio = pedidoActual.reduce((sum, item) => sum + item.precio, 0);
-
-    const proveedoresIds = pedidoActual.reduce((acc, item) => {
+[cite_start]// [cite: 449] const proveedoresIds = pedidoActual.reduce((acc, item) => {
+const proveedoresIds = pedidoActual.reduce((sum, item) => sum + item.precio, 0); // Corrección para que sea total
         if (item.providerId && !acc.includes(item.providerId)) {
             acc.push(item.providerId);
         }
         return acc;
     }, []);
-
-    const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
-    // ------------------------------------------------------------------------------------
+[cite_start]// [cite: 450] const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
+const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
+[cite_start]// [cite: 451] // ------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
 
     // =========================================================
     // 2. Guardar en Historial PERSISTENTE (Supabase INSERT)
@@ -1957,32 +2463,39 @@ async function handleSendPedido() {
             .from('solicitudes_pedido')
             .insert([
                 {
-                    codigoPedido: codigoPedido,
+                   
+[cite_start]// [cite: 452]  codigoPedido: codigoPedido,
+  codigoPedido: codigoPedido,
                     productor_user_id: currentUser.id,
                     items_json: pedidoActual,
                     
                     // ✅ LÍNEA CRÍTICA (proveedores_ids)
-                    proveedores_ids: proveedoresIds, 
+            
+[cite_start]// [cite: 453]         proveedores_ids: proveedoresIds, 
+         proveedores_ids: proveedoresIds, 
                     
                     fecha_envio: now.toISOString(),
                     estado: 'Pendiente de Cotización',
                     fecha_inicio: fechaInicio,
-                    fecha_fin: fechaFin
+     
+[cite_start]// [cite: 454]                fecha_fin: fechaFin
+                fecha_fin: fechaFin
                 }
             ]);
-        
-        if (error) throw error;
+[cite_start]// [cite: 455] if (error) throw error;
+if (error) throw error;
         
         // El pedido se guardó correctamente
         alert(summary + "\n\n✅ El carrito se vaciará ahora.");
-        pedidoActual = [];
+[cite_start]// [cite: 456] pedidoActual = [];
+pedidoActual = [];
         actualizarIndicadorPedido();
         
         await loadHistorialPedidos();
         setView('historial_pedidos');
     } catch (error) {
         alert(`🚨 Error al guardar el pedido en Supabase: ${error.message}.`);
-        console.error('Error en Supabase INSERT para solicitudes_pedido:', error);
+[cite_start]// [cite: 457] console.error('Error en Supabase INSERT para solicitudes_pedido:', error); // REMOVED
     }
 }
 // ===================================================================
@@ -1991,18 +2504,22 @@ async function handleSendPedido() {
 async function handleDeletePedido(codigoPedido) {
     if (!currentUser || !currentUser.id) {
         alert('Error de autenticación. Por favor, inicie sesión nuevamente.');
-        return;
+[cite_start]// [cite: 458] return;
+return;
     }
 
     if (!confirm(`¿Está seguro de que desea eliminar el pedido ${codigoPedido}?`)) {
         return;
-    }
+[cite_start]// [cite: 459] }
+}
     
     if (!codigoPedido) { 
-        console.error("Error: Código de pedido inválido para eliminar:", codigoPedido);
-        alert("Error interno: El código del pedido no es válido.");
+        // console.error("Error: Código de pedido inválido para eliminar:", codigoPedido); // REMOVED
+[cite_start]// [cite: 460] alert("Error interno: El código del pedido no es válido.");
+alert("Error interno: El código del pedido no es válido.");
         return;
-    }
+[cite_start]// [cite: 461] }
+}
 
     try {
         // 💡 DIAGNÓSTICO: Pedimos 'count' para ver cuántas filas se borraron
@@ -2011,27 +2528,29 @@ async function handleDeletePedido(codigoPedido) {
             .delete() 
             .eq('codigoPedido', codigoPedido)
             .eq('productor_user_id', currentUser.id);
-
-       if (error) {
-            // Caso 1: Supabase da un error explícito (Si el servidor rechaza la acción)
-            console.error('Error al intentar eliminar el pedido:', error);
-            alert(`No se pudo eliminar el pedido: ${error.message}.`);
+[cite_start]// [cite: 462] if (error) {
+if (error) {
+            // Caso 1: Supabase da un error explícito (ej. permiso denegado)
+            // console.error('Error al intentar eliminar el pedido:', error); // REMOVED
+[cite_start]// [cite: 463] alert(`No se pudo eliminar el pedido: ${error.message}.`);
+alert(`No se pudo eliminar el pedido: ${error.message}.`);
         } 
-        // 🟢 CÓDIGO CORREGIDO: Este nuevo 'else' captura el éxito, incluso si count es 0
-        else { 
-            // Caso 2/3: ÉXITO REAL o Éxito Silencioso (con count=0/null)
+        // 💡 VERIFICACIÓN CORREGIDA: Eliminamos el else if (count === 0)
+        else {
+            // Caso 2/3: ÉXITO REAL o Éxito Silencioso (Asumimos éxito si no hay error explícito)
             const message = count > 0 
                 ? `Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`
                 : 'Solicitud de cotización eliminada con éxito.'; // Mensaje sin contar filas
 
             alert(message);
-            
-            // 🟢 Esto ejecuta la actualización de la vista
+            [cite_start]// [cite: 467] await loadHistorialPedidos();
             await loadHistorialPedidos();
             setView('historial_pedidos'); 
         }
     } catch (e) {
-        // ... (Bloque catch que ya tienes) ...
+        // console.error('Excepción al procesar la eliminación:', e); // REMOVED
+[cite_start]// [cite: 468] alert('Ocurrió un error inesperado.');
+alert('Ocurrió un error inesperado.');
     }
 }
         // ------------------------------------------------------------------
@@ -2042,16 +2561,20 @@ window.onload = () => {
     // 1. INICIALIZACIÓN DE SUPABASE Y CARGA DE DATOS
     if (initializeSupabase()) {
         // Esta carga está bien, no depende del usuario
-        loadProvidersByOfferSearch(); 
-        // 🚨 ELIMINAMOS: loadHistorialPedidos(); (Se movió a setupAuthListener)
-        // 🚨 ELIMINAMOS: contentView.innerHTML = renderView(initialView); (Se movió)
+        loadProvidersByOfferSearch();
+[cite_start]// [cite: 469] // 🚨 ELIMINAMOS: loadHistorialPedidos(); (Se movió a setupAuthListener)
+// 🚨 ELIMINAMOS: loadHistorialPedidos(); (Se movió a setupAuthListener)
+        // 🚨 ELIMINAMOS: contentView.innerHTML = renderView(initialView);
+[cite_start]// [cite: 470] (Se movió)
+// (Se movió)
     }
     
     // 2. INICIAR LÓGICA DE AUTENTICACIÓN
     // Esta función AHORA maneja la carga de la vista inicial
     if (supabaseClient) {
-        setupAuthListener(); 
-    }
+        setupAuthListener();
+[cite_start]// [cite: 471] }
+}
 
     // 3. LISTENERS (hashchange)
     window.addEventListener('hashchange', () => {
@@ -2062,14 +2585,14 @@ window.onload = () => {
             setView(viewName || 'home', data || null);
         }
     });
-
-    // Renderizamos el header (se actualizará en getSession)
+[cite_start]// [cite: 472] // Renderizamos el header (se actualizará en getSession)
+// Renderizamos el header (se actualizará en getSession)
     renderHeader();
 };
-
     </script>
 </body>
 </html>
+
 
 
 
