@@ -1908,10 +1908,8 @@ async function handleSendPedido() {
     const fechaInicioElement = document.getElementById('fecha-inicio');
     const fechaFinElement = document.getElementById('fecha-fin');
     
-    // 🚨 Verifica que los elementos DOM existan
     if (!fechaInicioElement || !fechaFinElement) {
         alert("Error de Interfaz: No se encontraron los campos de fecha. Por favor, recarga la página.");
-        console.error("DOM Error: Elementos de fecha no encontrados.");
         return;
     }
 
@@ -1928,24 +1926,13 @@ async function handleSendPedido() {
         return;
     }
     
-    // 🟢 CÁLCULO DE DATOS Y NUEVA COLUMNA
+    // 🟢 CÁLCULO DE DATOS (SIN PROVEEDORES IDS)
     const now = new Date(); 
     const codigoPedido = `PEDIDO-${now.getTime()}`.slice(-10);
     const totalPrecio = pedidoActual.reduce((sum, item) => sum + item.precio, 0);
 
-    const proveedoresIds = pedidoActual.reduce((acc, item) => {
-        if (item.providerId && !acc.includes(item.providerId)) {
-            acc.push(item.providerId);
-        }
-        return acc;
-    }, []);
-    
-// 🟢 NUEVA LÍNEA: Obtener el primer proveedor de la lista (para RLS simple)
-    const principalProvider = proveedoresIds.length > 0 ? proveedoresIds[0] : null;
-    
     const summary = `Solicitud ${codigoPedido} enviada exitosamente. Total estimado: $${totalPrecio.toLocaleString('es-AR')}`;
-    // ------------------------------------------------------------------------------------
-
+    
     // =========================================================
     // 2. Guardar en Historial PERSISTENTE (Supabase INSERT)
     // =========================================================
@@ -1958,9 +1945,7 @@ async function handleSendPedido() {
                     productor_user_id: currentUser.id,
                     items_json: pedidoActual,
                     
-                    // ✅ LÍNEA CRÍTICA (proveedores_ids)
-                    proveedores_ids: proveedoresIds, 
-                    proveedor_principal_id: principalProvider,
+                    // ⚠️ SE ELIMINA LA COLUMNA PROBLEMA (proveedor_principal_id o proveedores_ids)
                     
                     fecha_envio: now.toISOString(),
                     estado: 'Pendiente de Cotización',
@@ -1971,7 +1956,7 @@ async function handleSendPedido() {
         
         if (error) throw error;
         
-        // El pedido se guardó correctamente
+        // ÉXITO: Limpieza y Redirección
         alert(summary + "\n\n✅ El carrito se vaciará ahora.");
         pedidoActual = [];
         actualizarIndicadorPedido();
@@ -1981,58 +1966,6 @@ async function handleSendPedido() {
     } catch (error) {
         alert(`🚨 Error al guardar el pedido en Supabase: ${error.message}.`);
         console.error('Error en Supabase INSERT para solicitudes_pedido:', error);
-    }
-}
-// ===================================================================
-// 🟢 FUNCIÓN DE DIAGNÓSTICO (Comprueba 'count')
-// ===================================================================
-async function handleDeletePedido(codigoPedido) {
-    if (!currentUser || !currentUser.id) {
-        alert('Error de autenticación. Por favor, inicie sesión nuevamente.');
-        return;
-    }
-
-    if (!confirm(`¿Está seguro de que desea eliminar el pedido ${codigoPedido}?`)) {
-        return;
-    }
-    
-    if (!codigoPedido) { 
-        console.error("Error: Código de pedido inválido para eliminar:", codigoPedido);
-        alert("Error interno: El código del pedido no es válido.");
-        return;
-    }
-
-    try {
-        // 💡 DIAGNÓSTICO: Pedimos 'count' para ver cuántas filas se borraron
-        const { error, count } = await supabaseClient
-            .from('solicitudes_pedido')
-            .delete() 
-            .eq('codigoPedido', codigoPedido)
-            .eq('productor_user_id', currentUser.id);
-
-        if (error) {
-            // Caso 1: Supabase da un error explícito (ej. permiso denegado)
-            console.error('Error al intentar eliminar el pedido:', error);
-            alert(`No se pudo eliminar el pedido: ${error.message}.`);
-        } 
-        // 💡 NUEVA VERIFICACIÓN:
-        else if (count === 0 || count === null) {
-            // Caso 2: El query corrió bien, PERO no borró nada.
-            console.warn('Delete query se ejecutó pero no borró filas (count: 0).', {
-                sent_codigo: codigoPedido,
-                sent_user_id: currentUser.id
-            });
-            alert('La solicitud de cotización no se pudo eliminar. No se encontró el registro o no tienes permisos (Verifica RLS).');
-        }
-        else {
-            // Caso 3: ÉXITO REAL
-            alert(`Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`);  
-            await loadHistorialPedidos();
-            setView('historial_pedidos'); 
-        }
-    } catch (e) {
-        console.error('Excepción al procesar la eliminación:', e);
-        alert('Ocurrió un error inesperado.');
     }
 }
         // ------------------------------------------------------------------
@@ -2071,6 +2004,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
