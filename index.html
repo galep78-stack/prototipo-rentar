@@ -2012,20 +2012,20 @@ async function handleDeletePedido(codigoPedido) {
             alert(`No se pudo eliminar el pedido: ${error.message}.`);
         } 
         // 💡 NUEVA VERIFICACIÓN:
-        else if (count === 0 || count === null) {
-            // Caso 2: El query corrió bien, PERO no borró nada.
-            console.warn('Delete query se ejecutó pero no borró filas (count: 0).', {
-                sent_codigo: codigoPedido,
-                sent_user_id: currentUser.id
-            });
-            alert('La solicitud de cotización no se pudo eliminar. No se encontró el registro o no tienes permisos (Verifica RLS).');
-        }
-        else {
-            // Caso 3: ÉXITO REAL
-            alert(`Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`);  
-            await loadHistorialPedidos();
-            setView('historial_pedidos'); 
-        }
+       else if (count === 0 || count === null) {
+    // Caso 2: El query corrió bien, PERO no borró nada.
+    console.warn('Delete query se ejecutó pero no borró filas (count: 0).', {
+        sent_codigo: codigoPedido,
+        sent_user_id: currentUser.id
+    });
+    alert('La solicitud de cotización no se pudo eliminar. No se encontró el registro o no tienes permisos (Verifica RLS).'); // <--- Muestra el error
+}
+else { 
+    // Caso 3: ÉXITO REAL (count > 0)
+    alert(`Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`);
+    await loadHistorialPedidos();
+    setView('historial_pedidos'); // <--- Recarga la vista
+}
     } catch (e) {
         console.error('Excepción al procesar la eliminación:', e);
         alert('Ocurrió un error inesperado.');
@@ -2067,4 +2067,5 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
