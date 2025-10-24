@@ -51,13 +51,13 @@
                      <p class="text-gray-400 font-sans mt-2">© 2025 Rent.Ar.</p>
                  </div>
                  <div>
-                     <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Soporte</h5>
+                     <h5 class="font-bold text-accent-cyan mb-3 upper font-heading">Soporte</h5>
                      <ul class="space-y-2 font-sans">
                          <li><a href="mailto:contactorentar@gmail.com" class="text-gray-300 hover:text-accent-cyan transition">Contacto</a></li>
                      </ul>
                  </div>
                  <div>
-                     <h5 class="font-bold text-accent-cyan mb-3 uppercase font-heading">Seguinos</h5>
+                     <h5 class="font-bold text-accent-cyan mb-3 upper font-heading">Seguinos</h5>
                      <ul class="space-y-2 font-sans">
                          <li>
                              <a href="https://www.instagram.com/somosrent.ar" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-accent-cyan transition flex items-center">
@@ -71,7 +71,7 @@
                  </div>
              </div>
              <div class="border-t border-accent-blue/20 mt-8 pt-6 col-span-2 md:col-span-4 text-center text-xs text-gray-500 font-sans">
-                 <h6 class="font-bold text-gray-400 mb-2 uppercase">Aviso Legal</h6>
+                 <h6 class="font-bold text-gray-400 mb-2 upper">Aviso Legal</h6>
                  <p>Rent.ar es una plataforma que actúa como intermediario. No nos responsabilizamos por los acuerdos o transacciones entre las partes.</p>
              </div>
         </div>
@@ -834,7 +834,9 @@ async function loadHistorialPedidos() {
                 case 'categories_selection': return renderCategoriesSelectionView(); // 🟢 CORRECCIÓN AÑADIDA
                 case 'pedido_actual': return renderPedidoActualView();
                 case 'historial_pedidos': return renderHistorialPedidosView(); // 🟢 NUEVO: Caso para la vista de Historial
-               
+               case 'provider_requests':
+    html = await renderProviderRequestsView();
+    break;
                 default: return renderHomeView();
             }
         }
@@ -2067,6 +2069,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
