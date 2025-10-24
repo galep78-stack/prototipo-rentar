@@ -1944,8 +1944,7 @@ async function handleSendPedido() {
                     codigoPedido: codigoPedido,
                     productor_user_id: currentUser.id,
                     items_json: pedidoActual,
-                    
-                    // ⚠️ SE ELIMINA LA COLUMNA PROBLEMA (proveedor_principal_id o proveedores_ids)
+                    // ⚠️ NO SE INSERTA proveedores_ids o proveedor_principal_id
                     
                     fecha_envio: now.toISOString(),
                     estado: 'Pendiente de Cotización',
@@ -2004,6 +2003,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
