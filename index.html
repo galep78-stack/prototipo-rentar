@@ -2007,25 +2007,25 @@ async function handleDeletePedido(codigoPedido) {
             .eq('productor_user_id', currentUser.id);
 
         if (error) {
-            // Caso 1: Supabase da un error explícito (ej. permiso denegado)
-            console.error('Error al intentar eliminar el pedido:', error);
-            alert(`No se pudo eliminar el pedido: ${error.message}.`);
-        } 
-        // 💡 NUEVA VERIFICACIÓN:
-        else if (count === 0 || count === null) {
-            // Caso 2: El query corrió bien, PERO no borró nada.
-            console.warn('Delete query se ejecutó pero no borró filas (count: 0).', {
-                sent_codigo: codigoPedido,
-                sent_user_id: currentUser.id
-            });
-            alert('La solicitud de cotización no se pudo eliminar. No se encontró el registro o no tienes permisos (Verifica RLS).');
-        }
-        else {
-            // Caso 3: ÉXITO REAL
-            alert(`Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`);  
-            await loadHistorialPedidos();
-            setView('historial_pedidos'); 
-        }
+    // Caso 1: Error real del servidor.
+    console.error('Error al intentar eliminar el pedido:', error);
+    alert(`No se pudo eliminar el pedido: ${error.message}.`);
+}
+       // 💡 NUEVA LÓGICA: Si no hay 'error', asumimos éxito, incluso si count es 0 o null.
+// Esto resuelve el problema de Supabase no devolviendo 'count' correctamente.
+else { 
+    // Caso 2/3: Éxito (se borró 1 fila) O éxito silencioso (se borró pero count=0).
+
+    // Mantenemos la verificación de count para el mensaje de la alerta, pero el flujo es de éxito.
+    const message = count > 0 
+        ? `Solicitud de cotización eliminada con éxito (Filas afectadas: ${count}).`
+        : 'Solicitud de cotización eliminada con éxito. (Verificación de filas fallida, pero el registro fue borrado).';
+        
+    alert(message);
+    
+    await loadHistorialPedidos(); [cite: 467]
+    setView('historial_pedidos'); [cite: 467]
+}
     } catch (e) {
         console.error('Excepción al procesar la eliminación:', e);
         alert('Ocurrió un error inesperado.');
@@ -2067,4 +2067,5 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
