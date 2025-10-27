@@ -1552,8 +1552,8 @@ function renderProducerDashboard() {
         // 🟢 CAMBIO: Iteramos sobre 'providerResults' (proveedores)
         resultsHtml = providerResults.map(provider => {
             // --- NUEVO: Usa renderPlays con el dato real ---
-            const averageRating = provider.avg_rating; // Obtenido de la consulta modificada
-            const ratingHtml = renderPlays(averageRating); // Llama a la nueva función auxiliar
+           // const averageRating = provider.avg_rating; // Obtenido de la consulta modificada
+          //  const ratingHtml = renderPlays(averageRating); // Llama a la nueva función auxiliar
             // ---------------------------------------------
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -2363,6 +2363,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
