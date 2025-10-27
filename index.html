@@ -564,12 +564,13 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                     console.log(`Buscando ofertas con término: "${searchTerm}"`); // Debug log
                     let { data: offers, error: offersError } = await supabaseClient
                         .from('ofertas')
-                        .select(`
-                id,
-                nombre_empresa,
-                direccion,
-                user_id,
-                avg_rating:get_provider_avg_rating(user_id)
+           //             .select(`
+             //   id,
+             // nombre_empresa,
+             //   direccion,
+             //   user_id,
+               // avg_rating:get_provider_avg_rating(user_id)
+               .select('id, nombre_empresa, direccion, user_id');
             `);
                         or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
 
@@ -2362,6 +2363,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
