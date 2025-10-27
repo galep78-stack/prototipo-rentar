@@ -2169,7 +2169,8 @@ async function handleRateProvider(codigoPedido) {
         alert("Error: No se pudieron identificar proveedores válidos para este pedido (verificar IDs en los ítems).");
         return;
     }
-
+console.log("Datos a insertar:", JSON.stringify(opinionData));
+console.log("ID del usuario actual (currentUser.id):", currentUser.id);
     // --- Buscar nombres de proveedores ---
     const providerNames = {};
     try {
@@ -2305,6 +2306,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
