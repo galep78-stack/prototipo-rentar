@@ -1789,7 +1789,7 @@ async function renderProviderDetailsView(providerId) {
     }
 
     // --- Renderizado de Opiniones ---
-    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">★</span>`).join('');
+    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>`).join(''); // <-- CAMBIADO A PLAY
     let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
 
     if (opinionsData.length > 0) {
@@ -2349,6 +2349,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
