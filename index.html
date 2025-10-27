@@ -1070,7 +1070,7 @@ function renderHistorialPedidosView() {
                     </button>
                 </div>
             </div>
-        `; [cite_start]// [cite: 257, 258]
+        `;
     }
 
     const tableRows = historialPedidos.map((pedido, index) => {
@@ -1116,7 +1116,7 @@ function renderHistorialPedidosView() {
                             class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
                         Eliminar
                     </button>
-                `; [cite_start]// [cite: 262]
+                `;
         }
 
         return `
@@ -1136,8 +1136,8 @@ function renderHistorialPedidosView() {
                 ${accionesHtml}
             </td>
             </tr>
-        `; [cite_start]// [cite: 261]
-    }).join(''); [cite_start]// [cite: 263]
+        `;
+    }).join('');
 
     const content = `
     <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
@@ -1157,14 +1157,14 @@ function renderHistorialPedidosView() {
             </tbody>
         </table>
     </div>
-    `; [cite_start]// [cite: 264, 265]
+    `;
 
     return `
         <div class="max-w-6xl mx-auto p-4 md:p-8">
             ${header}
             ${content}
         </div>
-    `; [cite_start]// [cite: 266]
+    `;
 }
        // Función auxiliar para el header
        // Función auxiliar para el header
@@ -2156,6 +2156,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
