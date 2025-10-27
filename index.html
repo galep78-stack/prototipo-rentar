@@ -1052,6 +1052,7 @@ async function loadHistorialPedidos() {
 // ===================================================================
 // REEMPLAZA tu función existente con esta:
 function renderHistorialPedidosView() {
+    console.log('Renderizando historial con estos datos:', JSON.stringify(historialPedidos));
     const header = `
         <div class="mb-6">
             <h2 class="text-3xl font-bold text-accent-cyan font-heading mb-2">📄 Historial de Solicitudes de Cotización</h2>
@@ -2171,6 +2172,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
