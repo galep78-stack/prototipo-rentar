@@ -1517,8 +1517,17 @@ function renderRating() {
         }
         // Función para renderizar plays (similar a renderStars)
 function renderPlays(rating) {
-    // Redondea el rating al entero más cercano para mostrar plays completos
-    const roundedRating = Math.round(rating || 0);
+    console.log(`[renderPlays] Recibiendo rating: ${rating} (tipo: ${typeof rating})`); // Log para depurar
+
+    // 1. Convierte a número (maneja strings como "3.7" mejor que parseInt)
+    const numericRating = Number(rating) || 0;
+
+    // 2. Redondea al entero más cercano
+    const roundedRating = Math.round(numericRating);
+
+    console.log(`[renderPlays] Rating numérico: ${numericRating}, Rating redondeado: ${roundedRating}`); // Log para depurar
+
+    // 3. Genera los íconos (sin cambios aquí)
     return Array.from({length: 5}, (_, i) =>
         `<span class="text-2xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>`
     ).join('');
@@ -2363,6 +2372,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
