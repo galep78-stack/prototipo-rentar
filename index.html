@@ -2068,21 +2068,29 @@ async function handleDeletePedido(codigoPedido) {
     }
 }
         async function handleSimulateResponse(codigoPedido) {
-    if (!confirm("Esto simulará que un proveedor ha respondido a tu cotización. ¿Continuar?")) return;
+   if (!confirm("Esto simulará que un proveedor ha respondido a tu cotización. ¿Continuar?")) return;
 
     try {
+        console.log(`Simulando respuesta para: ${codigoPedido}`); // Log para depurar
         const { error } = await supabaseClient
             .from('solicitudes_pedido')
-            .update({ estado: 'Cotizado (Simulado)' }) // Cambiamos el estado
+            .update({ estado: 'Cotizado (Simulado)' })
             .eq('codigoPedido', codigoPedido)
-            .eq('productor_user_id', currentUser.id); // ¡Seguridad!
+            .eq('productor_user_id', currentUser.id);
 
         if (error) throw error;
 
         alert("¡Simulación exitosa! El proveedor ha 'respondido'. Ahora puedes calificarlo.");
-        await loadHistorialPedidos(); // Recargar datos
-        setView('historial_pedidos'); // Re-renderizar la vista
+
+        // Asegúrate de esperar a que carguen los datos ANTES de redibujar
+        console.log("Recargando historial..."); // Log para depurar
+        await loadHistorialPedidos();
+        console.log("Historial recargado, redibujando vista..."); // Log para depurar
+
+        setView('historial_pedidos'); // Llama a setView DESPUÉS de await
+
     } catch (error) {
+        console.error(`Error al simular respuesta: ${error.message}`); // Usar console.error
         alert(`Error al simular respuesta: ${error.message}`);
     }
 }
@@ -2156,6 +2164,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
