@@ -1106,8 +1106,8 @@ function renderHistorialPedidosView() {
 
             case 'Completado y Calificado':
                 estadoClass = 'text-gray-400 bg-gray-700/50';
-                // Usamos el dato 'rating' que cargamos
-                accionesHtml = `<span class="text-lg text-accent-cyan font-bold">${pedido.rating} ★</span>`;
+                // Ya no mostramos un rating único, solo indicamos que está listo
+                accionesHtml = `<span class="text-xs text-gray-400">Calificado</span>`;
                 break;
 
             default: // Otros estados (o si algo falla)
@@ -1642,48 +1642,61 @@ function renderProviderDashboard() {
         </div>
     </div>`;
 }
-        // ==================================================================
-// ✅ FUNCIÓN `renderProviderDetailsView` (ACTUALIZADA para mostrar Ofertas)
-// ==================================================================
+
 async function renderProviderDetailsView(providerId) {
     if (!providerId) return `<p class="text-red-500">Error: No se recibió ID de proveedor.</p>`;
 
     let providerData;
-    let offers = []; // Variable para guardar las ofertas
+    let offers = [];
+    let opinionsData = []; // Para guardar las opiniones reales
 
     try {
-        // 1. Busca el proveedor específico Y SU USER_ID en la BDD
+        // --- 1. Busca el proveedor ---
         const { data: providerResult, error: providerError } = await supabaseClient
             .from('proveedores')
-            // 🟢 PEDIMOS TAMBIÉN EL user_id PARA BUSCAR OFERTAS
-            .select('nombre_empresa, direccion, user_id')
+            .select('nombre_empresa, direccion, user_id') // Necesitamos user_id para buscar opiniones
             .eq('id', providerId)
             .single();
 
         if (providerError || !providerResult) throw new Error("Proveedor no encontrado.");
-        providerData = providerResult; // Guardamos todos los datos del proveedor
+        providerData = providerResult;
 
-        // 2. Busca las ofertas asociadas a ESE proveedor usando su user_id
+        // --- 2. Busca las ofertas de ESE proveedor ---
         const { data: offersResult, error: offersError } = await supabaseClient
             .from('ofertas')
             .select('id, titulo, descripcion, precio, categoria, ubicacion')
-            .eq('user_id', providerData.user_id); // 🟢 Filtramos por el user_id del proveedor
+            .eq('user_id', providerData.user_id); // Usamos el user_id del proveedor
 
-        if (offersError) throw new Error(`Error al buscar ofertas: ${offersError.message}`);
-        offers = offersResult || []; // Guardamos las ofertas encontradas (o un array vacío)
+        if (offersError) console.warn(`Advertencia al buscar ofertas: ${offersError.message}`); // No detener si fallan las ofertas
+        offers = offersResult || [];
+
+        // --- 3. Busca las OPINIONES para ESE proveedor ---
+        const { data: opinionsResult, error: opinionsError } = await supabaseClient
+            .from('opiniones')
+            // Seleccionamos el rating, comentario y datos del productor que lo escribió
+            .select(`
+                rating,
+                comment,
+                productores ( nombre_completo )
+            `)
+            .eq('proveedor_user_id', providerData.user_id); // Filtramos por el user_id del proveedor
+
+        if (opinionsError) throw new Error(`Error al buscar opiniones: ${opinionsError.message}`);
+        opinionsData = opinionsResult || [];
 
     } catch (error) {
-        return `<p class="text-red-500">Error al cargar datos del proveedor o sus ofertas: ${error.message}</p>`;
+        // Mostramos el error principal que detuvo la carga
+        return `<p class="text-red-500">Error al cargar datos: ${error.message}</p>`;
     }
 
-    // --- Renderizado de la información del proveedor (igual que antes) ---
+    // --- Renderizado de Info Proveedor (igual que antes) ---
     const provider = {
         nombre: providerData.nombre_empresa,
         tipo: 'Empresa',
         ubicacion: providerData.direccion || 'Ubicación no definida'
     };
 
-    // --- 🟢 NUEVO: Renderizado de la lista de ofertas ---
+    // --- Renderizado de Ofertas (igual que antes) ---
     let offersHtml = '<p class="text-gray-400 font-sans">Este proveedor no tiene ofertas publicadas actualmente.</p>';
     if (offers.length > 0) {
         offersHtml = offers.map(offer => `
@@ -1696,18 +1709,28 @@ async function renderProviderDetailsView(providerId) {
                     <p class="text-lg text-accent-cyan font-bold flex-shrink-0 ml-4">$${offer.precio}</p>
                 </div>
                 <p class="text-gray-300 font-sans mt-2 text-sm">${offer.descripcion || 'Sin descripción.'}</p>
-                
-                </div>
+            </div>
         `).join('');
     }
 
-    // --- Renderizado de opiniones (igual que antes) ---
-    const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join('');
-    const opinions = [ // Simulación
-        { user: 'Productor A', rating: 5, comment: 'Excelente equipo, entregado a tiempo.' },
-        { user: 'Estudio Z', rating: 4, comment: 'La locación era perfecta, buen servicio al cliente.' }
-    ];
-    let opinionsHtml = opinions.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join('');
+    // --- Renderizado de Opiniones REALES ---
+    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">★</span>`).join(''); // Cambiado a estrellas
+    let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
+
+    if (opinionsData.length > 0) {
+        opinionsHtml = opinionsData.map(op => {
+            // Obtenemos el nombre del productor (si el JOIN funcionó y no es null)
+            const productorName = op.productores ? op.productores.nombre_completo : 'Productor Anónimo';
+            return `
+            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
+                <div class="flex items-center mb-2">
+                    ${renderStars(op.rating)}
+                    <h4 class="ml-4 font-bold text-lg font-heading">${productorName}</h4>
+                </div>
+                ${op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : ''}
+            </div>`;
+        }).join('');
+    }
 
     // --- HTML Final Combinado ---
     return `
@@ -1717,12 +1740,11 @@ async function renderProviderDetailsView(providerId) {
             <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1>
             <p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
 
-            
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
             <div class="space-y-4 mb-10">${offersHtml}</div>
 
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2>
-            <div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div>
+            <div class="space-y-4">${opinionsHtml}</div>
         </div>`;
 }
         // ===================================================================
@@ -2096,42 +2118,104 @@ async function handleDeletePedido(codigoPedido) {
     }
 }
 
+// REEMPLAZA tu función handleRateProvider con esta:
 async function handleRateProvider(codigoPedido) {
-    let rating = prompt("Califica al proveedor (del 1 al 5):");
-    if (rating === null) return; // El usuario apretó "cancelar"
+    if (!currentUser) return; // Ya deberías estar logueado
 
-    let ratingNum = parseInt(rating, 10);
+    let pedidoParaCalificar = historialPedidos.find(p => p.codigo === codigoPedido);
 
-    // Validación simple
-    if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
-        alert("Por favor, ingresa un número válido entre 1 y 5.");
+    if (!pedidoParaCalificar || !pedidoParaCalificar.items || pedidoParaCalificar.items.length === 0) {
+        alert("Error: No se encontraron detalles o ítems para este pedido.");
         return;
     }
 
-   try {
-        console.log(`Calificando pedido: ${codigoPedido} con ${ratingNum}`); // Log
-        const { error } = await supabaseClient
-            .from('solicitudes_pedido')
-            .update({
-                estado: 'Completado y Calificado',
-                rating: ratingNum
-            })
-            .eq('codigoPedido', codigoPedido)
-            .eq('productor_user_id', currentUser.id);
+    // Obtenemos los IDs únicos de los proveedores involucrados en ESTE pedido
+    const proveedorIdsUnicos = [...new Set(pedidoParaCalificar.items.map(item => item.providerId))];
 
-        if (error) throw error;
+    if (proveedorIdsUnicos.length === 0) {
+        alert("Error: No se pudieron identificar proveedores para este pedido.");
+        return;
+    }
 
-        alert("¡Gracias por tu calificación!");
+    let todasLasCalificacionesExitosas = true;
 
-        console.log("Recargando historial después de calificar..."); // Log
-        await loadHistorialPedidos();
-        console.log("Historial recargado, redibujando vista..."); // Log
+    // --- Bucle para calificar a cada proveedor ---
+    for (const proveedorId of proveedorIdsUnicos) {
+        // (Opcional: podrías buscar el nombre del proveedor para mostrarlo en el prompt)
+        let ratingInput = prompt(`Califica al proveedor (ID: ${proveedorId.substring(0, 8)}...) para el pedido ${codigoPedido} (1-5):`);
 
-        setView('historial_pedidos'); // Llama a setView DESPUÉS de await
+        if (ratingInput === null) {
+            alert("Calificación cancelada para este proveedor.");
+            continue; // Saltar al siguiente proveedor
+        }
 
-    } catch (error) {
-        console.error(`Error al guardar calificación: ${error.message}`); // Usar console.error
-        alert(`Error al guardar la calificación: ${error.message}`);
+        let ratingNum = parseInt(ratingInput, 10);
+
+        if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+            alert(`Valor inválido (${ratingInput}). Calificación omitida para el proveedor ${proveedorId.substring(0, 8)}...`);
+            continue; // Saltar al siguiente proveedor
+        }
+
+        // (Opcional: Pedir un comentario)
+        // let commentInput = prompt(`(Opcional) Deja un comentario para el proveedor ${proveedorId.substring(0, 8)}...`);
+
+        // Insertar la calificación en la nueva tabla 'opiniones'
+        try {
+            const { error: insertError } = await supabaseClient
+                .from('opiniones')
+                .insert({
+                    pedido_codigo: codigoPedido,
+                    productor_user_id: currentUser.id,
+                    proveedor_user_id: proveedorId, // El proveedor específico
+                    rating: ratingNum
+                    // comment: commentInput || null // Si pides comentario
+                });
+
+            if (insertError) {
+                console.error(`Error insertando calificación para proveedor ${proveedorId}:`, insertError);
+                alert(`Error al guardar la calificación para el proveedor ${proveedorId.substring(0, 8)}...`);
+                todasLasCalificacionesExitosas = false; // Marcamos que algo falló
+            } else {
+                 console.log(`Calificación guardada para proveedor ${proveedorId}`);
+            }
+
+        } catch (e) {
+            console.error(`Excepción insertando calificación para proveedor ${proveedorId}:`, e);
+            alert(`Error inesperado al calificar al proveedor ${proveedorId.substring(0, 8)}...`);
+            todasLasCalificacionesExitosas = false;
+        }
+    } // --- Fin del bucle ---
+
+    // Actualizar el estado del pedido principal SOLO si todas las calificaciones se guardaron
+    if (todasLasCalificacionesExitosas && proveedorIdsUnicos.length > 0) {
+        try {
+            const { error: updateError } = await supabaseClient
+                .from('solicitudes_pedido')
+                .update({ estado: 'Completado y Calificado' })
+                .eq('codigoPedido', codigoPedido)
+                .eq('productor_user_id', currentUser.id);
+
+            if (updateError) throw updateError;
+
+            alert("¡Gracias por completar todas las calificaciones!");
+            await loadHistorialPedidos();
+            setView('historial_pedidos');
+
+        } catch (error) {
+            console.error("Error actualizando estado del pedido a 'Completado':", error);
+            alert("Se guardaron las calificaciones, pero hubo un error al marcar el pedido como completado.");
+            // Igualmente recargamos para que vea las calificaciones guardadas
+            await loadHistorialPedidos();
+            setView('historial_pedidos');
+        }
+    } else if (proveedorIdsUnicos.length > 0) {
+         alert("Algunas calificaciones no pudieron guardarse. El pedido no se marcará como completado aún.");
+         // Recargamos para ver las que sí se guardaron
+         await loadHistorialPedidos();
+         setView('historial_pedidos');
+    } else {
+         // No debería llegar aquí si validamos antes, pero por si acaso
+         console.warn("No se encontraron proveedores para calificar en el pedido", codigoPedido);
     }
 }
         window.handleSimulateResponse = handleSimulateResponse;
@@ -2172,6 +2256,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
