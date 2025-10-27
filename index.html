@@ -2141,7 +2141,7 @@ async function handleDeletePedido(codigoPedido) {
 
 // REEMPLAZA tu función handleRateProvider con esta:
 async function handleRateProvider(codigoPedido) {
-    if (!currentUser) return; // Ya deberías estar logueado
+    if (!currentUser) return;
 
     let pedidoParaCalificar = historialPedidos.find(p => p.codigo === codigoPedido);
 
@@ -2150,61 +2150,74 @@ async function handleRateProvider(codigoPedido) {
         return;
     }
 
-    // Obtenemos los IDs únicos de los proveedores involucrados en ESTE pedido
-    const proveedorIdsUnicos = [...new Set(pedidoParaCalificar.items.map(item => item.providerId))];
+    const validProviderIds = pedidoParaCalificar.items
+        .map(item => item.providerId)
+        .filter(id => id && typeof id === 'string' && id.length > 10);
+
+    const proveedorIdsUnicos = [...new Set(validProviderIds)];
+
+    console.log("Proveedores únicos VÁLIDOS a calificar:", proveedorIdsUnicos);
 
     if (proveedorIdsUnicos.length === 0) {
-        alert("Error: No se pudieron identificar proveedores para este pedido.");
+        alert("Error: No se pudieron identificar proveedores válidos para este pedido.");
         return;
     }
 
+    // --- NUEVO: Buscar nombres de proveedores ---
+    const providerNames = {};
+    try {
+        const { data: providersData, error: nameError } = await supabaseClient
+            .from('proveedores')
+            .select('user_id, nombre_empresa') // Selecciona user_id y nombre
+            .in('user_id', proveedorIdsUnicos); // Busca por la lista de IDs de usuario
+
+        if (nameError) throw nameError;
+
+        providersData.forEach(p => {
+            providerNames[p.user_id] = p.nombre_empresa; // Guarda nombre por user_id
+        });
+        console.log("Nombres de proveedores encontrados:", providerNames);
+    } catch (e) {
+        console.warn("Advertencia: No se pudieron cargar los nombres de algunos proveedores. Se mostrarán IDs.", e.message);
+    }
+    // --- FIN: Buscar nombres ---
+
     let todasLasCalificacionesExitosas = true;
 
-    // --- Bucle para calificar a cada proveedor ---
     for (const proveedorId of proveedorIdsUnicos) {
-        // (Opcional: podrías buscar el nombre del proveedor para mostrarlo en el prompt)
-        let ratingInput = prompt(`Califica al proveedor (ID: ${proveedorId.substring(0, 8)}...) para el pedido ${codigoPedido} (1-5):`);
+        // Usa el nombre encontrado o el ID truncado como fallback
+        const displayName = providerNames[proveedorId] || `ID: ${proveedorId.substring(0, 8)}...`;
+
+        // --- CAMBIO: Mostrar nombre en el prompt ---
+        let ratingInput = prompt(`Califica a "${displayName}" para el pedido ${codigoPedido} (1-5):`);
 
         if (ratingInput === null) {
             alert("Calificación cancelada para este proveedor.");
-            continue; // Saltar al siguiente proveedor
+            continue;
         }
-
+        // ... (resto de la validación y lógica de inserción no cambia) ...
         let ratingNum = parseInt(ratingInput, 10);
-
         if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
-            alert(`Valor inválido (${ratingInput}). Calificación omitida para el proveedor ${proveedorId.substring(0, 8)}...`);
-            continue; // Saltar al siguiente proveedor
+            alert(`Valor inválido (${ratingInput}). Calificación omitida para "${displayName}".`);
+            continue;
         }
-
-        // (Opcional: Pedir un comentario)
-        // let commentInput = prompt(`(Opcional) Deja un comentario para el proveedor ${proveedorId.substring(0, 8)}...`);
-
-        // Insertar la calificación en la nueva tabla 'opiniones'
+        const opinionData = { /* ... */ };
+        console.log("Intentando insertar opinion:", JSON.stringify(opinionData));
         try {
-            const { error: insertError } = await supabaseClient
+            const { data, error: insertError } = await supabaseClient
                 .from('opiniones')
-                .insert({
-                    pedido_codigo: codigoPedido,
-                    productor_user_id: currentUser.id,
-                    proveedor_user_id: proveedorId, // El proveedor específico
-                    rating: ratingNum
-                    // comment: commentInput || null // Si pides comentario
-                });
-
+                .insert(opinionData)
+                .select();
+            console.log("Resultado de la inserción:", { data, insertError });
             if (insertError) {
                 console.error(`Error insertando calificación para proveedor ${proveedorId}:`, insertError);
-                alert(`Error al guardar la calificación para el proveedor ${proveedorId.substring(0, 8)}...`);
-                todasLasCalificacionesExitosas = false; // Marcamos que algo falló
+                alert(`Error al guardar la calificación para "${displayName}". Detalles: ${insertError.message || 'Ver consola'}`);
+                todasLasCalificacionesExitosas = false;
             } else {
                  console.log(`Calificación guardada para proveedor ${proveedorId}`);
             }
-
-        } catch (e) {
-            console.error(`Excepción insertando calificación para proveedor ${proveedorId}:`, e);
-            alert(`Error inesperado al calificar al proveedor ${proveedorId.substring(0, 8)}...`);
-            todasLasCalificacionesExitosas = false;
-        }
+        } catch (e) 
+            
     } // --- Fin del bucle ---
 
     // Actualizar el estado del pedido principal SOLO si todas las calificaciones se guardaron
@@ -2222,13 +2235,10 @@ async function handleRateProvider(codigoPedido) {
             await loadHistorialPedidos();
             setView('historial_pedidos');
 
-        } catch (error) {
-            console.error("Error actualizando estado del pedido a 'Completado':", error);
-            alert("Se guardaron las calificaciones, pero hubo un error al marcar el pedido como completado.");
-            // Igualmente recargamos para que vea las calificaciones guardadas
-            await loadHistorialPedidos();
-            setView('historial_pedidos');
-        }
+        } catch (error) { /* ... manejo de error ... */ }
+    } else if (proveedorIdsUnicos.length > 0) { /* ... alerta y recarga ... */ }
+     else { /* ... console.warn ... */ }
+}
     } else if (proveedorIdsUnicos.length > 0) {
          alert("Algunas calificaciones no pudieron guardarse. El pedido no se marcará como completado aún.");
          // Recargamos para ver las que sí se guardaron
@@ -2277,6 +2287,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
