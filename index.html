@@ -2336,16 +2336,12 @@ window.handleRateProvider = handleRateProvider;
 // ------------------------------------------------------------------
 
 window.onload = () => {
-    // 1. INICIALIZACIÓN DE SUPABASE Y CARGA DE DATOS
+    // 1. INICIALIZACIÓN DE SUPABASE
     if (initializeSupabase()) {
-        // Esta carga está bien, no depende del usuario
-        loadProvidersByOfferSearch(); 
-        // 🚨 ELIMINAMOS: loadHistorialPedidos(); (Se movió a setupAuthListener)
-        // 🚨 ELIMINAMOS: contentView.innerHTML = renderView(initialView); (Se movió)
+        // loadProvidersByOfferSearch(); // <-- BORRA O COMENTA ESTA LÍNEA
     }
     
-    // 2. INICIAR LÓGICA DE AUTENTICACIÓN
-    // Esta función AHORA maneja la carga de la vista inicial
+    // 2. INICIAR LÓGICA DE AUTENTICACIÓN Y CARGA INICIAL DE VISTA
     if (supabaseClient) {
         setupAuthListener(); 
     }
@@ -2354,7 +2350,6 @@ window.onload = () => {
     window.addEventListener('hashchange', () => {
         if (!isNavigating) {
             const newHash = window.location.hash.replace('#', '');
-            // 🟢 CORRECCIÓN: Parsear data (ej: "offer_list_by_category/Equipos")
             const [viewName, data] = newHash.split('/');
             setView(viewName || 'home', data || null);
         }
@@ -2367,6 +2362,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
