@@ -763,7 +763,8 @@ async function loadHistorialPedidos() {
         // ✅ FUNCIÓN `setView` (Corregida para "Pantallazo" y Búsqueda)
         // ==================================================================
         function setView(viewName, data = null) {
-            // 🟢 Si ya estamos navegando (por la llamada original),
+           console.log(`setView llamada con: viewName='${viewName}', data='${data}' (tipo: ${typeof data})`); // Verifica esta línea
+                // 🟢 Si ya estamos navegando (por la llamada original),
             // ignoramos la llamada duplicada del hashchange.
             if (isNavigating) return;
 
@@ -2304,6 +2305,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
