@@ -2166,12 +2166,10 @@ async function handleRateProvider(codigoPedido) {
     console.log("Proveedores únicos VÁLIDOS a calificar:", proveedorIdsUnicos);
 
     if (proveedorIdsUnicos.length === 0) {
-        alert("Error: No se pudieron identificar proveedores válidos para este pedido (verificar IDs en los ítems).");
+        alert("Error: No se pudieron identificar proveedores válidos para este pedido.");
         return;
     }
-console.log("Datos a insertar:", JSON.stringify(opinionData));
-console.log("ID del usuario actual (currentUser.id):", currentUser.id);
-    // --- Buscar nombres de proveedores ---
+
     const providerNames = {};
     try {
         const { data: providersData, error: nameError } = await supabaseClient
@@ -2188,7 +2186,6 @@ console.log("ID del usuario actual (currentUser.id):", currentUser.id);
     } catch (e) {
         console.warn("Advertencia: No se pudieron cargar los nombres de algunos proveedores. Se mostrarán IDs.", e.message);
     }
-    // --- Fin: Buscar nombres ---
 
     let todasLasCalificacionesExitosas = true;
 
@@ -2207,6 +2204,8 @@ console.log("ID del usuario actual (currentUser.id):", currentUser.id);
             continue;
         }
 
+        // --- Punto Crítico: Definición de opinionData ---
+        // Asegúrate de que esta línea esté EXACTAMENTE así y DENTRO del bucle 'for'
         const opinionData = {
             pedido_codigo: codigoPedido,
             productor_user_id: currentUser.id,
@@ -2214,14 +2213,18 @@ console.log("ID del usuario actual (currentUser.id):", currentUser.id);
             rating: ratingNum
             // Podrías añadir 'comment' aquí si lo pides
         };
+        // ---------------------------------------------
 
         console.log("Intentando insertar opinion:", JSON.stringify(opinionData));
 
         try {
+            // --- Punto Crítico: Uso de opinionData ---
+            // Asegúrate de que aquí se use el nombre correcto
             const { data, error: insertError } = await supabaseClient
                 .from('opiniones')
-                .insert(opinionData)
+                .insert(opinionData) // <-- Verifica que aquí diga 'opinionData'
                 .select();
+            // --------------------------------------
 
             console.log("Resultado de la inserción:", { data, insertError });
 
@@ -2240,6 +2243,7 @@ console.log("ID del usuario actual (currentUser.id):", currentUser.id);
         }
     } // Fin del bucle for
 
+    // --- Lógica para actualizar el estado del pedido principal ---
     if (todasLasCalificacionesExitosas && proveedorIdsUnicos.length > 0) {
         try {
             const { error: updateError } = await supabaseClient
@@ -2249,11 +2253,9 @@ console.log("ID del usuario actual (currentUser.id):", currentUser.id);
                 .eq('productor_user_id', currentUser.id);
 
             if (updateError) throw updateError;
-
             alert("¡Gracias por completar todas las calificaciones!");
             await loadHistorialPedidos();
             setView('historial_pedidos');
-
         } catch (error) {
              console.error("Error actualizando estado del pedido a 'Completado':", error);
              alert("Se guardaron las calificaciones, pero hubo un error al marcar el pedido como completado.");
@@ -2267,6 +2269,7 @@ console.log("ID del usuario actual (currentUser.id):", currentUser.id);
     } else {
          console.warn("No se encontraron proveedores válidos para calificar en el pedido", codigoPedido);
     }
+    // --- Fin de la lógica de actualización ---
 }
         window.handleSimulateResponse = handleSimulateResponse;
 window.handleRateProvider = handleRateProvider;
@@ -2306,6 +2309,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
