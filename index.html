@@ -1109,8 +1109,11 @@ function renderHistorialPedidosView() {
 
             case 'Completado y Calificado':
                 estadoClass = 'text-gray-400 bg-gray-700/50';
-                accionesHtml = `<span class="text-lg text-accent-cyan font-bold">${pedido.rating || '?'} ★</span>`;
-                // Decidimos NO mostrar Eliminar aquí, pero podrías añadir ${botonEliminar} si quieres
+                // Muestra la calificación Y el botón eliminar
+                accionesHtml = `
+                    <span class="text-lg text-accent-cyan font-bold mr-2">${pedido.rating || '?'} ★</span>
+                    ${botonEliminar} {/* Añadido aquí */}
+                `;
                 break;
 
             default: // Otros estados
@@ -2274,6 +2277,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
