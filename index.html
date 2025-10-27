@@ -669,7 +669,7 @@ async function loadHistorialPedidos() {
                     return acc;
                 }, []).length,
                 totalEstimado: (pedido.items_json || []).reduce((sum, item) => sum + (item.precio || 0), 0),
-                estado: pedido.estado
+                estado: pedido.estado,
                 rating: pedido.rating || null //
             }));
         } else {
@@ -2156,5 +2156,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
