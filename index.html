@@ -175,11 +175,9 @@ function setupAuthListener() {
         dataLoadPromise.then(() => {
             // Este código SÓLO se ejecuta después de que loadHistorialPedidos() terminó
             isNavigating = false;
-            // 👇 AÑADE ESTE LOG
-    console.log(`[setupAuthListener] Intentando cargar vista inicial: view='${initialView || 'home'}', data='${initialData || null}'`);
-    setView(initialView || 'home', initialData || null);
-});
-            
+            // Si no hay usuario, te redirigirá a 'login' (gracias a la lógica de setView)
+            setView(initialView || 'home', initialData || null); 
+        });
         // 🟢============================🟢
 
     });
@@ -566,11 +564,10 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                         .from('ofertas')
                         .select(`
                 id,
-              nombre_empresa,
+                nombre_empresa,
                 direccion,
                 user_id,
-               // avg_rating:get_provider_avg_rating(user_id)
-               .select('id, nombre_empresa, direccion, user_id');
+                avg_rating:get_provider_avg_rating(user_id)
             `);
                         or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
 
@@ -598,13 +595,7 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                 // 2. Buscamos en PROVEEDORES
                 let query = supabaseClient
                     .from('proveedores')
-                    .select(`
-                        id,
-                        nombre_empresa,
-                        direccion,
-                        user_id,
-                        avg_rating:get_provider_avg_rating(user_id)
-                    `);
+                    .select('id, nombre_empresa, direccion, user_id'); // Traemos todos los datos necesarios
 
                 // Si se encontraron IDs de la búsqueda de ofertas, filtramos por esos IDs
                 if (searchTerm && providerUserIds.length > 0) {
@@ -1512,22 +1503,11 @@ function renderComoFuncionaView() {
 
         function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección Principal (Ej: Calle Falsa 123)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
         function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
-function renderRating() {
-            // ... código de renderRating ...
-        }
+
         // Función para renderizar plays (similar a renderStars)
 function renderPlays(rating) {
-    console.log(`[renderPlays] Recibiendo rating: ${rating} (tipo: ${typeof rating})`); // Log para depurar
-
-    // 1. Convierte a número (maneja strings como "3.7" mejor que parseInt)
-    const numericRating = Number(rating) || 0;
-
-    // 2. Redondea al entero más cercano
-    const roundedRating = Math.round(numericRating);
-
-    console.log(`[renderPlays] Rating numérico: ${numericRating}, Rating redondeado: ${roundedRating}`); // Log para depurar
-
-    // 3. Genera los íconos (sin cambios aquí)
+    // Redondea el rating al entero más cercano para mostrar plays completos
+    const roundedRating = Math.round(rating || 0);
     return Array.from({length: 5}, (_, i) =>
         `<span class="text-2xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>`
     ).join('');
@@ -1560,18 +1540,13 @@ function renderProducerDashboard() {
     if (providerResults.length > 0) {
         // 🟢 CAMBIO: Iteramos sobre 'providerResults' (proveedores)
         resultsHtml = providerResults.map(provider => {
-            // --- NUEVO: Usa renderPlays con el dato real ---
-           // const averageRating = provider.avg_rating; // Obtenido de la consulta modificada
-          //  const ratingHtml = renderPlays(averageRating); // Llama a la nueva función auxiliar
-            // ---------------------------------------------
+
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h4 class="font-bold text-lg font-heading text-accent-cyan">${provider.nombre_empresa}</h4>
 
-                    {/* --- CAMBIO: Inserta el HTML de los plays --- */}
-                   // <div class="my-2">${ratingHtml}</div>
-                    {/* ----------------------------------------- */}
+                    <div class="my-2">${renderRating()}</div>
 
                     <p class="text-sm text-gray-400 font-sans mt-1">
                         Ubicación: ${provider.direccion || 'No especificada'}
@@ -1801,39 +1776,23 @@ async function renderProviderDetailsView(providerId) {
     }
 
     // --- Renderizado de Opiniones ---
-        const renderStars = (rating) => {
-            // Log para ver qué rating recibe
-            console.log("Renderizando estrellas/plays para rating:", rating, typeof rating);
-            // Convierte a número ASEGURÁNDOTE que sea base 10 si es string
-            const numericRating = parseInt(rating, 10) || 0; // Usar parseInt con base 10
-            // Redondea al entero más cercano
-            const roundedRating = Math.round(numericRating);
-            // Log para ver el valor redondeado
-            console.log("Rating redondeado:", roundedRating);
-            // Genera los íconos
-            return Array.from({length: 5}, (_, i) =>
-                `<span class="text-xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>` // Usa play ▶️
-            ).join('');
-        };
-        // --- FIN de renderStars ---
+    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">★</span>`).join('');
+    let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
 
-        let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones...</p>';
-
-        if (opinionsData.length > 0) {
-            opinionsHtml = opinionsData.map(op => {
-                console.log("Datos de opinión (op):", JSON.stringify(op)); // Log útil
-                const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
-                const commentHtml = op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : '';
-                return `
-                <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
-                    <div class="flex items-center mb-2">
-                        ${renderStars(op.rating)}
-                        <h4 class="ml-4 font-bold text-lg font-heading">${productorName}</h4>
-                    </div>
-                    ${commentHtml}
-                </div>`;
-            }).join('');
-        }
+    if (opinionsData.length > 0) {
+        opinionsHtml = opinionsData.map(op => {
+            // --- 👇 USO de producerNames (definido arriba) ---
+            const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
+            return `
+            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
+                <div class="flex items-center mb-2">
+                    ${renderStars(op.rating)}
+                    <h4 class="ml-4 font-bold text-lg font-heading">${productorName}</h4>
+                </div>
+                ${op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : ''}
+            </div>`;
+        }).join('');
+    }
 
     // --- HTML Final ---
     return `
@@ -2346,12 +2305,16 @@ window.handleRateProvider = handleRateProvider;
 // ------------------------------------------------------------------
 
 window.onload = () => {
-    // 1. INICIALIZACIÓN DE SUPABASE
+    // 1. INICIALIZACIÓN DE SUPABASE Y CARGA DE DATOS
     if (initializeSupabase()) {
-        // loadProvidersByOfferSearch(); // <-- BORRA O COMENTA ESTA LÍNEA
+        // Esta carga está bien, no depende del usuario
+        loadProvidersByOfferSearch(); 
+        // 🚨 ELIMINAMOS: loadHistorialPedidos(); (Se movió a setupAuthListener)
+        // 🚨 ELIMINAMOS: contentView.innerHTML = renderView(initialView); (Se movió)
     }
     
-    // 2. INICIAR LÓGICA DE AUTENTICACIÓN Y CARGA INICIAL DE VISTA
+    // 2. INICIAR LÓGICA DE AUTENTICACIÓN
+    // Esta función AHORA maneja la carga de la vista inicial
     if (supabaseClient) {
         setupAuthListener(); 
     }
@@ -2360,6 +2323,7 @@ window.onload = () => {
     window.addEventListener('hashchange', () => {
         if (!isNavigating) {
             const newHash = window.location.hash.replace('#', '');
+            // 🟢 CORRECCIÓN: Parsear data (ej: "offer_list_by_category/Equipos")
             const [viewName, data] = newHash.split('/');
             setView(viewName || 'home', data || null);
         }
@@ -2372,18 +2336,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
