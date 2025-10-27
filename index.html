@@ -553,18 +553,22 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
         // ==================================================================
         async function loadProvidersByOfferSearch(searchTerm = '') {
             if (!supabaseClient) return;
-
             providerResults = []; // Start fresh
-
             try {
                 let providerUserIds = [];
-
+                     
                 // 1. Si hay término de búsqueda, buscamos en OFERTAS primero
                 if (searchTerm) {
                     console.log(`Buscando ofertas con término: "${searchTerm}"`); // Debug log
                     let { data: offers, error: offersError } = await supabaseClient
                         .from('ofertas')
-                        .select('user_id') // Solo necesitamos los user_id
+                        .select(`
+                id,
+                nombre_empresa,
+                direccion,
+                user_id,
+                avg_rating:get_provider_avg_rating(user_id)
+            `);
                         .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
 
                     if (offersError){
@@ -1500,16 +1504,14 @@ function renderComoFuncionaView() {
         function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección Principal (Ej: Calle Falsa 123)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
         function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
 
-        // ==================================================================
-        // 🟢 NUEVA: Función auxiliar para simular ratings
-        // ==================================================================
-        function renderRating() {
-            // Genera un rating simulado de 3 a 5 "plays"
-            const simulatedRating = Math.floor(Math.random() * 3) + 3;
-            return Array.from({length: 5}, (_, i) =>
-                `<span class="text-2xl ${i < simulatedRating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`
-            ).join('');
-        }
+        // Función para renderizar plays (similar a renderStars)
+function renderPlays(rating) {
+    // Redondea el rating al entero más cercano para mostrar plays completos
+    const roundedRating = Math.round(rating || 0);
+    return Array.from({length: 5}, (_, i) =>
+        `<span class="text-2xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>`
+    ).join('');
+}
 // ===================================================================
 // 🟢 NUEVA FUNCIÓN: Actualizar contador del header
 // ===================================================================
@@ -2167,27 +2169,40 @@ async function handleDeletePedido(codigoPedido) {
     }
 }
 
-// REEMPLAZA handleRateProvider con esta versión
+// REEMPLAZA la función handleRateProvider anterior con esta:
 async function handleRateProvider(codigoPedido) {
-    // --- Reconfirmar currentUser (código sin cambios) ---
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) { /* ... manejo de error ... */ return; }
+    // --- NUEVO INICIO: Reconfirmar currentUser ---
+    const { data: { user } } = await supabaseClient.auth.getUser(); // Obtiene el usuario actual de Supabase
+    if (!user) { // Si no hay usuario conectado...
+        alert("Error: No se pudo verificar el usuario conectado. Por favor, inicia sesión de nuevo.");
+        setView('login'); // ...redirige al login
+        return; // ...y detiene la función
+    }
+    // Guarda el ID verificado en una variable local
     const currentUserId = user.id;
-    console.log("Usuario verificado:", currentUserId);
-    // --- Fin Reconfirmar ---
+    console.log("Usuario verificado para la operación:", currentUserId); // Log para depurar
+    // --- FIN: Reconfirmar ---
 
+    // Encuentra el pedido en la lista local (como antes)
     let pedidoParaCalificar = historialPedidos.find(p => p.codigo === codigoPedido);
-    if (!pedidoParaCalificar || !pedidoParaCalificar.items || pedidoParaCalificar.items.length === 0) { /* ... manejo de error ... */ return; }
-    console.log("Items:", JSON.stringify(pedidoParaCalificar.items));
+    if (!pedidoParaCalificar || !pedidoParaCalificar.items || pedidoParaCalificar.items.length === 0) {
+        alert("Error: No se encontraron detalles o ítems para este pedido.");
+        return;
+    }
+    console.log("Items en el pedido para calificar:", JSON.stringify(pedidoParaCalificar.items));
 
+    // Obtiene los IDs de proveedores válidos (como antes)
     const validProviderIds = pedidoParaCalificar.items
         .map(item => item.providerId)
         .filter(id => id && typeof id === 'string' && id.length > 10);
     const proveedorIdsUnicos = [...new Set(validProviderIds)];
-    console.log("Proveedores válidos:", proveedorIdsUnicos);
-    if (proveedorIdsUnicos.length === 0) { /* ... manejo de error ... */ return; }
+    console.log("Proveedores únicos VÁLIDOS a calificar:", proveedorIdsUnicos);
+    if (proveedorIdsUnicos.length === 0) {
+        alert("Error: No se pudieron identificar proveedores válidos para este pedido.");
+        return;
+    }
 
-    // --- Buscar nombres (código sin cambios) ---
+    // Busca los nombres de los proveedores (como antes)
     const providerNames = {};
     try {
         const { data: providersData, error: nameError } = await supabaseClient
@@ -2195,67 +2210,88 @@ async function handleRateProvider(codigoPedido) {
             .select('user_id, nombre_empresa')
             .in('user_id', proveedorIdsUnicos);
         if (nameError) throw nameError;
+        // Corrección: Verificar si providersData no es null antes de forEach
         if (providersData) {
             providersData.forEach(p => { providerNames[p.user_id] = p.nombre_empresa; });
         }
-        console.log("Nombres encontrados:", providerNames);
-    } catch (e) { /* ... manejo de advertencia ... */ }
-    // --- Fin Buscar nombres ---
+        console.log("Nombres de proveedores encontrados:", providerNames);
+    } catch (e) {
+        console.warn("Advertencia: No se pudieron cargar los nombres de algunos proveedores.", e.message);
+    }
 
     let todasLasCalificacionesExitosas = true;
 
+    // Bucle para calificar a cada proveedor (como antes)
     for (const proveedorId of proveedorIdsUnicos) {
         const displayName = providerNames[proveedorId] || `ID: ${proveedorId.substring(0, 8)}...`;
         // --- Pedir Rating (sin cambios) ---
-        let ratingInput = prompt(`Califica a "${displayName}" para el pedido ${codigoPedido} (1-5):`);
+        let ratingInput = prompt(`Califica a "${displayName}" para el pedido ${codigoPedido} (1-5):`); // Muestra nombre
+
         if (ratingInput === null) { alert("Calificación cancelada."); continue; }
         let ratingNum = parseInt(ratingInput, 10);
         if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) { alert(`Valor inválido. Calificación omitida.`); continue; }
 
         // --- 👇 NUEVO: Pedir Comentario Opcional ---
         let commentInput = prompt(`(Opcional) Deja un comentario para "${displayName}":`);
-        // Si el usuario presiona Cancelar en el comentario, commentInput será null. Lo guardamos así.
         // ------------------------------------------
 
         // Prepara los datos incluyendo el comentario
         const opinionData = {
             pedido_codigo: codigoPedido,
-            productor_user_id: currentUserId,
+            productor_user_id: currentUserId, // <-- USA EL ID VERIFICADO
             proveedor_user_id: proveedorId,
             rating: ratingNum,
-            comment: commentInput // <-- Añadido aquí (será null si cancela)
+            comment: commentInput // <-- Añadido aquí
         };
         console.log("Datos a insertar:", JSON.stringify(opinionData));
 
-        // Intenta insertar la opinión (código sin cambios)
+        // Intenta insertar la opinión (como antes)
         try {
             const { data, error: insertError } = await supabaseClient
                 .from('opiniones')
                 .insert(opinionData)
                 .select();
             console.log("Resultado inserción:", { data, insertError });
-            if (insertError) { /* ... manejo de error ... */ todasLasCalificacionesExitosas = false; }
-            else { console.log(`Calificación guardada para ${proveedorId}`); }
-        } catch (e) { /* ... manejo de excepción ... */ todasLasCalificacionesExitosas = false; }
-
+            if (insertError) {
+                console.error(`Error insertando calificación:`, insertError);
+                alert(`Error al guardar calificación para "${displayName}": ${insertError.message}`);
+                todasLasCalificacionesExitosas = false;
+            } else {
+                 console.log(`Calificación guardada para ${proveedorId}`);
+            }
+        } catch (e) {
+             console.error(`Excepción insertando calificación:`, e);
+             alert(`Error inesperado al calificar a "${displayName}".`);
+             todasLasCalificacionesExitosas = false;
+        }
     } // Fin del bucle
 
-    // --- Actualizar estado del pedido (código sin cambios) ---
+    // Actualiza el estado del pedido principal si todo salió bien (como antes)
     if (todasLasCalificacionesExitosas && proveedorIdsUnicos.length > 0) {
         try {
-            // ... (actualiza solicitudes_pedido a 'Completado y Calificado') ...
-             const { error: updateError } = await supabaseClient
+            const { error: updateError } = await supabaseClient
                 .from('solicitudes_pedido')
                 .update({ estado: 'Completado y Calificado' })
                 .eq('codigoPedido', codigoPedido)
-                .eq('productor_user_id', currentUserId);
+                .eq('productor_user_id', currentUserId); // <-- USA EL ID VERIFICADO
+
             if (updateError) throw updateError;
             alert("¡Gracias por completar todas las calificaciones!");
             await loadHistorialPedidos();
             setView('historial_pedidos');
-        } catch (error) { /* ... manejo de error ... */ }
-    } else if (proveedorIdsUnicos.length > 0) { /* ... alerta y recarga ... */ }
-    else { /* ... console.warn ... */ }
+        } catch (error) {
+             console.error("Error actualizando estado del pedido:", error);
+             alert("Error al marcar pedido como completado.");
+             await loadHistorialPedidos(); // Recarga igual
+             setView('historial_pedidos');
+        }
+    } else if (proveedorIdsUnicos.length > 0) {
+         alert("Algunas calificaciones no pudieron guardarse. El pedido no se marcará como completado aún.");
+         await loadHistorialPedidos(); // Recarga igual
+         setView('historial_pedidos');
+    } else {
+         console.warn("No se encontraron proveedores válidos", codigoPedido);
+    }
 }
         window.handleSimulateResponse = handleSimulateResponse;
 window.handleRateProvider = handleRateProvider;
@@ -2295,6 +2331,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
