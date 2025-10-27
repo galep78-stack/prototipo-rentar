@@ -175,9 +175,11 @@ function setupAuthListener() {
         dataLoadPromise.then(() => {
             // Este código SÓLO se ejecuta después de que loadHistorialPedidos() terminó
             isNavigating = false;
-            // Si no hay usuario, te redirigirá a 'login' (gracias a la lógica de setView)
-            setView(initialView || 'home', initialData || null); 
-        });
+            // 👇 AÑADE ESTE LOG
+    console.log(`[setupAuthListener] Intentando cargar vista inicial: view='${initialView || 'home'}', data='${initialData || null}'`);
+    setView(initialView || 'home', initialData || null);
+});
+            
         // 🟢============================🟢
 
     });
@@ -2365,6 +2367,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
