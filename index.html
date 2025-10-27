@@ -1514,6 +1514,27 @@ function renderPlays(rating) {
         `<span class="text-2xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>`
     ).join('');
 }
+
+        function renderView(viewName, data) {
+    switch (viewName) {
+        case 'home': return renderHomeView();
+        case 'login': return renderLoginView();
+        case 'register': return renderRegisterView();
+        case 'dashboard_productor': return renderProducerDashboard();
+        case 'dashboard_proveedor': return renderProviderDashboard();
+        // Asegúrate de que provider_details NO esté aquí, se maneja en isAsyncView
+        case 'info': return renderInfoView(data); // Asumiendo que existe
+        case 'add_offer': return renderAddOfferView();
+        case 'como_funciona': return renderComoFuncionaView();
+        case 'categories_selection': return renderCategoriesSelectionView();
+        case 'pedido_actual': return renderPedidoActualView();
+        case 'historial_pedidos': return renderHistorialPedidosView();
+
+        default:
+            console.warn(`Vista desconocida solicitada: ${viewName}. Mostrando home.`);
+            return renderHomeView();
+    }
+}
 // ===================================================================
 // 🟢 NUEVA FUNCIÓN: Actualizar contador del header
 // ===================================================================
@@ -2338,6 +2359,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
