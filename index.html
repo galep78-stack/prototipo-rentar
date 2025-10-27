@@ -569,7 +569,7 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                 user_id,
                 avg_rating:get_provider_avg_rating(user_id)
             `);
-                        .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
+                        or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
 
                     if (offersError){
                         console.error("Error buscando en ofertas:", offersError);
@@ -2259,12 +2259,15 @@ async function handleRateProvider(codigoPedido) {
             } else {
                  console.log(`Calificación guardada para ${proveedorId}`);
             }
-        } catch (e) {
+        } 
+        catch (e) {
              console.error(`Excepción insertando calificación:`, e);
              alert(`Error inesperado al calificar a "${displayName}".`);
              todasLasCalificacionesExitosas = false;
         }
-    } // Fin del bucle
+    } 
+    
+    // Fin del bucle
 
     // Actualiza el estado del pedido principal si todo salió bien (como antes)
     if (todasLasCalificacionesExitosas && proveedorIdsUnicos.length > 0) {
@@ -2285,17 +2288,19 @@ async function handleRateProvider(codigoPedido) {
              await loadHistorialPedidos(); // Recarga igual
              setView('historial_pedidos');
         }
-    } else if (proveedorIdsUnicos.length > 0) {
+    }
+    else if (proveedorIdsUnicos.length > 0) {
          alert("Algunas calificaciones no pudieron guardarse. El pedido no se marcará como completado aún.");
          await loadHistorialPedidos(); // Recarga igual
          setView('historial_pedidos');
-    } else {
+    } 
+    else {
          console.warn("No se encontraron proveedores válidos", codigoPedido);
     }
 }
-        window.handleSimulateResponse = handleSimulateResponse;
+window.handleSimulateResponse = handleSimulateResponse;
 window.handleRateProvider = handleRateProvider;
-        // ------------------------------------------------------------------
+ // ------------------------------------------------------------------
 // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Persistencia de Vista)
 // ------------------------------------------------------------------
 
@@ -2331,6 +2336,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
