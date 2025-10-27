@@ -2146,7 +2146,17 @@ async function handleDeletePedido(codigoPedido) {
 }
 
 async function handleRateProvider(codigoPedido) {
-    if (!currentUser) return;
+    // --- NUEVO: Reconfirmar currentUser ---
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+        alert("Error: No se pudo verificar el usuario conectado. Por favor, inicia sesión de nuevo.");
+        setView('login');
+        return;
+    }
+    // Usa el 'user' recién obtenido en lugar del 'currentUser' global para la inserción
+    const currentUserId = user.id;
+    console.log("Usuario verificado para la operación:", currentUserId);
+    // --- FIN: Reconfirmar ---
 
     let pedidoParaCalificar = historialPedidos.find(p => p.codigo === codigoPedido);
 
@@ -2309,6 +2319,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
