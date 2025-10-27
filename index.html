@@ -1789,20 +1789,34 @@ async function renderProviderDetailsView(providerId) {
     }
 
     // --- Renderizado de Opiniones ---
-    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>`).join(''); // <-- CAMBIADO A PLAY
-    let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
+    const renderStars = (rating) => {
+        // Log para ver qué rating recibe
+        console.log("Renderizando estrellas/plays para rating:", rating, typeof rating);
+        // Convierte a número por si acaso viene como string
+        const numericRating = Number(rating) || 0;
+        // Redondea al entero más cercano
+        const roundedRating = Math.round(numericRating);
+        return Array.from({length: 5}, (_, i) =>
+            `<span class="text-xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>` // Usa play ▶️
+        ).join('');
+    };
+    // ------------------------------------
+
+    let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones...</p>';
 
     if (opinionsData.length > 0) {
         opinionsHtml = opinionsData.map(op => {
-            // --- 👇 USO de producerNames (definido arriba) ---
+            // Log para ver el rating de esta opinión específica
+            console.log("Datos de opinión (op):", JSON.stringify(op));
             const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
+            const commentHtml = op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : '';
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
                 <div class="flex items-center mb-2">
-                    ${renderStars(op.rating)}
+                    ${renderStars(op.rating)} {/* Llama a la función */}
                     <h4 class="ml-4 font-bold text-lg font-heading">${productorName}</h4>
                 </div>
-                ${op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : ''}
+                ${commentHtml}
             </div>`;
         }).join('');
     }
@@ -2349,6 +2363,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
