@@ -1789,37 +1789,39 @@ async function renderProviderDetailsView(providerId) {
     }
 
     // --- Renderizado de Opiniones ---
-    const renderStars = (rating) => {
-        // Log para ver qué rating recibe
-        console.log("Renderizando estrellas/plays para rating:", rating, typeof rating);
-        // Convierte a número por si acaso viene como string
-        const numericRating = Number(rating) || 0;
-        // Redondea al entero más cercano
-        const roundedRating = Math.round(numericRating);
-        return Array.from({length: 5}, (_, i) =>
-            `<span class="text-xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>` // Usa play ▶️
-        ).join('');
-    };
-    // ------------------------------------
+        const renderStars = (rating) => {
+            // Log para ver qué rating recibe
+            console.log("Renderizando estrellas/plays para rating:", rating, typeof rating);
+            // Convierte a número ASEGURÁNDOTE que sea base 10 si es string
+            const numericRating = parseInt(rating, 10) || 0; // Usar parseInt con base 10
+            // Redondea al entero más cercano
+            const roundedRating = Math.round(numericRating);
+            // Log para ver el valor redondeado
+            console.log("Rating redondeado:", roundedRating);
+            // Genera los íconos
+            return Array.from({length: 5}, (_, i) =>
+                `<span class="text-xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">▶️</span>` // Usa play ▶️
+            ).join('');
+        };
+        // --- FIN de renderStars ---
 
-    let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones...</p>';
+        let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones...</p>';
 
-    if (opinionsData.length > 0) {
-        opinionsHtml = opinionsData.map(op => {
-            // Log para ver el rating de esta opinión específica
-            console.log("Datos de opinión (op):", JSON.stringify(op));
-            const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
-            const commentHtml = op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : '';
-            return `
-            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
-                <div class="flex items-center mb-2">
-                    ${renderStars(op.rating)} 
-                    <h4 class="ml-4 font-bold text-lg font-heading">${productorName}</h4>
-                </div>
-                ${commentHtml}
-            </div>`;
-        }).join('');
-    }
+        if (opinionsData.length > 0) {
+            opinionsHtml = opinionsData.map(op => {
+                console.log("Datos de opinión (op):", JSON.stringify(op)); // Log útil
+                const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
+                const commentHtml = op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : '';
+                return `
+                <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
+                    <div class="flex items-center mb-2">
+                        ${renderStars(op.rating)} {/* Llama a la función corregida */}
+                        <h4 class="ml-4 font-bold text-lg font-heading">${productorName}</h4>
+                    </div>
+                    ${commentHtml}
+                </div>`;
+            }).join('');
+        }
 
     // --- HTML Final ---
     return `
@@ -2363,6 +2365,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
