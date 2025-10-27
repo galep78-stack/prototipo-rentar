@@ -2107,12 +2107,13 @@ async function handleRateProvider(codigoPedido) {
         return;
     }
 
-    try {
+   try {
+        console.log(`Calificando pedido: ${codigoPedido} con ${ratingNum}`); // Log
         const { error } = await supabaseClient
             .from('solicitudes_pedido')
             .update({
-                estado: 'Completado y Calificado', // Nuevo estado final
-                rating: ratingNum // Aquí guardamos el rating
+                estado: 'Completado y Calificado',
+                rating: ratingNum
             })
             .eq('codigoPedido', codigoPedido)
             .eq('productor_user_id', currentUser.id);
@@ -2120,9 +2121,15 @@ async function handleRateProvider(codigoPedido) {
         if (error) throw error;
 
         alert("¡Gracias por tu calificación!");
-        await loadHistorialPedidos(); // Recargar datos
-        setView('historial_pedidos'); // Re-renderizar la vista
+
+        console.log("Recargando historial después de calificar..."); // Log
+        await loadHistorialPedidos();
+        console.log("Historial recargado, redibujando vista..."); // Log
+
+        setView('historial_pedidos'); // Llama a setView DESPUÉS de await
+
     } catch (error) {
+        console.error(`Error al guardar calificación: ${error.message}`); // Usar console.error
         alert(`Error al guardar la calificación: ${error.message}`);
     }
 }
@@ -2164,6 +2171,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
