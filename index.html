@@ -1644,20 +1644,22 @@ function renderProviderDashboard() {
         </div>
     </div>`;
 }
-        // ==================================================================
-// ✅ FUNCIÓN `renderProviderDetailsView` (ACTUALIZADA para mostrar Ofertas)
-// ==================================================================
+
 async function renderProviderDetailsView(providerId) {
-    console.log(`renderProviderDetailsView recibiendo providerId='${providerId}' (tipo: ${typeof providerId})`); // Log añadido
+    console.log(`renderProviderDetailsView recibiendo providerId='${providerId}' (tipo: ${typeof providerId})`);
 
     if (!providerId) {
-         console.error("renderProviderDetailsView: ID de proveedor es inválido:", providerId); // Log de error
-         return `<p class="text-red-500">Error: No se recibió ID de proveedor válido.</p>`;
+        console.error("renderProviderDetailsView: ID de proveedor es inválido:", providerId);
+        return `<p class="text-red-500">Error: No se recibió ID de proveedor válido.</p>`;
     }
 
     let providerData;
     let offers = [];
     let opinionsData = [];
+    // --- 👇 DEFINICIÓN de producerNames ---
+    // Se define aquí como un objeto vacío ANTES de intentar llenarlo
+    const producerNames = {};
+    // ------------------------------------
 
     try {
         // --- 1. Busca el proveedor ---
@@ -1666,40 +1668,30 @@ async function renderProviderDetailsView(providerId) {
             .select('nombre_empresa, direccion, user_id')
             .eq('id', providerId)
             .single();
-
-        if (providerError || !providerResult) {
-            console.error("Error buscando proveedor con ID:", providerId, providerError);
-            throw new Error(`Proveedor con ID ${providerId} no encontrado.`);
-        }
+        if (providerError || !providerResult) throw new Error(`Proveedor con ID ${providerId} no encontrado.`);
         providerData = providerResult;
         console.log("Datos del proveedor encontrados:", providerData);
 
-        // --- 2. Busca las ofertas de ESE proveedor ---
+        // --- 2. Busca las ofertas ---
         const { data: offersResult, error: offersError } = await supabaseClient
             .from('ofertas')
             .select('id, titulo, descripcion, precio, categoria, ubicacion')
             .eq('user_id', providerData.user_id);
-
         if (offersError) console.warn(`Advertencia al buscar ofertas: ${offersError.message}`);
         offers = offersResult || [];
-        console.log(`Encontradas ${offers.length} ofertas para el proveedor.`);
+        console.log(`Encontradas ${offers.length} ofertas.`);
 
-        // --- 3. Busca las OPINIONES para ESE proveedor ---
+        // --- 3. Busca las OPINIONES ---
         const { data: opinionsResult, error: opinionsError } = await supabaseClient
             .from('opiniones')
             .select('rating, comment, productor_user_id')
             .eq('proveedor_user_id', providerData.user_id);
-
-        if (opinionsError) {
-             console.error("Error buscando opiniones para proveedor user_id:", providerData.user_id, opinionsError);
-             throw new Error(`Error al buscar opiniones: ${opinionsError.message}`);
-        }
+        if (opinionsError) throw new Error(`Error al buscar opiniones: ${opinionsError.message}`);
         opinionsData = opinionsResult || [];
-        console.log(`Encontradas ${opinionsData.length} opiniones para el proveedor.`);
+        console.log(`Encontradas ${opinionsData.length} opiniones.`);
 
-
-        // --- 4. Busca los nombres de los productores por separado ---
-        const producerNames = {};
+        // --- 4. Busca los nombres de los productores (si hay opiniones) ---
+        // SOLO se ejecuta si se encontraron opiniones
         if (opinionsData.length > 0) {
             const producerIds = [...new Set(opinionsData.map(op => op.productor_user_id))];
             console.log("Buscando nombres para IDs de productores:", producerIds);
@@ -1710,8 +1702,9 @@ async function renderProviderDetailsView(providerId) {
                 .in('user_id', producerIds);
 
             if (producersError) {
-                console.warn("Advertencia: No se pudieron cargar algunos nombres de productores:", producersError.message);
+                console.warn("Advertencia: No se pudieron cargar nombres de productores:", producersError.message);
             } else if (producers) {
+                // --- 👇 Llenamos el objeto producerNames ---
                 producers.forEach(p => {
                     producerNames[p.user_id] = p.nombre_completo;
                 });
@@ -1720,20 +1713,21 @@ async function renderProviderDetailsView(providerId) {
         }
 
     } catch (error) {
-         console.error("Error general en renderProviderDetailsView:", error); // Log del error
+         console.error("Error general en renderProviderDetailsView:", error);
          return `<p class="text-red-500">Error al cargar datos: ${error.message}</p>`;
     }
 
     // --- Renderizado Info Proveedor ---
-    const provider = {
-        nombre: providerData.nombre_empresa,
-        tipo: 'Empresa',
-        ubicacion: providerData.direccion || 'Ubicación no definida'
-    };
+    const provider = { /* ... */ };
+    provider.nombre = providerData.nombre_empresa;
+    provider.tipo = 'Empresa';
+    provider.ubicacion = providerData.direccion || 'Ubicación no definida';
+
 
     // --- Renderizado Ofertas ---
     let offersHtml = '<p class="text-gray-400 font-sans">Este proveedor no tiene ofertas publicadas actualmente.</p>';
     if (offers.length > 0) {
+       // ... (código igual para offersHtml) ...
         offersHtml = offers.map(offer => `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
                 <div class="flex justify-between items-start">
@@ -1748,14 +1742,16 @@ async function renderProviderDetailsView(providerId) {
         `).join('');
     }
 
-    // --- Renderizado de Opiniones REALES ---
-    // DEFINIMOS RENDERSTARS AQUÍ (o puedes moverla fuera si prefieres)
+    // --- Renderizado de Opiniones ---
     const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">★</span>`).join('');
     let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
 
     if (opinionsData.length > 0) {
         opinionsHtml = opinionsData.map(op => {
+            // --- 👇 USO de producerNames ---
+            // Buscamos el nombre en el objeto que definimos y llenamos antes
             const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
+            // -----------------------------
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
                 <div class="flex items-center mb-2">
@@ -1767,22 +1763,19 @@ async function renderProviderDetailsView(providerId) {
         }).join('');
     }
 
-    // --- HTML Final Combinado ---
+    // --- HTML Final ---
     return `
         <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
-
             <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1>
             <p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
-
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
             <div class="space-y-4 mb-10">${offersHtml}</div>
-
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2>
             <div class="space-y-4">${opinionsHtml}</div>
         </div>`;
 }
-        // ===================================================================
+        =================================================
         // 🟢🟢 INICIO DE NUEVAS FUNCIONES (CATEGORÍAS) 🟢🟢
         // ===================================================================
 
@@ -2298,6 +2291,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
