@@ -1643,84 +1643,109 @@ function renderProviderDashboard() {
             </div>
         </div>
     </div>`;
-}
-        // ==================================================================
-// ✅ FUNCIÓN `renderProviderDetailsView` (ACTUALIZADA para mostrar Ofertas)
-// ==================================================================
+}// REEMPLAZA tu función renderProviderDetailsView completa con esta versión:
 async function renderProviderDetailsView(providerId) {
-    console.log(`renderProviderDetailsView recibiendo providerId='${providerId}' (tipo: ${typeof providerId})`); // Log añadido
+    // Log inicial para verificar el ID recibido
+    console.log(`renderProviderDetailsView recibiendo providerId='${providerId}' (tipo: ${typeof providerId})`);
 
-    if (!providerId) {
-         console.error("renderProviderDetailsView: ID de proveedor es inválido:", providerId); // Log de error
+    // Verificación robusta del ID al inicio
+    if (!providerId || providerId === 'undefined' || providerId === 'null') {
+         console.error("renderProviderDetailsView: ID de proveedor es inválido:", providerId);
          return `<p class="text-red-500">Error: No se recibió ID de proveedor válido.</p>`;
     }
 
+    // --- Declaración de variables ---
     let providerData;
     let offers = [];
     let opinionsData = [];
+    // --- 👇 DEFINICIÓN de producerNames ---
+    // Se define aquí como un objeto vacío ANTES del try/catch
+    const producerNames = {};
+    // ------------------------------------
 
     try {
         // --- 1. Busca el proveedor ---
+        // Intenta buscar por ID numérico primero
+        let initialProviderSearchError = null;
         const { data: providerResult, error: providerError } = await supabaseClient
             .from('proveedores')
-            .select('nombre_empresa, direccion, user_id')
-            .eq('id', providerId)
-            .single();
+            .select('id, nombre_empresa, direccion, user_id') // Pedimos 'id' y 'user_id'
+            .eq('id', providerId) // Busca por id numérico
+            .single(); // Espera solo uno
 
         if (providerError || !providerResult) {
-            console.error("Error buscando proveedor con ID:", providerId, providerError);
-            throw new Error(`Proveedor con ID ${providerId} no encontrado.`);
-        }
-        providerData = providerResult;
-        console.log("Datos del proveedor encontrados:", providerData);
+            initialProviderSearchError = providerError;
+            console.warn("No se encontró proveedor por ID numérico, intentando por user_id:", providerId);
+             // Si falla, intenta buscar asumiendo que providerId es un user_id
+             const { data: providerByUserId, error: errorByUserId } = await supabaseClient
+                 .from('proveedores')
+                 .select('id, nombre_empresa, direccion, user_id')
+                 .eq('user_id', providerId) // Busca por user_id
+                 .maybeSingle(); // Puede que no lo encuentre
 
-        // --- 2. Busca las ofertas de ESE proveedor ---
+             if (errorByUserId || !providerByUserId) {
+                 console.error("Error buscando proveedor por user_id:", errorByUserId);
+                 throw new Error(`Proveedor no encontrado (ID: ${providerId}). Intentó buscar por ID numérico y por User ID.`);
+             }
+             // Si lo encuentra por user_id, usa esos datos
+             providerData = providerByUserId;
+             console.log("Proveedor encontrado por user_id:", providerData);
+             // IMPORTANTE: Actualiza providerId al ID numérico correcto para consistencia
+             providerId = providerData.id;
+
+        } else {
+            // Si lo encontró por ID numérico, usa esos datos
+            providerData = providerResult;
+            console.log("Datos del proveedor encontrados por id:", providerData);
+        }
+        // Ahora 'providerData' tiene los datos correctos y 'providerId' tiene el ID numérico
+
+        // --- 2. Busca las ofertas ---
         const { data: offersResult, error: offersError } = await supabaseClient
             .from('ofertas')
             .select('id, titulo, descripcion, precio, categoria, ubicacion')
-            .eq('user_id', providerData.user_id);
-
+            .eq('user_id', providerData.user_id); // Usa el user_id del proveedor
         if (offersError) console.warn(`Advertencia al buscar ofertas: ${offersError.message}`);
         offers = offersResult || [];
-        console.log(`Encontradas ${offers.length} ofertas para el proveedor.`);
+        console.log(`Encontradas ${offers.length} ofertas.`);
 
-        // --- 3. Busca las OPINIONES para ESE proveedor ---
+        // --- 3. Busca las OPINIONES ---
         const { data: opinionsResult, error: opinionsError } = await supabaseClient
             .from('opiniones')
             .select('rating, comment, productor_user_id')
-            .eq('proveedor_user_id', providerData.user_id);
-
-        if (opinionsError) {
-             console.error("Error buscando opiniones para proveedor user_id:", providerData.user_id, opinionsError);
-             throw new Error(`Error al buscar opiniones: ${opinionsError.message}`);
-        }
+            .eq('proveedor_user_id', providerData.user_id); // Usa el user_id del proveedor
+        if (opinionsError) throw new Error(`Error al buscar opiniones: ${opinionsError.message}`);
         opinionsData = opinionsResult || [];
-        console.log(`Encontradas ${opinionsData.length} opiniones para el proveedor.`);
+        console.log(`Encontradas ${opinionsData.length} opiniones.`);
 
-
-        // --- 4. Busca los nombres de los productores por separado ---
-        const producerNames = {};
+        // --- 4. Busca los nombres de los productores (si hay opiniones) ---
         if (opinionsData.length > 0) {
-            const producerIds = [...new Set(opinionsData.map(op => op.productor_user_id))];
-            console.log("Buscando nombres para IDs de productores:", producerIds);
+            // Obtiene IDs válidos de productores
+            const producerIds = [...new Set(opinionsData.map(op => op.productor_user_id))].filter(id => id);
+             if (producerIds.length > 0) {
+                 console.log("Buscando nombres para IDs de productores:", producerIds);
+                 const { data: producers, error: producersError } = await supabaseClient
+                    .from('productores')
+                    .select('user_id, nombre_completo')
+                    .in('user_id', producerIds);
 
-            const { data: producers, error: producersError } = await supabaseClient
-                .from('productores')
-                .select('user_id, nombre_completo')
-                .in('user_id', producerIds);
-
-            if (producersError) {
-                console.warn("Advertencia: No se pudieron cargar algunos nombres de productores:", producersError.message);
-            } else if (producers) {
-                producers.forEach(p => {
-                    producerNames[p.user_id] = p.nombre_completo;
-                });
-                console.log("Nombres de productores encontrados:", producerNames);
+                 if (producersError) {
+                    console.warn("Advertencia: No se pudieron cargar nombres de productores:", producersError.message);
+                 } else if (producers) {
+                    // --- 👇 Llenamos el objeto producerNames (definido arriba) ---
+                    producers.forEach(p => {
+                        producerNames[p.user_id] = p.nombre_completo;
+                    });
+                    console.log("Nombres de productores encontrados:", producerNames);
+                 }
+            } else {
+                console.log("No se encontraron IDs de productores válidos en las opiniones.");
             }
         }
 
     } catch (error) {
-         console.error("Error general en renderProviderDetailsView:", error); // Log del error
+         // Captura cualquier error de los pasos anteriores
+         console.error("Error fatal en renderProviderDetailsView:", error);
          return `<p class="text-red-500">Error al cargar datos: ${error.message}</p>`;
     }
 
@@ -1748,13 +1773,13 @@ async function renderProviderDetailsView(providerId) {
         `).join('');
     }
 
-    // --- Renderizado de Opiniones REALES ---
-    // DEFINIMOS RENDERSTARS AQUÍ (o puedes moverla fuera si prefieres)
+    // --- Renderizado de Opiniones ---
     const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">★</span>`).join('');
     let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
 
     if (opinionsData.length > 0) {
         opinionsHtml = opinionsData.map(op => {
+            // --- 👇 USO de producerNames (definido arriba) ---
             const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
@@ -1767,17 +1792,14 @@ async function renderProviderDetailsView(providerId) {
         }).join('');
     }
 
-    // --- HTML Final Combinado ---
+    // --- HTML Final ---
     return `
         <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
-
             <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1>
             <p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
-
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
             <div class="space-y-4 mb-10">${offersHtml}</div>
-
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2>
             <div class="space-y-4">${opinionsHtml}</div>
         </div>`;
@@ -2309,6 +2331,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
