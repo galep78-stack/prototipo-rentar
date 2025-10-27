@@ -670,6 +670,7 @@ async function loadHistorialPedidos() {
                 }, []).length,
                 totalEstimado: (pedido.items_json || []).reduce((sum, item) => sum + (item.precio || 0), 0),
                 estado: pedido.estado
+                rating: pedido.rating || null //
             }));
         } else {
             historialPedidos = [];
@@ -1049,6 +1050,7 @@ async function loadHistorialPedidos() {
 // ===================================================================
 // 🟢 FUNCIÓN NUEVA: Vista de Historial de Pedidos Realizados
 // ===================================================================
+// REEMPLAZA tu función existente con esta:
 function renderHistorialPedidosView() {
     const header = `
         <div class="mb-6">
@@ -1068,18 +1070,53 @@ function renderHistorialPedidosView() {
                     </button>
                 </div>
             </div>
-        `;
+        `; [cite_start]// [cite: 257, 258]
     }
 
     const tableRows = historialPedidos.map((pedido, index) => {
-        // Estilos para el estado
         let estadoClass = '';
-        if (pedido.estado.includes('Pendiente')) {
-            estadoClass = 'text-yellow-400 bg-yellow-900/50';
-        } else if (pedido.estado.includes('Cotizado')) {
-            estadoClass = 'text-green-400 bg-green-900/50';
-        } else {
-            estadoClass = 'text-gray-400 bg-gray-700/50';
+        let accionesHtml = ''; // Variable para las acciones
+
+        // Lógica de Estado y Acciones
+        switch (pedido.estado) {
+            case 'Pendiente de Cotización':
+                estadoClass = 'text-yellow-400 bg-yellow-900/50';
+                accionesHtml = `
+                    <button onclick="handleSimulateResponse('${pedido.codigo}')"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold text-xs mb-1">
+                        Simular Respuesta
+                    </button>
+                    <button onclick="handleDeletePedido('${pedido.codigo}')"
+                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Eliminar
+                    </button>
+                `;
+                break;
+
+            case 'Cotizado (Simulado)':
+                estadoClass = 'text-green-400 bg-green-900/50';
+                accionesHtml = `
+                    <button onclick="handleRateProvider('${pedido.codigo}')"
+                            class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs">
+                        Calificar (1-5)
+                    </button>
+                `;
+                break;
+
+            case 'Completado y Calificado':
+                estadoClass = 'text-gray-400 bg-gray-700/50';
+                // Usamos el dato 'rating' que cargamos
+                accionesHtml = `<span class="text-lg text-accent-cyan font-bold">${pedido.rating} ★</span>`;
+                break;
+
+            default: // Otros estados (o si algo falla)
+                estadoClass = 'text-gray-400 bg-gray-700/50';
+                accionesHtml = `
+                    <button onclick="handleDeletePedido('${pedido.codigo}')"
+                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Eliminar
+                    </button>
+                `; [cite_start]// [cite: 262]
         }
 
         return `
@@ -1090,46 +1127,45 @@ function renderHistorialPedidosView() {
                 ${pedido.fechaInicio || 'N/A'} al ${pedido.fechaFin || 'N/A'}
             </td>
             <td class="px-6 py-4 text-gray-300">${pedido.items.length} ítems</td>
-            <td class="px-6 py-4 text-gray-300">${pedido.proveedoresInvolucrados}</td>
             <td class="px-6 py-4">
-                <button 
-                    onclick="handleDeletePedido('${pedido.codigo}')" 
-                    class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                    Eliminar
-                </button>
+                <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
+                    ${pedido.estado}
+                </span>
+            </td>
+            <td class="px-6 py-4 text-center">
+                ${accionesHtml}
             </td>
             </tr>
-    `;
-}).join('');
+        `; [cite_start]// [cite: 261]
+    }).join(''); [cite_start]// [cite: 263]
 
-  const content = `
-    <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
-        <table class="min-w-full divide-y divide-gray-700/50">
-            <thead class="bg-primary-dark/50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Envío</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fechas de Uso</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Proveedores</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${tableRows}
-            </tbody>
-        </table>
-    </div>
-`;
+    const content = `
+    <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
+        <table class="min-w-full divide-y divide-gray-700/50">
+            <thead class="bg-primary-dark/50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Código</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fecha de Envío</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Fechas de Uso</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ítems</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Estado</th>
+                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+    </div>
+    `; [cite_start]// [cite: 264, 265]
 
     return `
         <div class="max-w-6xl mx-auto p-4 md:p-8">
             ${header}
             ${content}
         </div>
-    `;
+    `; [cite_start]// [cite: 266]
 }
-        
        // Función auxiliar para el header
        // Función auxiliar para el header
 // Función auxiliar para el header
@@ -2031,6 +2067,59 @@ async function handleDeletePedido(codigoPedido) {
         alert('Ocurrió un error inesperado.');
     }
 }
+        async function handleSimulateResponse(codigoPedido) {
+    if (!confirm("Esto simulará que un proveedor ha respondido a tu cotización. ¿Continuar?")) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('solicitudes_pedido')
+            .update({ estado: 'Cotizado (Simulado)' }) // Cambiamos el estado
+            .eq('codigoPedido', codigoPedido)
+            .eq('productor_user_id', currentUser.id); // ¡Seguridad!
+
+        if (error) throw error;
+
+        alert("¡Simulación exitosa! El proveedor ha 'respondido'. Ahora puedes calificarlo.");
+        await loadHistorialPedidos(); // Recargar datos
+        setView('historial_pedidos'); // Re-renderizar la vista
+    } catch (error) {
+        alert(`Error al simular respuesta: ${error.message}`);
+    }
+}
+
+async function handleRateProvider(codigoPedido) {
+    let rating = prompt("Califica al proveedor (del 1 al 5):");
+    if (rating === null) return; // El usuario apretó "cancelar"
+
+    let ratingNum = parseInt(rating, 10);
+
+    // Validación simple
+    if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+        alert("Por favor, ingresa un número válido entre 1 y 5.");
+        return;
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('solicitudes_pedido')
+            .update({
+                estado: 'Completado y Calificado', // Nuevo estado final
+                rating: ratingNum // Aquí guardamos el rating
+            })
+            .eq('codigoPedido', codigoPedido)
+            .eq('productor_user_id', currentUser.id);
+
+        if (error) throw error;
+
+        alert("¡Gracias por tu calificación!");
+        await loadHistorialPedidos(); // Recargar datos
+        setView('historial_pedidos'); // Re-renderizar la vista
+    } catch (error) {
+        alert(`Error al guardar la calificación: ${error.message}`);
+    }
+}
+        window.handleSimulateResponse = handleSimulateResponse;
+window.handleRateProvider = handleRateProvider;
         // ------------------------------------------------------------------
 // 🟢 PUNTO DE ARRANQUE DE LA APLICACIÓN (Persistencia de Vista)
 // ------------------------------------------------------------------
@@ -2067,4 +2156,5 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
