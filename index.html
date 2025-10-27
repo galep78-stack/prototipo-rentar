@@ -595,7 +595,13 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                 // 2. Buscamos en PROVEEDORES
                 let query = supabaseClient
                     .from('proveedores')
-                    .select('id, nombre_empresa, direccion, user_id'); // Traemos todos los datos necesarios
+                    .select(`
+                        id,
+                        nombre_empresa,
+                        direccion,
+                        user_id,
+                        avg_rating:get_provider_avg_rating(user_id)
+                    `);
 
                 // Si se encontraron IDs de la búsqueda de ofertas, filtramos por esos IDs
                 if (searchTerm && providerUserIds.length > 0) {
@@ -1503,7 +1509,9 @@ function renderComoFuncionaView() {
 
         function renderProductorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="nombre" placeholder="Nombre completo" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="dni" placeholder="DNI" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección Principal (Ej: Calle Falsa 123)" required class="w-full p-3 border rounded-lg text-primary-dark"><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
         function renderProveedorForm() { return `<form onsubmit="handleRegister(event)" class="space-y-4"><input type="text" name="empresa" placeholder="Nombre de la Empresa" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="email" name="email" placeholder="Email de Contacto" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="password" name="password" minlength="6" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="cuit" placeholder="CUIT" required class="w-full p-3 border rounded-lg text-primary-dark"><input type="text" name="direccion" placeholder="Dirección de la Empresa (Ej: Av. Rivadavia 4000)" required class="w-full p-3 border rounded-lg text-primary-dark"><div class="border p-3 rounded-lg bg-gray-50"><label class="block text-sm font-medium text-gray-700 mb-2">Comprobante de CUIT</label><input type="file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-accent-blue file:text-white"></div><button type="submit" class="w-full bg-accent-blue text-white p-3 rounded-lg font-semibold">Crear Cuenta</button></form>`; }
-
+function renderRating() {
+            // ... código de renderRating ...
+        }
         // Función para renderizar plays (similar a renderStars)
 function renderPlays(rating) {
     // Redondea el rating al entero más cercano para mostrar plays completos
@@ -1540,13 +1548,18 @@ function renderProducerDashboard() {
     if (providerResults.length > 0) {
         // 🟢 CAMBIO: Iteramos sobre 'providerResults' (proveedores)
         resultsHtml = providerResults.map(provider => {
-
+            // --- NUEVO: Usa renderPlays con el dato real ---
+            const averageRating = provider.avg_rating; // Obtenido de la consulta modificada
+            const ratingHtml = renderPlays(averageRating); // Llama a la nueva función auxiliar
+            // ---------------------------------------------
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h4 class="font-bold text-lg font-heading text-accent-cyan">${provider.nombre_empresa}</h4>
 
-                    <div class="my-2">${renderRating()}</div>
+                    {/* --- CAMBIO: Inserta el HTML de los plays --- */}
+                    <div class="my-2">${ratingHtml}</div>
+                    {/* ----------------------------------------- */}
 
                     <p class="text-sm text-gray-400 font-sans mt-1">
                         Ubicación: ${provider.direccion || 'No especificada'}
@@ -2336,6 +2349,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
