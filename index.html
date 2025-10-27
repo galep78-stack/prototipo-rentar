@@ -628,40 +628,36 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
 // 🟢 NUEVA FUNCIÓN: Cargar Historial de Pedidos desde Supabase
 // ===================================================================
 async function loadHistorialPedidos() {
-    // 💡 SOLUCIÓN: Si ya se está ejecutando, ¡salir!
     if (isHistorialLoading) return;
     isHistorialLoading = true;
-    
+
     if (!supabaseClient || !currentUser) {
         historialPedidos = [];
-        isHistorialLoading = false; // Desbloquear si sale temprano
+        isHistorialLoading = false;
         return;
     }
-// 🟢 NUEVA VERIFICACIÓN DE ROL:
     if (currentUser.user_metadata.user_role === 'proveedor') {
-        historialPedidos = []; // Limpiamos y salimos. Los proveedores no tienen historial de pedidos salientes.
+        historialPedidos = [];
         isHistorialLoading = false;
         return;
     }
     try {
-        // Obtenemos los pedidos del usuario productor actual
         const { data, error } = await supabaseClient
             .from('solicitudes_pedido')
             .select('*')
             .eq('productor_user_id', currentUser.id)
-            .order('fecha_envio', { ascending: false }); // Ordenamos por fecha más reciente
+            .order('fecha_envio', { ascending: false });
 
         if (error) throw error;
-        
+
         if (data && data.length > 0) {
-            // Mapeamos los datos de Supabase a la estructura local que usa renderHistorialPedidosView
             historialPedidos = data.map(pedido => ({
                 codigo: pedido.codigoPedido,
                 fechaEnvio: new Date(pedido.fecha_envio).toLocaleString('es-AR'),
-                fechaInicio: pedido.fecha_inicio || 'N/A', // Asumiendo que agregaste estas columnas
-                fechaFin: pedido.fecha_fin || 'N/A',     // Asumiendo que agregaste estas columnas
+                fechaInicio: pedido.fecha_inicio || 'N/A',
+                fechaFin: pedido.fecha_fin || 'N/A',
                 productorId: pedido.productor_user_id,
-                items: pedido.items_json || [], // Los items están en el campo JSONB
+                items: pedido.items_json || [],
                 proveedoresInvolucrados: (pedido.items_json || []).reduce((acc, item) => {
                     if (item.providerId && !acc.includes(item.providerId)) {
                         acc.push(item.providerId);
@@ -669,24 +665,21 @@ async function loadHistorialPedidos() {
                     return acc;
                 }, []).length,
                 totalEstimado: (pedido.items_json || []).reduce((sum, item) => sum + (item.precio || 0), 0),
-                estado: pedido.estado,
-                rating: pedido.rating || null //
+                estado: pedido.estado
+                // LA LÍNEA 'rating: ...' SE ELIMINÓ DE AQUÍ
             }));
         } else {
             historialPedidos = [];
         }
 
         console.log("Historial de pedidos cargado desde BDD:", historialPedidos.length);
-
     } catch (error) {
         console.error("Error al cargar el historial de pedidos:", error.message);
         historialPedidos = [];
-        } finally {
-        // ✅ Desbloquear al finalizar la ejecución, incluso si hay un error
+    } finally {
         isHistorialLoading = false;
     }
 }
-
         // ==================================================================
         // ✅ FUNCIÓN `getProfileData` (Corregida para Perfiles)
         // ==================================================================
@@ -2156,6 +2149,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
