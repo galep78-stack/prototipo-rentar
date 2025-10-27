@@ -1047,12 +1047,8 @@ async function loadHistorialPedidos() {
                 </div>
             `;
         }
-// ===================================================================
-// 🟢 FUNCIÓN NUEVA: Vista de Historial de Pedidos Realizados
-// ===================================================================
-// REEMPLAZA tu función existente con esta:
+
 function renderHistorialPedidosView() {
-    console.log('Renderizando historial con estos datos:', JSON.stringify(historialPedidos));
     const header = `
         <div class="mb-6">
             <h2 class="text-3xl font-bold text-accent-cyan font-heading mb-2">📄 Historial de Solicitudes de Cotización</h2>
@@ -1061,6 +1057,7 @@ function renderHistorialPedidosView() {
     `;
 
     if (historialPedidos.length === 0) {
+        // ... (código sin cambios para historial vacío) ...
         return `
             <div class="max-w-4xl mx-auto p-4 md:p-8">
                 ${header}
@@ -1076,7 +1073,15 @@ function renderHistorialPedidosView() {
 
     const tableRows = historialPedidos.map((pedido, index) => {
         let estadoClass = '';
-        let accionesHtml = ''; // Variable para las acciones
+        let accionesHtml = '';
+
+        // Botón Eliminar Común (lo mostraremos en la mayoría de los casos)
+        const botonEliminar = `
+            <button onclick="handleDeletePedido('${pedido.codigo}')"
+                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                Eliminar
+            </button>
+        `;
 
         // Lógica de Estado y Acciones
         switch (pedido.estado) {
@@ -1087,10 +1092,7 @@ function renderHistorialPedidosView() {
                             class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold text-xs mb-1">
                         Simular Respuesta
                     </button>
-                    <button onclick="handleDeletePedido('${pedido.codigo}')"
-                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                        Eliminar
-                    </button>
+                    ${botonEliminar} {/* Añadido aquí */}
                 `;
                 break;
 
@@ -1098,26 +1100,22 @@ function renderHistorialPedidosView() {
                 estadoClass = 'text-green-400 bg-green-900/50';
                 accionesHtml = `
                     <button onclick="handleRateProvider('${pedido.codigo}')"
-                            class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs">
+                            class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs mb-1">
                         Calificar (1-5)
                     </button>
+                    ${botonEliminar} {/* Añadido aquí */}
                 `;
                 break;
 
             case 'Completado y Calificado':
                 estadoClass = 'text-gray-400 bg-gray-700/50';
-                // Ya no mostramos un rating único, solo indicamos que está listo
-                accionesHtml = `<span class="text-xs text-gray-400">Calificado</span>`;
+                accionesHtml = `<span class="text-lg text-accent-cyan font-bold">${pedido.rating || '?'} ★</span>`;
+                // Decidimos NO mostrar Eliminar aquí, pero podrías añadir ${botonEliminar} si quieres
                 break;
 
-            default: // Otros estados (o si algo falla)
+            default: // Otros estados
                 estadoClass = 'text-gray-400 bg-gray-700/50';
-                accionesHtml = `
-                    <button onclick="handleDeletePedido('${pedido.codigo}')"
-                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                        Eliminar
-                    </button>
-                `;
+                accionesHtml = botonEliminar; // Solo mostrar eliminar por defecto
         }
 
         return `
@@ -1140,6 +1138,7 @@ function renderHistorialPedidosView() {
         `;
     }).join('');
 
+    // ... (el resto de la función, 'content' y 'return', no cambia) ...
     const content = `
     <div class="overflow-x-auto shadow-xl rounded-xl border border-gray-700/50">
         <table class="min-w-full divide-y divide-gray-700/50">
@@ -1648,13 +1647,13 @@ async function renderProviderDetailsView(providerId) {
 
     let providerData;
     let offers = [];
-    let opinionsData = []; // Para guardar las opiniones reales
+    let opinionsData = [];
 
     try {
         // --- 1. Busca el proveedor ---
         const { data: providerResult, error: providerError } = await supabaseClient
             .from('proveedores')
-            .select('nombre_empresa, direccion, user_id') // Necesitamos user_id para buscar opiniones
+            .select('nombre_empresa, direccion, user_id')
             .eq('id', providerId)
             .single();
 
@@ -1665,41 +1664,60 @@ async function renderProviderDetailsView(providerId) {
         const { data: offersResult, error: offersError } = await supabaseClient
             .from('ofertas')
             .select('id, titulo, descripcion, precio, categoria, ubicacion')
-            .eq('user_id', providerData.user_id); // Usamos el user_id del proveedor
+            .eq('user_id', providerData.user_id);
 
-        if (offersError) console.warn(`Advertencia al buscar ofertas: ${offersError.message}`); // No detener si fallan las ofertas
+        if (offersError) console.warn(`Advertencia al buscar ofertas: ${offersError.message}`);
         offers = offersResult || [];
 
         // --- 3. Busca las OPINIONES para ESE proveedor ---
+        // CAMBIO: Ahora solo pedimos el ID del productor, no intentamos el JOIN automático
         const { data: opinionsResult, error: opinionsError } = await supabaseClient
             .from('opiniones')
-            // Seleccionamos el rating, comentario y datos del productor que lo escribió
-            .select(`
-                rating,
-                comment,
-                productores ( nombre_completo )
-            `)
-            .eq('proveedor_user_id', providerData.user_id); // Filtramos por el user_id del proveedor
+            .select('rating, comment, productor_user_id') // Pedimos el ID
+            .eq('proveedor_user_id', providerData.user_id); // Filtramos por el proveedor
 
         if (opinionsError) throw new Error(`Error al buscar opiniones: ${opinionsError.message}`);
         opinionsData = opinionsResult || [];
 
+        // --- 4. (NUEVO) Busca los nombres de los productores por separado ---
+        // Creamos un mapa para buscar nombres rápidamente
+        const producerNames = {};
+        if (opinionsData.length > 0) {
+            // Obtenemos la lista única de IDs de productores que dejaron opinión
+            const producerIds = [...new Set(opinionsData.map(op => op.productor_user_id))];
+
+            // Hacemos UNA sola consulta para traer todos los nombres necesarios
+            const { data: producers, error: producersError } = await supabaseClient
+                .from('productores')
+                .select('user_id, nombre_completo')
+                .in('user_id', producerIds); // Buscamos por la lista de IDs
+
+            if (producersError) {
+                console.warn("Advertencia: No se pudieron cargar algunos nombres de productores:", producersError.message);
+            } else {
+                // Llenamos el mapa: { 'uuid_productor': 'Nombre Completo', ... }
+                producers.forEach(p => {
+                    producerNames[p.user_id] = p.nombre_completo;
+                });
+            }
+        }
+
     } catch (error) {
-        // Mostramos el error principal que detuvo la carga
         return `<p class="text-red-500">Error al cargar datos: ${error.message}</p>`;
     }
 
-    // --- Renderizado de Info Proveedor (igual que antes) ---
+    // --- Renderizado Info Proveedor (igual que antes) ---
     const provider = {
         nombre: providerData.nombre_empresa,
         tipo: 'Empresa',
         ubicacion: providerData.direccion || 'Ubicación no definida'
     };
 
-    // --- Renderizado de Ofertas (igual que antes) ---
+    // --- Renderizado Ofertas (igual que antes) ---
     let offersHtml = '<p class="text-gray-400 font-sans">Este proveedor no tiene ofertas publicadas actualmente.</p>';
     if (offers.length > 0) {
-        offersHtml = offers.map(offer => `
+        // ... (código para generar offersHtml no cambia) ...
+         offersHtml = offers.map(offer => `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
                 <div class="flex justify-between items-start">
                     <div>
@@ -1713,14 +1731,14 @@ async function renderProviderDetailsView(providerId) {
         `).join('');
     }
 
-    // --- Renderizado de Opiniones REALES ---
-    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">★</span>`).join(''); // Cambiado a estrellas
+    // --- Renderizado de Opiniones REALES (usando el mapa de nombres) ---
+    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">★</span>`).join('');
     let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
 
     if (opinionsData.length > 0) {
         opinionsHtml = opinionsData.map(op => {
-            // Obtenemos el nombre del productor (si el JOIN funcionó y no es null)
-            const productorName = op.productores ? op.productores.nombre_completo : 'Productor Anónimo';
+            // Buscamos el nombre en nuestro mapa, o usamos un default
+            const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
                 <div class="flex items-center mb-2">
@@ -1732,7 +1750,7 @@ async function renderProviderDetailsView(providerId) {
         }).join('');
     }
 
-    // --- HTML Final Combinado ---
+    // --- HTML Final Combinado (igual que antes) ---
     return `
         <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
@@ -2256,6 +2274,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
