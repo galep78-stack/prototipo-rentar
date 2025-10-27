@@ -1638,44 +1638,90 @@ function renderProviderDashboard() {
 // ✅ FUNCIÓN `renderProviderDetailsView` (ACTUALIZADA para mostrar Ofertas)
 // ==================================================================
 async function renderProviderDetailsView(providerId) {
-    if (!providerId) return `<p class="text-red-500">Error: No se recibió ID de proveedor.</p>`;
+    console.log(`renderProviderDetailsView recibiendo providerId='${providerId}' (tipo: ${typeof providerId})`); // Log añadido
+
+    if (!providerId) {
+         console.error("renderProviderDetailsView: ID de proveedor es inválido:", providerId); // Log de error
+         return `<p class="text-red-500">Error: No se recibió ID de proveedor válido.</p>`;
+    }
 
     let providerData;
-    let offers = []; // Variable para guardar las ofertas
+    let offers = [];
+    let opinionsData = [];
 
     try {
-        // 1. Busca el proveedor específico Y SU USER_ID en la BDD
+        // --- 1. Busca el proveedor ---
         const { data: providerResult, error: providerError } = await supabaseClient
             .from('proveedores')
-            // 🟢 PEDIMOS TAMBIÉN EL user_id PARA BUSCAR OFERTAS
             .select('nombre_empresa, direccion, user_id')
             .eq('id', providerId)
             .single();
 
-        if (providerError || !providerResult) throw new Error("Proveedor no encontrado.");
-        providerData = providerResult; // Guardamos todos los datos del proveedor
+        if (providerError || !providerResult) {
+            console.error("Error buscando proveedor con ID:", providerId, providerError);
+            throw new Error(`Proveedor con ID ${providerId} no encontrado.`);
+        }
+        providerData = providerResult;
+        console.log("Datos del proveedor encontrados:", providerData);
 
-        // 2. Busca las ofertas asociadas a ESE proveedor usando su user_id
+        // --- 2. Busca las ofertas de ESE proveedor ---
         const { data: offersResult, error: offersError } = await supabaseClient
             .from('ofertas')
             .select('id, titulo, descripcion, precio, categoria, ubicacion')
-            .eq('user_id', providerData.user_id); // 🟢 Filtramos por el user_id del proveedor
+            .eq('user_id', providerData.user_id);
 
-        if (offersError) throw new Error(`Error al buscar ofertas: ${offersError.message}`);
-        offers = offersResult || []; // Guardamos las ofertas encontradas (o un array vacío)
+        if (offersError) console.warn(`Advertencia al buscar ofertas: ${offersError.message}`);
+        offers = offersResult || [];
+        console.log(`Encontradas ${offers.length} ofertas para el proveedor.`);
+
+        // --- 3. Busca las OPINIONES para ESE proveedor ---
+        const { data: opinionsResult, error: opinionsError } = await supabaseClient
+            .from('opiniones')
+            .select('rating, comment, productor_user_id')
+            .eq('proveedor_user_id', providerData.user_id);
+
+        if (opinionsError) {
+             console.error("Error buscando opiniones para proveedor user_id:", providerData.user_id, opinionsError);
+             throw new Error(`Error al buscar opiniones: ${opinionsError.message}`);
+        }
+        opinionsData = opinionsResult || [];
+        console.log(`Encontradas ${opinionsData.length} opiniones para el proveedor.`);
+
+
+        // --- 4. Busca los nombres de los productores por separado ---
+        const producerNames = {};
+        if (opinionsData.length > 0) {
+            const producerIds = [...new Set(opinionsData.map(op => op.productor_user_id))];
+            console.log("Buscando nombres para IDs de productores:", producerIds);
+
+            const { data: producers, error: producersError } = await supabaseClient
+                .from('productores')
+                .select('user_id, nombre_completo')
+                .in('user_id', producerIds);
+
+            if (producersError) {
+                console.warn("Advertencia: No se pudieron cargar algunos nombres de productores:", producersError.message);
+            } else if (producers) {
+                producers.forEach(p => {
+                    producerNames[p.user_id] = p.nombre_completo;
+                });
+                console.log("Nombres de productores encontrados:", producerNames);
+            }
+        }
 
     } catch (error) {
-        return `<p class="text-red-500">Error al cargar datos del proveedor o sus ofertas: ${error.message}</p>`;
+         console.error("Error general en renderProviderDetailsView:", error); // Log del error
+         return `<p class="text-red-500">Error al cargar datos: ${error.message}</p>`;
     }
 
-    // --- Renderizado de la información del proveedor (igual que antes) ---
+    // --- Renderizado Info Proveedor ---
     const provider = {
         nombre: providerData.nombre_empresa,
         tipo: 'Empresa',
         ubicacion: providerData.direccion || 'Ubicación no definida'
     };
 
-    // --- 🟢 NUEVO: Renderizado de la lista de ofertas ---
+    // --- Renderizado Ofertas ---
     let offersHtml = '<p class="text-gray-400 font-sans">Este proveedor no tiene ofertas publicadas actualmente.</p>';
     if (offers.length > 0) {
         offersHtml = offers.map(offer => `
@@ -1688,18 +1734,28 @@ async function renderProviderDetailsView(providerId) {
                     <p class="text-lg text-accent-cyan font-bold flex-shrink-0 ml-4">$${offer.precio}</p>
                 </div>
                 <p class="text-gray-300 font-sans mt-2 text-sm">${offer.descripcion || 'Sin descripción.'}</p>
-                
-                </div>
+            </div>
         `).join('');
     }
 
-    // --- Renderizado de opiniones (igual que antes) ---
-    const renderPlays = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-2xl ${i < rating ? 'text-accent-cyan' : 'text-gray-500'}">▶️</span>`).join('');
-    const opinions = [ // Simulación
-        { user: 'Productor A', rating: 5, comment: 'Excelente equipo, entregado a tiempo.' },
-        { user: 'Estudio Z', rating: 4, comment: 'La locación era perfecta, buen servicio al cliente.' }
-    ];
-    let opinionsHtml = opinions.map(op => `<div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg"><div class="flex items-center mb-2">${renderPlays(op.rating)}<h4 class="ml-4 font-bold text-lg font-heading">${op.user}</h4></div><p class="text-gray-300 italic font-sans">"${op.comment}"</p></div>`).join('');
+    // --- Renderizado de Opiniones REALES ---
+    // DEFINIMOS RENDERSTARS AQUÍ (o puedes moverla fuera si prefieres)
+    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">★</span>`).join('');
+    let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
+
+    if (opinionsData.length > 0) {
+        opinionsHtml = opinionsData.map(op => {
+            const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
+            return `
+            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
+                <div class="flex items-center mb-2">
+                    ${renderStars(op.rating)}
+                    <h4 class="ml-4 font-bold text-lg font-heading">${productorName}</h4>
+                </div>
+                ${op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : ''}
+            </div>`;
+        }).join('');
+    }
 
     // --- HTML Final Combinado ---
     return `
@@ -1709,12 +1765,11 @@ async function renderProviderDetailsView(providerId) {
             <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1>
             <p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
 
-            
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
             <div class="space-y-4 mb-10">${offersHtml}</div>
 
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2>
-            <div class="space-y-4">${opinionsHtml.length > 0 ? opinionsHtml : '<p class="font-sans">Sin opiniones.</p>'}</div>
+            <div class="space-y-4">${opinionsHtml}</div>
         </div>`;
 }
         // ===================================================================
@@ -2240,6 +2295,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
