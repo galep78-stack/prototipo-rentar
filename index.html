@@ -562,13 +562,8 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                     console.log(`Buscando ofertas con término: "${searchTerm}"`); // Debug log
                     let { data: offers, error: offersError } = await supabaseClient
                         .from('ofertas')
-                        .select(`
-                id,
-                nombre_empresa,
-                direccion,
-                user_id,
-                avg_rating:get_provider_avg_rating(user_id)
-            `);
+                        .select(`id, user_id`) // SOLO NECESITAMOS EL user_id
+                        .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
                         or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
 
                     if (offersError){
@@ -1568,8 +1563,7 @@ function renderProducerDashboard() {
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h4 class="font-bold text-lg font-heading text-accent-cyan">${provider.nombre_empresa}</h4>
-
-                    <div class="my-2">${renderRating()}</div>
+                    <div class="my-2"></div> <p class="text-sm text-gray-400 font-sans mt-1">
 
                     <p class="text-sm text-gray-400 font-sans mt-1">
                         Ubicación: ${provider.direccion || 'No especificada'}
@@ -2360,6 +2354,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
