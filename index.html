@@ -564,7 +564,7 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
                         .from('ofertas')
                         .select(`id, user_id`) // SOLO NECESITAMOS EL user_id
                         .or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
-                        or(`titulo.ilike.%${searchTerm}%,descripcion.ilike.%${searchTerm}%`);
+                        
 
                     if (offersError){
                         console.error("Error buscando en ofertas:", offersError);
@@ -2354,6 +2354,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
