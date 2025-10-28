@@ -871,7 +871,7 @@ function setView(viewName, data = null) {
 
             return `
                 <div class="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
-                    <button onclick="setView('${dashboardView}')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+                    <button onclick="history.back()" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver</button>
                     <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Editar Perfil (${userRole})</h2>
                     <p class="text-gray-600 mb-6 text-center">
                         Estás conectado como: <strong>${currentUser.email}</strong>
@@ -1320,7 +1320,7 @@ function renderAddOfferView() {
     // La función handleAddOffer (línea 312) ya maneja el submit.
     return `
         <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-2xl text-primary-dark">
-            <button onclick="setView('dashboard_proveedor')" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+            <button onclick="history.back()" class="mb-6 bg-gray-200 text-primary-dark px-4 py-2 rounded-lg font-semibold">← Volver</button>
 
             <h2 class="text-3xl font-bold text-center mb-6 text-accent-blue font-heading">Publicar Nueva Oferta</h2>
             
@@ -1668,7 +1668,8 @@ function renderProviderDashboard() {
             </div>
         </div>
     </div>`;
-}// REEMPLAZA tu función renderProviderDetailsView completa con esta versión:
+}
+// REEMPLAZA tu función renderProviderDetailsView completa con esta versión:
 async function renderProviderDetailsView(providerId) {
     // Log inicial para verificar el ID recibido
     console.log(`renderProviderDetailsView recibiendo providerId='${providerId}' (tipo: ${typeof providerId})`);
@@ -1820,7 +1821,7 @@ async function renderProviderDetailsView(providerId) {
     // --- HTML Final ---
     return `
         <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-            <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
+            <button onclick="history.back()" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
             <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1>
             <p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
@@ -1992,7 +1993,7 @@ function renderPedidoActualView() {
 
     return `
         <div class="max-w-3xl mx-auto p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-            <button onclick="setView('dashboard_productor')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Dashboard</button>
+            <button onclick="history.back()" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
             <h1 class="text-4xl font-bold mb-6 text-accent-cyan font-heading">Mi Lista de Pedido (${totalItems} ítems)</h1>
             ${totalItems > 0 ? `
     <div class="bg-primary-dark p-6 rounded-lg border border-accent-cyan/20">
@@ -2359,6 +2360,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
