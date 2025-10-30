@@ -97,7 +97,7 @@
 
         // 🟢 NUEVA: Variable para resultados de búsqueda de proveedores
         let providerResults = [];
-        let pedidoActual = [];
+      let pedidoActual = loadPedidoFromStorage();
         let historialPedidos = [];
         // ===================================================================
         // 🟢 FUNCIONES DE INICIALIZACIÓN Y AUTHENTICACIÓN
@@ -247,7 +247,7 @@ async function handleLogout() {
     // 1. Limpia el estado de la aplicación
     currentUser = null;
     pedidoActual = []; // Limpia el carrito al desconectar
-    
+    savePedidoToStorage();
     // 2. Limpia el Local Storage (donde Supabase guarda los tokens)
     // Esto asegura que no queden tokens antiguos o expirados
     for (let i = 0; i < localStorage.length; i++) {
@@ -324,7 +324,7 @@ function handlePedido(offerId, providerUserId, titulo, precio, action) {
 
     // 🪵 Log 4: Ver el estado del carrito DESPUÉS de la acción
     console.log("pedidoActual AFTER:", JSON.stringify(pedidoActual));
-
+savePedidoToStorage();
     // 2. Actualizar UI (Indicador del carrito)
     console.log("Calling actualizarIndicadorPedido...");
     actualizarIndicadorPedido();
@@ -679,6 +679,33 @@ async function loadHistorialPedidos() {
         isHistorialLoading = false;
     }
 }
+        // ===================================================================
+// 🟢 INICIO: Funciones de Persistencia del Pedido (LocalStorage)
+// ===================================================================
+
+function savePedidoToStorage() {
+    // Convierte el array del pedido en un string JSON y lo guarda
+    localStorage.setItem('rentArPedido', JSON.stringify(pedidoActual));
+    console.log("Pedido guardado en localStorage:", pedidoActual);
+}
+
+function loadPedidoFromStorage() {
+    const pedidoGuardado = localStorage.getItem('rentArPedido');
+    if (pedidoGuardado) {
+        try {
+            // Si hay un pedido guardado, lo convierte de JSON a un array
+            return JSON.parse(pedidoGuardado);
+        } catch (e) {
+            console.error("Error al parsear el pedido guardado:", e);
+            return []; // Si está corrupto, empieza de cero
+        }
+    }
+    return []; // Si no hay nada guardado, empieza de cero
+}
+
+// ===================================================================
+// 🟢 FIN: Funciones de Persistencia
+// ===================================================================
         // ==================================================================
         // ✅ FUNCIÓN `getProfileData` (Corregida para Perfiles)
         // ==================================================================
@@ -2045,7 +2072,7 @@ function handleRemoveItemFromPedido(index, titulo) {
     
     // Remueve 1 elemento en la posición 'index'
     pedidoActual.splice(index, 1);
-    
+    savePedidoToStorage();
     actualizarIndicadorPedido();
     // Re-renderiza la vista para que el cambio sea visible
     setView('pedido_actual');
@@ -2065,7 +2092,7 @@ function handleAddItemToPedido(index) {
     
     // Lo agregamos al final de la lista
     pedidoActual.push(newItem);
-    
+    savePedidoToStorage();
     actualizarIndicadorPedido();
     // Re-renderiza la vista del carrito para que el cambio sea visible
     setView('pedido_actual');
@@ -2147,6 +2174,7 @@ async function handleSendPedido() {
         // El pedido se guardó correctamente
         alert(summary + "\n\n✅ El carrito se vaciará ahora.");
         pedidoActual = [];
+        savePedidoToStorage();
         actualizarIndicadorPedido();
         
         await loadHistorialPedidos();
@@ -2395,6 +2423,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
