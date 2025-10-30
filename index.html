@@ -1759,11 +1759,12 @@ function renderProviderDashboard() {
         </div>
     </div>`;
 }
-// REEMPLAZA tu función renderProviderDetailsView completa con esta versión:
+        
+// REEMPLAZA ESTA FUNCIÓN COMPLETA (Líneas 397-434)
+
 async function renderProviderDetailsView(providerId) {
     // Log inicial para verificar el ID recibido
     console.log(`renderProviderDetailsView recibiendo providerId='${providerId}' (tipo: ${typeof providerId})`);
-
     // Verificación robusta del ID al inicio
     if (!providerId || providerId === 'undefined' || providerId === 'null') {
          console.error("renderProviderDetailsView: ID de proveedor es inválido:", providerId);
@@ -1774,53 +1775,44 @@ async function renderProviderDetailsView(providerId) {
     let providerData;
     let offers = [];
     let opinionsData = [];
-    // --- 👇 DEFINICIÓN de producerNames ---
-    // Se define aquí como un objeto vacío ANTES del try/catch
     const producerNames = {};
     // ------------------------------------
 
     try {
         // --- 1. Busca el proveedor ---
-        // Intenta buscar por ID numérico primero
         let initialProviderSearchError = null;
         const { data: providerResult, error: providerError } = await supabaseClient
             .from('proveedores')
-            .select('id, nombre_empresa, direccion, user_id') // Pedimos 'id' y 'user_id'
-            .eq('id', providerId) // Busca por id numérico
-            .single(); // Espera solo uno
+            .select('id, nombre_empresa, direccion, user_id') 
+            .eq('id', providerId) 
+            .single(); 
 
         if (providerError || !providerResult) {
             initialProviderSearchError = providerError;
             console.warn("No se encontró proveedor por ID numérico, intentando por user_id:", providerId);
-             // Si falla, intenta buscar asumiendo que providerId es un user_id
              const { data: providerByUserId, error: errorByUserId } = await supabaseClient
                  .from('proveedores')
                  .select('id, nombre_empresa, direccion, user_id')
-                 .eq('user_id', providerId) // Busca por user_id
-                 .maybeSingle(); // Puede que no lo encuentre
+                 .eq('user_id', providerId) 
+                 .maybeSingle(); 
 
              if (errorByUserId || !providerByUserId) {
                  console.error("Error buscando proveedor por user_id:", errorByUserId);
                  throw new Error(`Proveedor no encontrado (ID: ${providerId}). Intentó buscar por ID numérico y por User ID.`);
              }
-             // Si lo encuentra por user_id, usa esos datos
              providerData = providerByUserId;
              console.log("Proveedor encontrado por user_id:", providerData);
-             // IMPORTANTE: Actualiza providerId al ID numérico correcto para consistencia
              providerId = providerData.id;
-
         } else {
-            // Si lo encontró por ID numérico, usa esos datos
             providerData = providerResult;
             console.log("Datos del proveedor encontrados por id:", providerData);
         }
-        // Ahora 'providerData' tiene los datos correctos y 'providerId' tiene el ID numérico
 
-        // --- 2. Busca las ofertas ---
+        // --- 2. Busca las ofertas (con imagen_url) ---
         const { data: offersResult, error: offersError } = await supabaseClient
             .from('ofertas')
-            .select('id, titulo, descripcion, precio, categoria, ubicacion')
-            .eq('user_id', providerData.user_id); // Usa el user_id del proveedor
+            .select('id, titulo, descripcion, precio, categoria, ubicacion, imagen_url') // Pedimos la imagen
+            .eq('user_id', providerData.user_id); 
         if (offersError) console.warn(`Advertencia al buscar ofertas: ${offersError.message}`);
         offers = offersResult || [];
         console.log(`Encontradas ${offers.length} ofertas.`);
@@ -1829,14 +1821,13 @@ async function renderProviderDetailsView(providerId) {
         const { data: opinionsResult, error: opinionsError } = await supabaseClient
             .from('opiniones')
             .select('rating, comment, productor_user_id')
-            .eq('proveedor_user_id', providerData.user_id); // Usa el user_id del proveedor
+            .eq('proveedor_user_id', providerData.user_id); 
         if (opinionsError) throw new Error(`Error al buscar opiniones: ${opinionsError.message}`);
         opinionsData = opinionsResult || [];
         console.log(`Encontradas ${opinionsData.length} opiniones.`);
 
         // --- 4. Busca los nombres de los productores (si hay opiniones) ---
         if (opinionsData.length > 0) {
-            // Obtiene IDs válidos de productores
             const producerIds = [...new Set(opinionsData.map(op => op.productor_user_id))].filter(id => id);
              if (producerIds.length > 0) {
                  console.log("Buscando nombres para IDs de productores:", producerIds);
@@ -1844,15 +1835,13 @@ async function renderProviderDetailsView(providerId) {
                     .from('productores')
                     .select('user_id, nombre_completo')
                     .in('user_id', producerIds);
-
                  if (producersError) {
                     console.warn("Advertencia: No se pudieron cargar nombres de productores:", producersError.message);
                  } else if (producers) {
-                    // --- 👇 Llenamos el objeto producerNames (definido arriba) ---
-                    producers.forEach(p => {
+                     producers.forEach(p => {
                         producerNames[p.user_id] = p.nombre_completo;
-                    });
-                    console.log("Nombres de productores encontrados:", producerNames);
+                     });
+                     console.log("Nombres de productores encontrados:", producerNames);
                  }
             } else {
                 console.log("No se encontraron IDs de productores válidos en las opiniones.");
@@ -1860,10 +1849,20 @@ async function renderProviderDetailsView(providerId) {
         }
 
     } catch (error) {
-         // Captura cualquier error de los pasos anteriores
          console.error("Error fatal en renderProviderDetailsView:", error);
          return `<p class="text-red-500">Error al cargar datos: ${error.message}</p>`;
     }
+
+    // --- 5. 🟢 PREPARAR URL DEL MAPA ---
+    // Usamos la URL estándar de Google Maps Embed
+    let mapUrl = 'https://maps.google.com/maps?q=Argentina&output=embed&z=5'; // Mapa de Argentina si no hay dirección
+    if (providerData.direccion) {
+        const encodedAddress = encodeURIComponent(providerData.direccion);
+        // 'q=' busca la dirección, 'z=15' es el zoom
+        mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&output=embed&z=15`;
+    }
+    // --- FIN DE LA PREPARACIÓN DEL MAPA ---
+
 
     // --- Renderizado Info Proveedor ---
     const provider = {
@@ -1872,19 +1871,30 @@ async function renderProviderDetailsView(providerId) {
         ubicacion: providerData.direccion || 'Ubicación no definida'
     };
 
-    // --- Renderizado Ofertas ---
+    // --- Renderizado Ofertas (Modificado para incluir imagen) ---
     let offersHtml = '<p class="text-gray-400 font-sans">Este proveedor no tiene ofertas publicadas actualmente.</p>';
     if (offers.length > 0) {
         offersHtml = offers.map(offer => `
-            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
-                        <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion || 'Sin ubicación'}</p>
+            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row gap-4">
+                
+                ${offer.imagen_url ? `
+                    <img src="${offer.imagen_url}" alt="${offer.titulo}" class="w-full sm:w-32 h-32 sm:h-24 object-cover rounded-lg flex-shrink-0">
+                ` : `
+                    <div class="w-full sm:w-32 h-32 sm:h-24 rounded-lg bg-primary-dark/70 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l-1-1m6 0l-4-4m-6 4l-4 4"></path></svg>
                     </div>
-                    <p class="text-lg text-accent-cyan font-bold flex-shrink-0 ml-4">$${offer.precio}</p>
+                `}
+
+                <div class="flex-grow">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+                            <p class="text-sm text-gray-400 font-sans">${offer.categoria} - ${offer.ubicacion || 'Sin ubicación'}</p>
+                        </div>
+                        <p class="text-lg text-accent-cyan font-bold flex-shrink-0 ml-4">$${offer.precio}</p>
+                    </div>
+                    <p class="text-gray-300 font-sans mt-2 text-sm">${offer.descripcion || 'Sin descripción.'}</p>
                 </div>
-                <p class="text-gray-300 font-sans mt-2 text-sm">${offer.descripcion || 'Sin descripción.'}</p>
             </div>
         `).join('');
     }
@@ -1895,7 +1905,6 @@ async function renderProviderDetailsView(providerId) {
 
     if (opinionsData.length > 0) {
         opinionsHtml = opinionsData.map(op => {
-            // --- 👇 USO de producerNames (definido arriba) ---
             const productorName = producerNames[op.productor_user_id] || 'Productor Anónimo';
             return `
             <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg">
@@ -1905,7 +1914,7 @@ async function renderProviderDetailsView(providerId) {
                 </div>
                 ${op.comment ? `<p class="text-gray-300 italic font-sans">"${op.comment}"</p>` : ''}
             </div>`;
-        }).join('');
+         }).join('');
     }
 
     // --- HTML Final ---
@@ -1914,8 +1923,17 @@ async function renderProviderDetailsView(providerId) {
             <button onclick="history.back()" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
             <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">${provider.nombre}</h1>
             <p class="text-xl text-gray-300 mb-8 font-sans">${provider.tipo} en ${provider.ubicacion}</p>
+            
+            <div class="w-full h-[300px] rounded-lg border-4 border-accent-blue/50 overflow-hidden mb-10">
+                <iframe 
+                    id="provider-detail-map"
+                    src="${mapUrl}" 
+                    width="100%" height="100%" style="border:0;" 
+                    allowfullscreen="" loading="lazy"></iframe>
+            </div>
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Productos/Servicios</h2>
             <div class="space-y-4 mb-10">${offersHtml}</div>
+            
             <h2 class="text-3xl font-bold mt-10 mb-6 text-accent-cyan font-heading">Opiniones</h2>
             <div class="space-y-4">${opinionsHtml}</div>
         </div>`;
@@ -2578,6 +2596,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
