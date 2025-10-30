@@ -1946,6 +1946,9 @@ async function renderOfferListByCategoryView(categoryName) {
      // ===================================================================
 // 🟢 NUEVA VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView)
 // ===================================================================
+// ===================================================================
+// 🟢 NUEVA VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView)
+// ===================================================================
 function renderPedidoActualView() {
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
         return renderLoginView();
@@ -1980,7 +1983,8 @@ function renderPedidoActualView() {
                     <p class="text-lg text-accent-cyan font-bold">$${item.precio.toLocaleString('es-AR')}</p>
                 </div>
                 <button onclick="handleRemoveItemFromPedido(${index}, '${item.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"')}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0">
-    Quitar (1)
+                    Quitar
+                </button>
             </div>
         `).join('');
     }
@@ -1989,6 +1993,11 @@ function renderPedidoActualView() {
         <div class="max-w-3xl mx-auto p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <button onclick="history.back()" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
             <h1 class="text-4xl font-bold mb-6 text-accent-cyan font-heading">Mi Lista de Pedido (${totalItems} ítems)</h1>
+            
+            <div class="space-y-4 mb-8">
+                ${itemsHtml}
+            </div>
+            
             ${totalItems > 0 ? `
     <div class="bg-primary-dark p-6 rounded-lg border border-accent-cyan/20">
         <h3 class="text-xl font-bold mb-3 text-accent-cyan font-heading border-b border-gray-700 pb-2">Fechas de Producción</h3>
@@ -2354,6 +2363,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
