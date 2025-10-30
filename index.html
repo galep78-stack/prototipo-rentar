@@ -1079,36 +1079,54 @@ function renderHistorialPedidosView() {
         // Lógica de Estado y Acciones
         switch (pedido.estado) {
             case 'Pendiente de Cotización':
-                estadoClass = 'text-yellow-400 bg-yellow-900/50';
-                accionesHtml = `
-                    <button onclick="setView('pedido_detalle', '${pedido.codigo}')" class="bg-accent-blue hover:opacity-80 transition text-white px-3 py-1 rounded-lg font-semibold text-xs mb-1"> Detalle </button> <button onclick="handleSimulateResponse('${pedido.codigo}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold text-xs mb-1"> Simular Respuesta </button> <button onclick="handleDeletePedido('${pedido.codigo}')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs"> Eliminar </button> `;
-                `;
-                break;
+        estadoClass = 'text-yellow-400 bg-yellow-900/50';
+        accionesHtml = `
+            <button onclick="setView('pedido_detalle', '${pedido.codigo}')" // 🟢 BOTÓN DETALLE
+                    class="bg-accent-blue hover:opacity-80 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                Detalle
+            </button>
+            <button onclick="handleSimulateResponse('${pedido.codigo}')"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                Simular Resp.
+            </button>
+            <button onclick="handleDeletePedido('${pedido.codigo}')"
+                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                Eliminar
+            </button>
+        `;
+        break;
 
-            case 'Cotizado (Simulado)':
-                estadoClass = 'text-green-400 bg-green-900/50';
-                accionesHtml = `
-                    <button onclick="handleRateProvider('${pedido.codigo}')"
-                            class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs mb-1">
-                        Calificar (1-5)
-                    </button>
-                    <button onclick="handleDeletePedido('${pedido.codigo}')"
-                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                        Eliminar
-                    </button>
-                `;
-                break;
+           case 'Cotizado (Simulado)':
+        estadoClass = 'text-green-400 bg-green-900/50';
+        accionesHtml = `
+            <button onclick="setView('pedido_detalle', '${pedido.codigo}')" // 🟢 BOTÓN DETALLE
+                    class="bg-accent-blue hover:opacity-80 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                Detalle
+            </button>
+            <button onclick="handleRateProvider('${pedido.codigo}')"
+                    class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs">
+                Calificar (1-5)
+            </button>
+            <button onclick="handleDeletePedido('${pedido.codigo}')"
+                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                Eliminar
+            </button>
+        `;
+        break;
 
             case 'Completado y Calificado':
-                estadoClass = 'text-gray-400 bg-gray-700/50';
-                // Ya no mostramos rating aquí, solo el botón eliminar
-                accionesHtml = `
-                    <button onclick="handleDeletePedido('${pedido.codigo}')"
-                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                        Eliminar
-                    </button>
-                `;
-                break;
+        estadoClass = 'text-gray-400 bg-gray-700/50';
+        accionesHtml = `
+            <button onclick="setView('pedido_detalle', '${pedido.codigo}')" // 🟢 BOTÓN DETALLE
+                    class="bg-accent-blue hover:opacity-80 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                Detalle
+            </button>
+            <button onclick="handleDeletePedido('${pedido.codigo}')"
+                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                Eliminar
+            </button>
+        `;
+        break;
 
             default: // Otros estados posibles o por defecto
                 estadoClass = 'text-gray-400 bg-gray-700/50';
@@ -1134,6 +1152,7 @@ function renderHistorialPedidosView() {
                 </span>
             </td>
             <td class="px-6 py-4 text-center">
+                    <div class="flex flex-col space-y-1">
                 ${accionesHtml}
             </td>
             </tr>
@@ -2473,6 +2492,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
