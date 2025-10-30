@@ -1917,7 +1917,7 @@ async function renderOfferListByCategoryView(categoryName) {
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 
-                                ${actionButton} // Usamos el botón condicional
+                                ${actionButton} 
 
                                 ${providerNumId ? `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
@@ -2354,6 +2354,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
