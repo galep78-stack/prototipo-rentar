@@ -1989,7 +1989,7 @@ function renderPedidoActualView() {
                 <div class="flex flex-col sm:flex-row gap-2">
                     <button onclick="handleAddItemToPedido(${index})" 
                             class="bg-accent-blue hover:bg-accent-blue/80 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0 text-sm">
-                        Agregar (1)
+                        Agregar
                     </button>
                     
                     <button onclick="handleRemoveItemFromPedido(${index}, '${item.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"')}')" 
@@ -2395,6 +2395,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
