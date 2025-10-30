@@ -809,7 +809,8 @@ function setView(viewName, data = null) {
                         viewName === 'edit_offer' ||
                         viewName === 'provider_details' ||
                         viewName === 'offer_list_by_category' ||
-                        viewName === 'provider_requests';
+                        viewName === 'provider_requests'
+    viewName === 'pedido_detalle';
 
     if (isAsyncView) {
         contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
@@ -833,6 +834,8 @@ function setView(viewName, data = null) {
                               viewName === 'edit_offer' ? renderEditOfferView(data) :
                               viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) :
                               viewName === 'provider_requests' ? renderProviderRequestsView() :
+            viewName === 'pedido_detalle' ?
+            renderPedidoDetalleView(data) :
                               renderProviderDetailsView(data); // para provider_details
 
         renderPromise.then(html => {
@@ -1070,9 +1073,8 @@ function setView(viewName, data = null) {
             `;
         }
 // ===================================================================
-// 🟢 FUNCIÓN NUEVA: Vista de Historial de Pedidos Realizados
+// 🟢 FUNCIÓN DE VISTA DE HISTORIAL (Con Botón de Detalle y Layout Corregido)
 // ===================================================================
-// REEMPLAZA tu función existente con esta:
 function renderHistorialPedidosView() {
     const header = `
         <div class="mb-6">
@@ -1080,7 +1082,6 @@ function renderHistorialPedidosView() {
             <p class="text-gray-400">Listado de todos los pedidos de equipamiento enviados a los proveedores.</p>
         </div>
     `;
-
     if (historialPedidos.length === 0) {
         return `
             <div class="max-w-4xl mx-auto p-4 md:p-8">
@@ -1103,9 +1104,14 @@ function renderHistorialPedidosView() {
         switch (pedido.estado) {
             case 'Pendiente de Cotización':
                 estadoClass = 'text-yellow-400 bg-yellow-900/50';
+                // 🟢 INICIO: BOTÓN AÑADIDO
                 accionesHtml = `
+                    <button onclick="setView('pedido_detalle', '${pedido.codigo}')"
+                            class="bg-accent-blue hover:opacity-80 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Ver Detalle
+                    </button>
                     <button onclick="handleSimulateResponse('${pedido.codigo}')"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold text-xs mb-1">
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
                         Simular Respuesta
                     </button>
                     <button onclick="handleDeletePedido('${pedido.codigo}')"
@@ -1113,13 +1119,19 @@ function renderHistorialPedidosView() {
                         Eliminar
                     </button>
                 `;
+                // 🟢 FIN: BOTÓN AÑADIDO
                 break;
 
             case 'Cotizado (Simulado)':
                 estadoClass = 'text-green-400 bg-green-900/50';
+                // 🟢 INICIO: BOTÓN AÑADIDO
                 accionesHtml = `
+                    <button onclick="setView('pedido_detalle', '${pedido.codigo}')"
+                            class="bg-accent-blue hover:opacity-80 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Ver Detalle
+                    </button>
                     <button onclick="handleRateProvider('${pedido.codigo}')"
-                            class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs mb-1">
+                            class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs">
                         Calificar (1-5)
                     </button>
                     <button onclick="handleDeletePedido('${pedido.codigo}')"
@@ -1127,27 +1139,40 @@ function renderHistorialPedidosView() {
                         Eliminar
                     </button>
                 `;
+                // 🟢 FIN: BOTÓN AÑADIDO
                 break;
 
             case 'Completado y Calificado':
                 estadoClass = 'text-gray-400 bg-gray-700/50';
-                // Ya no mostramos rating aquí, solo el botón eliminar
+                // 🟢 INICIO: BOTÓN AÑADIDO
                 accionesHtml = `
+                    <button onclick="setView('pedido_detalle', '${pedido.codigo}')"
+                            class="bg-accent-blue hover:opacity-80 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Ver Detalle
+                    </button>
                     <button onclick="handleDeletePedido('${pedido.codigo}')"
                             class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
                         Eliminar
                     </button>
                 `;
+                // 🟢 FIN: BOTÓN AÑADIDO
                 break;
 
-            default: // Otros estados posibles o por defecto
+            default: 
                 estadoClass = 'text-gray-400 bg-gray-700/50';
+                // 🟢 INICIO: BOTÓN AÑADIDO
                 accionesHtml = `
+                    <button onclick="setView('pedido_detalle', '${pedido.codigo}')"
+                            class="bg-accent-blue hover:opacity-80 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Ver Detalle
+                    </button>
                     <button onclick="handleDeletePedido('${pedido.codigo}')"
                             class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
                         Eliminar
                     </button>
                 `;
+                // 🟢 FIN: BOTÓN AÑADIDO
+                break;
         }
 
         return `
@@ -1164,7 +1189,9 @@ function renderHistorialPedidosView() {
                 </span>
             </td>
             <td class="px-6 py-4 text-center">
-                ${accionesHtml}
+                <div class="flex flex-col space-y-1">
+                    ${accionesHtml}
+                </div>
             </td>
             </tr>
         `;
@@ -1189,7 +1216,6 @@ function renderHistorialPedidosView() {
         </table>
     </div>
     `;
-
     return `
         <div class="max-w-6xl mx-auto p-4 md:p-8">
             ${header}
@@ -1197,9 +1223,6 @@ function renderHistorialPedidosView() {
         </div>
     `;
 }
-       // Función auxiliar para el header
-       // Función auxiliar para el header
-// Función auxiliar para el header
 function renderHeader() {
     const header = document.getElementById('main-header');
     if (!header) return;
@@ -1852,6 +1875,80 @@ async function renderProviderDetailsView(providerId) {
         </div>`;
 }
         // ===================================================================
+// 🟢 NUEVA VISTA: Detalle de un Pedido del Historial
+// ===================================================================
+function renderPedidoDetalleView(codigoPedido) {
+    // 1. Encontrar el pedido en el historial usando el código
+    const pedido = historialPedidos.find(p => p.codigo === codigoPedido);
+
+    if (!pedido) {
+        return `
+            <div class="max-w-3xl mx-auto p-8 text-center">
+                <h1 class="text-4xl font-bold mb-4 text-red-500">Error</h1>
+                <p class="text-lg">No se encontró el detalle del pedido: ${codigoPedido}</p>
+                <button onclick="history.back()" class="mt-6 bg-accent-blue text-white px-6 py-3 rounded-lg font-semibold">
+                    ← Volver al Historial
+                </button>
+            </div>`;
+    }
+
+    // 2. Agrupar ítems para consolidar duplicados (Ej: '2 x Camara A')
+    const groupedItems = pedido.items.reduce((acc, item) => {
+        // Usamos el offerId como clave única para agrupar
+        const key = item.offerId;
+        if (!acc[key]) {
+            acc[key] = { ...item, cantidad: 0 }; 
+        }
+        acc[key].cantidad += 1;
+        return acc;
+    }, {});
+    
+    // Convertir el objeto agrupado de nuevo a un array
+    const itemsArray = Object.values(groupedItems);
+    
+    // 3. Generar el HTML de los ítems detallados
+    const itemsHtml = itemsArray.map(item => `
+        <div class="p-4 bg-primary-dark/70 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center border border-gray-700">
+            <div>
+                <h4 class="font-bold text-lg">${item.titulo}</h4>
+                <p class="text-sm text-gray-400">Proveedor ID: ${item.providerId}</p>
+            </div>
+            <div class="text-left sm:text-right mt-2 sm:mt-0">
+                <p class="text-lg font-bold text-accent-cyan">${item.cantidad} x $${item.precio.toLocaleString('es-AR')}</p>
+                <p class="text-sm text-gray-400">Subtotal: $${(item.precio * item.cantidad).toLocaleString('es-AR')}</p>
+            </div>
+        </div>
+    `).join('');
+    
+    return `
+        <div class="max-w-4xl mx-auto p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <button onclick="history.back()" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Historial</button>
+            <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Detalle del Pedido #${pedido.codigo}</h1>
+            <p class="text-lg text-gray-400 mb-6">Enviado el ${pedido.fechaEnvio}</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
+                <div class="bg-primary-dark p-4 rounded-lg border border-accent-cyan/20">
+                    <p class="text-sm text-gray-400">Estado</p>
+                    <p class="text-xl font-bold text-accent-cyan">${pedido.estado}</p>
+                </div>
+                <div class="bg-primary-dark p-4 rounded-lg border border-accent-cyan/20">
+                    <p class="text-sm text-gray-400">Fechas de Uso</p>
+                    <p class="text-xl font-bold text-accent-cyan">${pedido.fechaInicio} al ${pedido.fechaFin}</p>
+                </div>
+                <div class="bg-primary-dark p-4 rounded-lg border border-accent-cyan/20">
+                    <p class="text-sm text-gray-400">Total Estimado</p>
+                    <p class="text-xl font-bold text-accent-cyan">$${pedido.totalEstimado.toLocaleString('es-AR')}</p>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-bold mb-4 text-white font-heading">Ítems Solicitados (${itemsArray.length} tipo/s)</h2>
+            <div class="space-y-3">
+                ${itemsHtml}
+            </div>
+        </div>
+    `;
+}
+        // ===================================================================
         // 🟢🟢 INICIO DE NUEVAS FUNCIONES (CATEGORÍAS) 🟢🟢
         // ===================================================================
 
@@ -2423,6 +2520,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
