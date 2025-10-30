@@ -458,37 +458,78 @@ savePedidoToStorage();
             }
         }
 
-        async function handleAddOffer(event) {
-            event.preventDefault();
-            if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
+        // ==================================================================
+// 🟢 FUNCIÓN handleAddOffer (ACTUALIZADA CON SUBIDA DE IMAGEN)
+// ==================================================================
+async function handleAddOffer(event) {
+    event.preventDefault();
+    if (!supabaseClient || !currentUser) return alert("Debes iniciar sesión para publicar ofertas.");
 
-            const form = event.target;
+    const form = event.target;
+    const fileInput = form.offer_image;
+    const file = fileInput.files[0];
 
-            const offerData = {
-                user_id: currentUser.id,
-                titulo: form.titulo.value,
-                descripcion: form.descripcion.value,
-                categoria: form.categoria.value,
-                precio: parseFloat(form.precio.value),
-                ubicacion: form.ubicacion.value
-            };
+    let imageUrl = null; // Variable para guardar la URL de la imagen
 
-            try {
-                const { error } = await supabaseClient
-                    .from('ofertas')
-                    .insert([offerData]);
+    // --- 1. Subir la imagen (si existe) ---
+    if (file) {
+        try {
+            // Generamos un nombre único para el archivo
+            const filePath = `public/${currentUser.id}-${Date.now()}`;
+            
+            // Subimos el archivo al bucket 'imagenes_ofertas'
+            let { error: uploadError } = await supabaseClient
+                .storage
+                .from('imagenes_ofertas')
+                .upload(filePath, file);
 
-                if (error) throw error;
-
-                alert("¡Oferta publicada con éxito!");
-                setView('dashboard_proveedor');
-
-            } catch (error) {
-                alert(`Error al publicar la oferta: ${error.message}.`);
-                console.error('Error en handleAddOffer:', error);
+            if (uploadError) {
+                throw uploadError;
             }
-        }
 
+            // --- 2. Obtener la URL pública ---
+            const { data: publicUrlData } = supabaseClient
+                .storage
+                .from('imagenes_ofertas')
+                .getPublicUrl(filePath);
+            
+            imageUrl = publicUrlData.publicUrl;
+            console.log("Imagen subida, URL pública:", imageUrl);
+
+        } catch (error) {
+            alert(`Error al subir la imagen: ${error.message}`);
+            console.error('Error en subida de imagen:', error);
+            return; // Detenemos si la subida de imagen falla
+        }
+    }
+
+    // --- 3. Preparar los datos de la oferta (con o sin imagen) ---
+    const offerData = {
+        user_id: currentUser.id,
+        titulo: form.titulo.value,
+        descripcion: form.descripcion.value,
+        categoria: form.categoria.value,
+        precio: parseFloat(form.precio.value),
+        ubicacion: form.ubicacion.value,
+        imagen_url: imageUrl // Añadimos la URL (o null si no hay imagen)
+    };
+
+    // --- 4. Insertar la oferta en la base de datos ---
+    try {
+        const { error } = await supabaseClient
+            .from('ofertas')
+            .insert([offerData]);
+
+        if (error) throw error;
+
+        alert("¡Oferta publicada con éxito!");
+        setView('dashboard_proveedor');
+
+    } catch (error) {
+        alert(`Error al publicar la oferta: ${error.message}.`);
+        console.error('Error en handleAddOffer (BD):', error);
+    }
+}
         // ==================================================================
         // ✅ FUNCIÓN `handleProfileUpdate` (Corregida para Perfiles)
         // ==================================================================
@@ -1371,7 +1412,13 @@ function renderAddOfferView() {
             <form onsubmit="handleAddOffer(event)" class="space-y-6">
                 <input type="text" name="titulo" placeholder="Título de la Oferta (Ej: Cámara Sony FX9)" required class="w-full p-3 border rounded-lg">
                 <textarea name="descripcion" rows="4" placeholder="Descripción detallada del producto o servicio" required class="w-full p-3 border rounded-lg"></textarea>
-                
+                <div>
+                    <label for="offer_image" class="block text-sm font-medium text-gray-700">Foto del Producto (Opcional)</label>
+                    <input type="file" name="offer_image" id="offer_image" accept="image/png, image/jpeg"
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                                  file:rounded-lg file:border-0 file:font-semibold
+                                  file:bg-accent-blue/10 file:text-accent-blue
+                                  hover:file:bg-accent-blue/20">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <select name="categoria" required class="w-full p-3 border rounded-lg">
                         <option value="">Seleccionar Categoría</option>
@@ -2000,6 +2047,7 @@ async function renderOfferListByCategoryView(categoryName) {
                 descripcion,
                 precio,
                 ubicacion,
+                imagen_url,
                 proveedores ( id, nombre_empresa, user_id ) 
             `)
             .eq('categoria', categoryName);
@@ -2037,21 +2085,32 @@ async function renderOfferListByCategoryView(categoryName) {
                 }
 
                 return `
-                        <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
-                            <div>
-                                <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
-                                <p class="text-sm text-gray-400 font-sans">${offer.ubicacion}</p>
-                                <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
-                                <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
-                            </div>
-                            <div class="flex-shrink-0 text-left sm:text-right">
-                                <p class="text-sm text-gray-400">Ofrecido por:</p>
-                                <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
-                                
-                                ${actionButton} ${providerNumId ? `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
-                            </div>
-                        </div>
-                        `;
+                      <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
+            
+            ${offer.imagen_url ? `
+                <img src="${offer.imagen_url}" alt="${offer.titulo}" 
+                     class="w-full sm:w-32 h-32 sm:h-24 object-cover rounded-lg flex-shrink-0">
+            ` : `
+                <div class="w-full sm:w-32 h-32 sm:h-24 rounded-lg bg-primary-dark/70 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l-1-1m6 0l-4-4m-6 4l-4 4"></path></svg>
+                </div>
+            `}
+            <div class="flex-grow">
+                <h4 class="font-bold text-lg font-heading">${offer.titulo}</h4>
+                <p class="text-sm text-gray-400 font-sans">${offer.ubicacion}</p>
+                <p class="text-lg text-accent-cyan font-bold">$${offer.precio}</p>
+                <p class="text-gray-300 font-sans mt-2">${offer.descripcion}</p>
+            </div>
+            <div class="flex-shrink-0 text-left sm:text-right">
+                <p class="text-sm text-gray-400">Ofrecido por:</p>
+                <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
+                
+                ${actionButton}
+                
+                ${providerNumId ? `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
+            </div>
+            </div>
+        `;
             }).join('');
         } else {
             offersHtml = `<p class="text-gray-400 text-center py-8">No se encontraron ofertas publicadas en la categoría "${categoryName}".</p>`;
@@ -2519,6 +2578,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
