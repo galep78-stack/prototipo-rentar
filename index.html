@@ -785,7 +785,8 @@ function loadPedidoFromStorage() {
         // 🟢 FUNCIONES DE VISTA (RENDERIZADO)
         // ===================================================================
 
-        // REEMPLAZA tu función setView completa con esta:
+       // REEMPLAZA TU FUNCIÓN setView (Líneas 179-202) CON ESTA:
+
 function setView(viewName, data = null) {
     console.log(`[setView] Llamada con: viewName='${viewName}', data='${data}' (tipo: ${typeof data})`);
     if (isNavigating) return;
@@ -793,67 +794,65 @@ function setView(viewName, data = null) {
 
     // --- MODIFICACIÓN: Setear hash con data si es necesario ---
     let newHashValue = viewName;
-    // Define las vistas que usan 'data' en el hash
-   const viewsUsingDataInHash = ['provider_details', 'offer_list_by_category', 'edit_offer', 'pedido_detalle'];
+    
+    // 🟢 1. AÑADIR 'pedido_detalle' AQUÍ:
+    const viewsUsingDataInHash = ['provider_details', 'offer_list_by_category', 'edit_offer', 'pedido_detalle'];
+    
     if (data !== null && viewsUsingDataInHash.includes(viewName)) {
-         newHashValue += `/${data}`; // Añade /ID al hash para estas vistas
+         newHashValue += `/${data}`;
     }
-    // Establece el hash COMPLETO (ej: #provider_details/123 o solo #dashboard_productor)
     window.location.hash = newHashValue;
     // --------------------------------------------------------
 
     const contentView = document.getElementById('content-view');
 
+    // 🟢 2. AÑADIR 'pedido_detalle' AL FINAL DE ESTA LISTA:
     const isAsyncView = viewName === 'profile_edit' ||
                         viewName === 'my_products' ||
                         viewName === 'edit_offer' ||
                         viewName === 'provider_details' ||
                         viewName === 'offer_list_by_category' ||
-                        viewName === 'provider_requests'
-                        viewName === 'pedido_detalle';
+                        viewName === 'provider_requests' ||
+                        viewName === 'pedido_detalle'; // <-- AQUÍ
 
     if (isAsyncView) {
         contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
-
-        if (!currentUser && (viewName.includes('dashboard') || viewName.includes('requests') || viewName.includes('products') || viewName.includes('profile_edit') )) { // Añadido profile_edit
+        
+        if (!currentUser && (viewName.includes('dashboard') || viewName.includes('requests') || viewName.includes('products') || viewName.includes('profile_edit') )) { 
             console.warn(`Intento de acceso a ${viewName} sin usuario. Redirigiendo a home.`);
             isNavigating = false;
-            // Importante: No llamar a setView('home') directamente aquí para evitar bucles
-            // Simplemente mostramos el mensaje de carga y setupAuthListener/hashchange redirigirá si es necesario.
-             contentView.innerHTML = `<p class="text-red-500 font-sans p-8">Acceso denegado. Por favor, inicia sesión.</p>`;
-             // Permitimos que continúe, pero el renderPromise probablemente fallará o devolverá login si necesita currentUser
-            // O podemos forzar la redirección cambiando el hash:
-            // window.location.hash = 'login';
-            // isNavigating = false;
-            // return;
+            contentView.innerHTML = `<p class="text-red-500 font-sans p-8">Acceso denegado. Por favor, inicia sesión.</p>`;
+            // return; // No retornamos para que el .catch maneje el error si es necesario
         }
 
-        // La llamada a la función de renderizado sigue usando 'data'
-        const renderPromise = viewName === 'profile_edit' ? renderProfileEditView() :
-                              viewName === 'my_products' ? renderMyProductsView() :
-                              viewName === 'edit_offer' ? renderEditOfferView(data) :
-                              viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) :
-                              viewName === 'provider_requests' ? renderProviderRequestsView() :
-                              viewName === 'pedido_detalle' ?
-                              renderPedidoDetalleView(data) :
-                              renderProviderDetailsView(data); // para provider_details
+        // 🟢 3. AÑADIR LA LLAMADA A 'renderPedidoDetalleView(data)' AQUÍ:
+        const renderPromise = viewName === 'profile_edit' ?
+                              renderProfileEditView() :
+                              viewName === 'my_products' ?
+                              renderMyProductsView() :
+                              viewName === 'edit_offer' ?
+                              renderEditOfferView(data) :
+                              viewName === 'offer_list_by_category' ?
+                              renderOfferListByCategoryView(data) :
+                              viewName === 'provider_requests' ?
+                              renderProviderRequestsView() :
+                              viewName === 'pedido_detalle' ?   // <-- AQUÍ
+                              renderPedidoDetalleView(data) : // <-- Y AQUÍ
+                              renderProviderDetailsView(data); 
 
         renderPromise.then(html => {
-             // --- MODIFICACIÓN: Comprobar hash completo ---
-             // Compara con el hash que seteamos, incluyendo la data si existe (newHashValue)
              if (window.location.hash === `#${newHashValue}`) {
                  contentView.innerHTML = html;
              } else {
                  console.log("Navegación cancelada, el hash cambió antes de que terminara la carga asíncrona.");
              }
-             // ---------------------------------------------
              isNavigating = false;
         }).catch(error => {
-            console.error(`Error al renderizar vista asíncrona ${viewName}:`, error); // Log de error más detallado
+            console.error(`Error al renderizar vista asíncrona ${viewName}:`, error); 
             contentView.innerHTML = `<p class="text-red-500 font-sans p-8">Error al cargar la vista '${viewName}': ${error.message}</p>`;
             isNavigating = false;
         });
-        return; // Importante retornar aquí para vistas asíncronas
+        return; 
     }
 
     // Para vistas síncronas (no asíncronas)
@@ -2520,6 +2519,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
