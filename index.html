@@ -1857,6 +1857,10 @@ async function renderProviderDetailsView(providerId) {
         }
 
        // 🟢 NUEVA VISTA ASÍNCRONA: Lista de ofertas
+        
+// ===================================================================
+// 🟢 VISTA ASÍNCRONA: Lista de ofertas (CON LÓGICA CONDICIONAL DE BOTÓN)
+// ===================================================================
 async function renderOfferListByCategoryView(categoryName) {
     if (!categoryName) {
         return '<p class="text-red-500">Error: No se especificó una categoría.</p>';
@@ -1865,7 +1869,6 @@ async function renderOfferListByCategoryView(categoryName) {
     let offersHtml = `<p class="text-gray-400">Buscando ofertas para "${categoryName}"...</p>`;
 
     try {
-        // Hacemos un JOIN para obtener el nombre de la empresa proveedora.
         const { data: offers, error } = await supabaseClient
             .from('ofertas')
             .select(`
@@ -1885,23 +1888,30 @@ async function renderOfferListByCategoryView(categoryName) {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerNumId = offer.proveedores ? offer.proveedores.id : null;
                 const providerUserId = offer.proveedores ? offer.proveedores.user_id : null;
-                const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
-                // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
-                const removeButtonHtml = `
-    <button onclick="handlePedido('${offer.id}', ${providerUserId}, '${escapedTitulo}', ${offer.precio}, 'quitar')"
-            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
-        Quitar
-    </button>
-`; // Nota: Se cambió a color rojo para quitar
+                const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"'); // Escape robusto
                 
-                // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
-                const addButtonHtml = `
-    <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
-            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
-            id="pedido-btn-${offer.id}">
-        Agregar
-    </button>
-`;
+                // 🟢 LÓGICA CONDICIONAL: Comprobamos si la oferta ya está en el pedido
+                const isItemInPedido = isOfferInPedido(offer.id); // Usa la función auxiliar (línea 57)
+                
+                let actionButton = '';
+                if (isItemInPedido) {
+                    // Si ya está, mostramos el botón QUITAR
+                    actionButton = `
+                      <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'quitar')"
+                            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
+                          Quitar
+                      </button>
+                    `;
+                } else {
+                    // Si no está, mostramos el botón AGREGAR
+                    actionButton = `
+                      <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
+                            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
+                            id="pedido-btn-${offer.id}">
+                          Agregar
+                      </button>
+                    `;
+                }
 
                 return `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
@@ -1915,10 +1925,7 @@ async function renderOfferListByCategoryView(categoryName) {
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 
-                                ${removeButtonHtml}
-                                ${addButtonHtml}
-                                
-                                ${providerNumId ? `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
+                                ${actionButton} ${providerNumId ? `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
                         </div>
                         `;
@@ -1929,21 +1936,21 @@ async function renderOfferListByCategoryView(categoryName) {
 
     } catch (error) {
         console.error('Error fetching offers by category:', error);
-        offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}. (Asegúrate de que la Foreign Key esté configurada en Supabase)</p>`;
+        offersHtml = `<p class="text-red-500">Error al cargar las ofertas: ${error.message}.</p>`;
     }
 
     return `
-                <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-                    <button onclick="setView('categories_selection')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver a Categorías</button>
-                    <h1 class="text-4xl font-bold mb-8 text-accent-cyan font-heading">Ofertas en: ${categoryName}</h1>
-                    <div class="space-y-4">
-                        ${offersHtml}
-                    </div>
-                </div>
-            `;
+        <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
+            <button onclick="setView('categories_selection')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver a Categorías</button>
+            <h1 class="text-4xl font-bold mb-8 text-accent-cyan font-heading">Ofertas en: ${categoryName}</h1>
+            <div class="space-y-4">
+                ${offersHtml}
+            </div>
+        </div>
+    `;
 }
-     // ===================================================================
-// 🟢 NUEVA VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView)
+// ===================================================================
+// 🟢 VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView) - ACTUALIZADA
 // ===================================================================
 function renderPedidoActualView() {
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
@@ -1972,15 +1979,24 @@ function renderPedidoActualView() {
     } else {
         // Genera el HTML de la lista de ítems
         itemsHtml = pedidoActual.map((item, index) => `
-            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex items-center justify-between gap-4">
+            <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                     <h4 class="font-bold text-lg font-heading">${item.titulo}</h4>
                     <p class="text-sm text-gray-400 font-sans">Proveedor ID: ${item.providerId}</p>
                     <p class="text-lg text-accent-cyan font-bold">$${item.precio.toLocaleString('es-AR')}</p>
                 </div>
-                <button onclick="handleRemoveItemFromPedido(${index}, '${item.titulo.replace(/'/g, "\\'")}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0">
-                    Quitar (1)
-                </button>
+                
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <button onclick="handleAddItemToPedido(${index})" 
+                            class="bg-accent-blue hover:bg-accent-blue/80 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0 text-sm">
+                        Agregar (1)
+                    </button>
+                    
+                    <button onclick="handleRemoveItemFromPedido(${index}, '${item.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"')}')" 
+                            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0 text-sm">
+                        Quitar
+                    </button>
+                </div>
             </div>
         `).join('');
     }
@@ -1989,6 +2005,11 @@ function renderPedidoActualView() {
         <div class="max-w-3xl mx-auto p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <button onclick="history.back()" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
             <h1 class="text-4xl font-bold mb-6 text-accent-cyan font-heading">Mi Lista de Pedido (${totalItems} ítems)</h1>
+            
+            <div class="space-y-4 mb-8">
+                ${itemsHtml}
+            </div>
+            
             ${totalItems > 0 ? `
     <div class="bg-primary-dark p-6 rounded-lg border border-accent-cyan/20">
         <h3 class="text-xl font-bold mb-3 text-accent-cyan font-heading border-b border-gray-700 pb-2">Fechas de Producción</h3>
@@ -2029,7 +2050,27 @@ function handleRemoveItemFromPedido(index, titulo) {
     // Re-renderiza la vista para que el cambio sea visible
     setView('pedido_actual');
 }
-
+// ===================================================================
+// 🟢 NUEVA FUNCIÓN AUXILIAR: Agregar ítem duplicado por índice
+// ===================================================================
+function handleAddItemToPedido(index) {
+    if (index < 0 || index >= pedidoActual.length) {
+        console.error("Índice de ítem inválido para duplicar.");
+        return;
+    }
+    
+    // Clonamos el ítem original
+    const itemToDuplicate = pedidoActual[index];
+    const newItem = { ...itemToDuplicate }; 
+    
+    // Lo agregamos al final de la lista
+    pedidoActual.push(newItem);
+    
+    actualizarIndicadorPedido();
+    // Re-renderiza la vista del carrito para que el cambio sea visible
+    setView('pedido_actual');
+    alert(`Se agregó una unidad adicional de "${itemToDuplicate.titulo}".`);
+}
 // ===================================================================
 // 🟢 FUNCIÓN CORREGIDA: Lógica para "Enviar" el pedido (Guardado PERSISTENTE)
 // ===================================================================
@@ -2354,6 +2395,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
