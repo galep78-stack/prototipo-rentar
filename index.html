@@ -1881,27 +1881,29 @@ async function renderOfferListByCategoryView(categoryName) {
         if (error) throw error;
 
         if (offers && offers.length > 0) {
-            offersHtml = offers.map(offer => {
+           offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerNumId = offer.proveedores ? offer.proveedores.id : null;
                 const providerUserId = offer.proveedores ? offer.proveedores.user_id : null;
                 const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
-                // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
-                const removeButtonHtml = `
-    <button onclick="handlePedido('${offer.id}', ${providerUserId}, '${escapedTitulo}', ${offer.precio}, 'quitar')"
-            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
-        Quitar
-    </button>
-`; // Nota: Se cambió a color rojo para quitar
                 
-                // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
-                const addButtonHtml = `
-    <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
-            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
-            id="pedido-btn-${offer.id}">
-        Agregar
-    </button>
-`;
+                // 🚨 LÓGICA CRÍTICA: Comprobamos si la oferta está en el pedido
+                const isItemInPedido = isOfferInPedido(offer.id); // Usamos la función auxiliar 
+                
+                const actionButton = isItemInPedido 
+                    ? `
+                      <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'quitar')"
+                            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
+                          Quitar
+                      </button>
+                      `
+                    : `
+                      <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
+                            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
+                            id="pedido-btn-${offer.id}">
+                          Agregar
+                      </button>
+                      `;
 
                 return `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
@@ -1915,9 +1917,8 @@ async function renderOfferListByCategoryView(categoryName) {
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 
-                                ${removeButtonHtml}
-                                ${addButtonHtml}
-                                
+                                ${actionButton} // Usamos el botón condicional
+
                                 ${providerNumId ? `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
                         </div>
@@ -2353,6 +2354,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
