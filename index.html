@@ -794,7 +794,7 @@ function setView(viewName, data = null) {
     // --- MODIFICACIÓN: Setear hash con data si es necesario ---
     let newHashValue = viewName;
     // Define las vistas que usan 'data' en el hash
-    const viewsUsingDataInHash = ['provider_details', 'offer_list_by_category', 'edit_offer'];
+   const viewsUsingDataInHash = ['provider_details', 'offer_list_by_category', 'edit_offer', 'pedido_detalle'];
     if (data !== null && viewsUsingDataInHash.includes(viewName)) {
          newHashValue += `/${data}`; // Añade /ID al hash para estas vistas
     }
@@ -810,7 +810,7 @@ function setView(viewName, data = null) {
                         viewName === 'provider_details' ||
                         viewName === 'offer_list_by_category' ||
                         viewName === 'provider_requests'
-    viewName === 'pedido_detalle';
+                        viewName === 'pedido_detalle';
 
     if (isAsyncView) {
         contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
@@ -834,8 +834,8 @@ function setView(viewName, data = null) {
                               viewName === 'edit_offer' ? renderEditOfferView(data) :
                               viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) :
                               viewName === 'provider_requests' ? renderProviderRequestsView() :
-            viewName === 'pedido_detalle' ?
-            renderPedidoDetalleView(data) :
+                              viewName === 'pedido_detalle' ?
+                              renderPedidoDetalleView(data) :
                               renderProviderDetailsView(data); // para provider_details
 
         renderPromise.then(html => {
@@ -2520,6 +2520,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
