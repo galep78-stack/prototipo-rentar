@@ -2040,6 +2040,26 @@ function handleRemoveItemFromPedido(index, titulo) {
 }
 
 // ===================================================================
+// 🟢 NUEVA FUNCIÓN AUXILIAR: Agregar ítem duplicado por índice
+// ===================================================================
+function handleAddItemToPedido(index) {
+    if (index < 0 || index >= pedidoActual.length) {
+        console.error("Índice de ítem inválido para duplicar.");
+        return;
+    }
+    
+    const itemToDuplicate = pedidoActual[index];
+    // Creamos una copia superficial del objeto original
+    const newItem = { ...itemToDuplicate }; 
+    
+    pedidoActual.push(newItem);
+    
+    actualizarIndicadorPedido();
+    // Re-renderiza la vista para que el cambio sea visible
+    setView('pedido_actual');
+    alert(`Se agregó una unidad adicional de "${itemToDuplicate.titulo}".`);
+}
+// ===================================================================
 // 🟢 FUNCIÓN CORREGIDA: Lógica para "Enviar" el pedido (Guardado PERSISTENTE)
 // ===================================================================
 async function handleSendPedido() {
@@ -2363,6 +2383,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
