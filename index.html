@@ -1876,7 +1876,7 @@ async function renderProviderDetailsView(providerId) {
         // ===================================================================
 // 🟢 NUEVA VISTA: Detalle de un Pedido del Historial
 // ===================================================================
-function renderPedidoDetalleView(codigoPedido) {
+async function renderPedidoDetalleView(codigoPedido) {
     // 1. Encontrar el pedido en el historial usando el código
     const pedido = historialPedidos.find(p => p.codigo === codigoPedido);
 
@@ -2519,6 +2519,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
