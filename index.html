@@ -185,7 +185,7 @@ function setupAuthListener() {
     // 3. Manejo de cambios de estado (Login/Logout) - SIN CAMBIOS
     supabaseClient.auth.onAuthStateChange((event, session) => {
         currentUser = session ? session.user : null;
-        ;
+        renderHeader();
         actualizarIndicadorPedido();
         if (currentUser) {
             if (event === 'SIGNED_IN') {
@@ -782,8 +782,7 @@ function setView(viewName, data = null) {
                         viewName === 'edit_offer' ||
                         viewName === 'provider_details' ||
                         viewName === 'offer_list_by_category' ||
-                        viewName === 'provider_requests'
-    viewName === 'pedido_detalle';
+                        viewName === 'provider_requests';
 
     if (isAsyncView) {
         contentView.innerHTML = `<div class="text-center p-10 text-accent-cyan font-heading">Cargando datos...</div>`;
@@ -807,9 +806,7 @@ function setView(viewName, data = null) {
                               viewName === 'edit_offer' ? renderEditOfferView(data) :
                               viewName === 'offer_list_by_category' ? renderOfferListByCategoryView(data) :
                               viewName === 'provider_requests' ? renderProviderRequestsView() :
-            viewName === 'pedido_detalle' ? // 🟢 NUEVA VISTA
-                            renderPedidoDetalleView(data) : // 🟢 LLAMADA
-                            renderProviderDetailsView(data); // para provider_details
+                              renderProviderDetailsView(data); // para provider_details
 
         renderPromise.then(html => {
              // --- MODIFICACIÓN: Comprobar hash completo ---
@@ -1050,7 +1047,6 @@ function setView(viewName, data = null) {
 // ===================================================================
 // REEMPLAZA tu función existente con esta:
 function renderHistorialPedidosView() {
-    itemsHtml = historialPedidos.map(pedido => {
     const header = `
         <div class="mb-6">
             <h2 class="text-3xl font-bold text-accent-cyan font-heading mb-2">📄 Historial de Solicitudes de Cotización</h2>
@@ -1079,54 +1075,43 @@ function renderHistorialPedidosView() {
         // Lógica de Estado y Acciones
         switch (pedido.estado) {
             case 'Pendiente de Cotización':
-        estadoClass = 'text-yellow-400 bg-yellow-900/50';
-        accionesHtml = `
-            <button onclick="setView('pedido_detalle', '${pedido.codigo}')" 
-                    class="bg-accent-blue hover:opacity-80 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                Detalle
-            </button>
-            <button onclick="handleSimulateResponse('${pedido.codigo}')"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                Simular Resp.
-            </button>
-            <button onclick="handleDeletePedido('${pedido.codigo}')"
-                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                Eliminar
-            </button>
-        `;
-        break;
+                estadoClass = 'text-yellow-400 bg-yellow-900/50';
+                accionesHtml = `
+                    <button onclick="handleSimulateResponse('${pedido.codigo}')"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold text-xs mb-1">
+                        Simular Respuesta
+                    </button>
+                    <button onclick="handleDeletePedido('${pedido.codigo}')"
+                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Eliminar
+                    </button>
+                `;
+                break;
 
-           case 'Cotizado (Simulado)':
-        estadoClass = 'text-green-400 bg-green-900/50';
-        accionesHtml = `
-            <button onclick="setView('pedido_detalle', '${pedido.codigo}')" // 🟢 BOTÓN DETALLE
-                    class="bg-accent-blue hover:opacity-80 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                Detalle
-            </button>
-            <button onclick="handleRateProvider('${pedido.codigo}')"
-                    class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs">
-                Calificar (1-5)
-            </button>
-            <button onclick="handleDeletePedido('${pedido.codigo}')"
-                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                Eliminar
-            </button>
-        `;
-        break;
+            case 'Cotizado (Simulado)':
+                estadoClass = 'text-green-400 bg-green-900/50';
+                accionesHtml = `
+                    <button onclick="handleRateProvider('${pedido.codigo}')"
+                            class="bg-accent-cyan hover:bg-white text-primary-dark px-3 py-1 rounded-lg font-semibold text-xs mb-1">
+                        Calificar (1-5)
+                    </button>
+                    <button onclick="handleDeletePedido('${pedido.codigo}')"
+                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Eliminar
+                    </button>
+                `;
+                break;
 
             case 'Completado y Calificado':
-        estadoClass = 'text-gray-400 bg-gray-700/50';
-        accionesHtml = `
-            <button onclick="setView('pedido_detalle', '${pedido.codigo}')" // 🟢 BOTÓN DETALLE
-                    class="bg-accent-blue hover:opacity-80 transition text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                Detalle
-            </button>
-            <button onclick="handleDeletePedido('${pedido.codigo}')"
-                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
-                Eliminar
-            </button>
-        `;
-        break;
+                estadoClass = 'text-gray-400 bg-gray-700/50';
+                // Ya no mostramos rating aquí, solo el botón eliminar
+                accionesHtml = `
+                    <button onclick="handleDeletePedido('${pedido.codigo}')"
+                            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg font-semibold text-xs">
+                        Eliminar
+                    </button>
+                `;
+                break;
 
             default: // Otros estados posibles o por defecto
                 estadoClass = 'text-gray-400 bg-gray-700/50';
@@ -1139,25 +1124,23 @@ function renderHistorialPedidosView() {
         }
 
         return `
-   <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
-    <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
-    <td class="px-6 py-4 text-gray-300">${pedido.fechaEnvio || pedido.fecha}</td>
-    <td class="px-6 py-4 text-gray-300">
-        ${pedido.fechaInicio || 'N/A'} al ${pedido.fechaFin || 'N/A'}
-    </td>
-    <td class="px-6 py-4 text-gray-300">${pedido.items.length} ítems</td>
-    <td class="px-6 py-4">
-        <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
-            ${pedido.estado}
-        </span>
-    </td>
-    <td class="px-6 py-4 text-center">
-        <div class="flex flex-col space-y-1 items-center">
-            ${accionesHtml}
-        </div>
-    </td>
-    </tr>
-`;
+           <tr class="border-b border-gray-700/50 hover:bg-primary-dark/50 transition">
+            <td class="px-6 py-4 font-semibold text-accent-cyan">${pedido.codigo}</td>
+            <td class="px-6 py-4 text-gray-300">${pedido.fechaEnvio || pedido.fecha}</td>
+            <td class="px-6 py-4 text-gray-300">
+                ${pedido.fechaInicio || 'N/A'} al ${pedido.fechaFin || 'N/A'}
+            </td>
+            <td class="px-6 py-4 text-gray-300">${pedido.items.length} ítems</td>
+            <td class="px-6 py-4">
+                <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
+                    ${pedido.estado}
+                </span>
+            </td>
+            <td class="px-6 py-4 text-center">
+                ${accionesHtml}
+            </td>
+            </tr>
+        `;
     }).join('');
 
     const content = `
@@ -1186,7 +1169,10 @@ function renderHistorialPedidosView() {
             ${content}
         </div>
     `;
-
+}
+       // Función auxiliar para el header
+       // Función auxiliar para el header
+// Función auxiliar para el header
 function renderHeader() {
     const header = document.getElementById('main-header');
     if (!header) return;
@@ -1194,11 +1180,13 @@ function renderHeader() {
     const isLoggedIn = !!currentUser;
     const userRole = isLoggedIn && currentUser.user_metadata ? currentUser.user_metadata.user_role : null;
     const displayName = isLoggedIn && currentUser.user_metadata ? (currentUser.user_metadata.display_name || currentUser.email) : null;
+
     // Iconos SVG para usar en móviles
     const userIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
     const logoutIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
     const loginIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>`;
     const registerIcon = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
+
     // Botones de Autenticación
     const authButtons = isLoggedIn
         ? // Estado: CONECTADO
@@ -1215,12 +1203,10 @@ function renderHeader() {
                 </button>
 
                 <div id="account-dropdown" class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                    <a href="javascript:void(0);"
-onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+                    <a href="javascript:void(0);" onclick="goToDashboard(); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
                         Mi Dashboard
                     </a>
-                    <a href="javascript:void(0);"
-onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
+                    <a href="javascript:void(0);" onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 text-sm text-primary-dark hover:bg-gray-100">
                         Editar Perfil
                     </a>
                 </div>
@@ -1243,6 +1229,7 @@ onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 t
                 <span class="inline sm:hidden">${registerIcon}</span>
             </button>
         </div>`;
+
     header.innerHTML = `
         <div class="container mx-auto px-4">
             <nav class="flex justify-between items-center py-4">
@@ -1275,89 +1262,7 @@ onclick="setView('profile_edit'); closeAllDropdowns();" class="block px-4 py-2 t
         </div>
     `;
 }
-// ===================================================================
-// 🟢 NUEVA VISTA: Detalle de un Pedido del Historial
-// ===================================================================
-function renderPedidoDetalleView(pedidoId) {
-    // 1. Encontrar el pedido por su ID
-    const pedido = historialPedidos.find(p => p.id === pedidoId);
 
-    if (!pedido) {
-        return `
-            <div class="max-w-3xl mx-auto p-8 text-center">
-                <h1 class="text-4xl font-bold mb-4 text-red-500">Error</h1>
-                <p class="text-lg">No se encontró el detalle del pedido con ID: ${pedidoId}</p>
-                <button onclick="setView('historial_pedidos')" class="mt-6 bg-accent-blue text-white px-6 py-3 rounded-lg font-semibold">
-                    ← Volver al Historial
-                </button>
-            </div>`;
-    }
-
-    // 2. Agrupar ítems para consolidar duplicados (Ej: '2 x Camara A')
-    const groupedItems = pedido.items.reduce((acc, item) => {
-        // Usamos una clave que combina offerId y providerId para agrupar ítems idénticos
-        const key = `${item.offerId}-${item.providerId}`;
-        if (!acc[key]) {
-            // Clonamos el ítem para agregarle la propiedad 'cantidad'
-            acc[key] = { ...item, cantidad: 0 }; 
-        }
-        acc[key].cantidad += 1;
-        return acc;
-    }, {});
-    
-    // Convertir el objeto agrupado a un array para el mapeo
-    const itemsArray = Object.values(groupedItems);
-    
-    // 3. Generar el HTML de los ítems detallados
-    const itemsHtml = itemsArray.map(item => `
-        <div class="p-4 bg-primary-dark/70 rounded-lg flex justify-between items-center border border-gray-700">
-            <h4 class="font-bold text-lg">${item.titulo}</h4>
-            <div class="text-right">
-                <p class="text-sm text-gray-400">Proveedor ID: ${item.providerId}</p>
-                <p class="text-lg font-bold text-accent-cyan">${item.cantidad} x $${item.precio.toLocaleString('es-AR')}</p>
-            </div>
-        </div>
-    `).join('');
-
-    // 4. Calcular totales y generar el HTML final
-    const totalPrecio = pedido.items.reduce((sum, item) => sum + item.precio, 0);
-    const totalItems = pedido.items.length;
-    
-    return `
-        <div class="max-w-4xl mx-auto p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
-            <button onclick="setView('historial_pedidos')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Historial</button>
-            <h1 class="text-4xl font-bold mb-2 text-accent-cyan font-heading">Detalle del Pedido #${pedido.codigo_pedido}</h1>
-            <p class="text-lg text-gray-400 mb-6">ID Interno: ${pedido.id}</p>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
-                <div class="bg-primary-dark p-4 rounded-lg border border-accent-cyan/20">
-                    <p class="text-sm text-gray-400">Estado</p>
-                    <p class="text-xl font-bold ${getStatusColor(pedido.estado)}">${pedido.estado}</p>
-                </div>
-                <div class="bg-primary-dark p-4 rounded-lg border border-accent-cyan/20">
-                    <p class="text-sm text-gray-400">Total Ítems</p>
-                    <p class="text-xl font-bold text-accent-cyan">${totalItems}</p>
-                </div>
-                <div class="bg-primary-dark p-4 rounded-lg border border-accent-cyan/20">
-                    <p class="text-sm text-gray-400">Total Estimado</p>
-                    <p class="text-xl font-bold text-accent-cyan">$${totalPrecio.toLocaleString('es-AR')}</p>
-                </div>
-            </div>
-            
-            <div class="bg-primary-dark p-6 rounded-lg border border-accent-cyan/20 mb-8">
-                <h3 class="text-xl font-bold mb-3 text-accent-cyan border-b border-gray-700 pb-2">Fechas Solicitadas</h3>
-                <p class="text-lg">Inicio: <span class="font-semibold">${pedido.fecha_inicio}</span></p>
-                <p class="text-lg">Fin: <span class="font-semibold">${pedido.fecha_fin}</span></p>
-            </div>
-
-            <h2 class="text-2xl font-bold mb-4 text-white font-heading">Ítems Solicitados (${itemsArray.length} Únicos)</h2>
-            <div class="space-y-3">
-                ${itemsHtml}
-            </div>
-            
-        </div>
-    `;
-}
         // ==================================================================
         // ✅ FUNCIÓN `renderHomeView` (Actualizada para Flujo Correcto)
         // ==================================================================
@@ -1976,29 +1881,27 @@ async function renderOfferListByCategoryView(categoryName) {
         if (error) throw error;
 
         if (offers && offers.length > 0) {
-           offersHtml = offers.map(offer => {
+            offersHtml = offers.map(offer => {
                 const providerName = offer.proveedores ? offer.proveedores.nombre_empresa : 'Proveedor Desconocido';
                 const providerNumId = offer.proveedores ? offer.proveedores.id : null;
                 const providerUserId = offer.proveedores ? offer.proveedores.user_id : null;
                 const escapedTitulo = offer.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                // 🟢 Botón QUITAR (Ahora llama a handlePedido con 'quitar')
+                const removeButtonHtml = `
+    <button onclick="handlePedido('${offer.id}', ${providerUserId}, '${escapedTitulo}', ${offer.precio}, 'quitar')"
+            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
+        Quitar
+    </button>
+`; // Nota: Se cambió a color rojo para quitar
                 
-                // 🚨 LÓGICA CRÍTICA: Comprobamos si la oferta está en el pedido
-                const isItemInPedido = isOfferInPedido(offer.id); // Usamos la función auxiliar 
-                
-                const actionButton = isItemInPedido 
-                    ? `
-                      <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'quitar')"
-                            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0">
-                          Quitar
-                      </button>
-                      `
-                    : `
-                      <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
-                            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
-                            id="pedido-btn-${offer.id}">
-                          Agregar
-                      </button>
-                      `;
+                // 🟢 Botón AGREGAR (Ahora llama a handlePedido con 'agregar' y mantiene color morado)
+                const addButtonHtml = `
+    <button onclick="handlePedido('${offer.id}', '${providerUserId}', '${escapedTitulo}', ${offer.precio}, 'agregar')"
+            class="bg-secondary-dark hover:opacity-80 text-white px-3 py-2 rounded-lg font-semibold mr-2 mb-2 sm:mb-0"
+            id="pedido-btn-${offer.id}">
+        Agregar
+    </button>
+`;
 
                 return `
                         <div class="p-4 bg-primary-dark/50 border border-accent-cyan/20 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
@@ -2012,8 +1915,9 @@ async function renderOfferListByCategoryView(categoryName) {
                                 <p class="text-sm text-gray-400">Ofrecido por:</p>
                                 <p class="font-bold text-accent-cyan mb-3">${providerName}</p>
                                 
-                                ${actionButton} 
-
+                                ${removeButtonHtml}
+                                ${addButtonHtml}
+                                
                                 ${providerNumId ? `<button onclick="setView('provider_details', ${providerNumId})" class="bg-accent-blue text-white px-3 py-2 rounded-lg font-semibold">Ver Proveedor</button>` : ''}
                             </div>
                         </div>
@@ -2040,12 +1944,6 @@ async function renderOfferListByCategoryView(categoryName) {
 }
      // ===================================================================
 // 🟢 NUEVA VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView)
-// ===================================================================
-// ===================================================================
-// 🟢 NUEVA VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView)
-// ===================================================================
-// ===================================================================
-// 🟢 VISTA: Mostrar y Gestionar Pedido Actual (renderPedidoActualView) - CORREGIDA
 // ===================================================================
 function renderPedidoActualView() {
     if (!currentUser || currentUser.user_metadata.user_role !== 'productor') {
@@ -2080,19 +1978,10 @@ function renderPedidoActualView() {
                     <p class="text-sm text-gray-400 font-sans">Proveedor ID: ${item.providerId}</p>
                     <p class="text-lg text-accent-cyan font-bold">$${item.precio.toLocaleString('es-AR')}</p>
                 </div>
-                
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <button onclick="handleAddItemToPedido(${index})" 
-                            class="bg-accent-blue hover:bg-accent-blue/80 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0 text-sm">
-                        Agregar
-                    </button>
-                    
-                    <button onclick="handleRemoveItemFromPedido(${index}, '${item.titulo.replace(/'/g, "\\'").replace(/"/g, '\\"')}')" 
-                            class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0 text-sm">
-                        Quitar
-                    </button>
-                </div>
-                </div>
+                <button onclick="handleRemoveItemFromPedido(${index}, '${item.titulo.replace(/'/g, "\\'")}')" class="bg-red-600 hover:bg-red-700 transition text-white px-3 py-2 rounded-lg font-semibold flex-shrink-0">
+                    Quitar (1)
+                </button>
+            </div>
         `).join('');
     }
 
@@ -2100,11 +1989,6 @@ function renderPedidoActualView() {
         <div class="max-w-3xl mx-auto p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
             <button onclick="history.back()" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver</button>
             <h1 class="text-4xl font-bold mb-6 text-accent-cyan font-heading">Mi Lista de Pedido (${totalItems} ítems)</h1>
-            
-            <div class="space-y-4 mb-8">
-                ${itemsHtml}
-            </div>
-            
             ${totalItems > 0 ? `
     <div class="bg-primary-dark p-6 rounded-lg border border-accent-cyan/20">
         <h3 class="text-xl font-bold mb-3 text-accent-cyan font-heading border-b border-gray-700 pb-2">Fechas de Producción</h3>
@@ -2130,6 +2014,7 @@ function renderPedidoActualView() {
 
         </div>`;
 }
+
 // ===================================================================
 // 🟢 NUEVA FUNCIÓN AUXILIAR: Eliminar ítem por índice
 // (Necesaria para manejar duplicados en el pedido de forma simple)
@@ -2145,26 +2030,6 @@ function handleRemoveItemFromPedido(index, titulo) {
     setView('pedido_actual');
 }
 
-// ===================================================================
-// 🟢 NUEVA FUNCIÓN AUXILIAR: Agregar ítem duplicado por índice
-// ===================================================================
-function handleAddItemToPedido(index) {
-    if (index < 0 || index >= pedidoActual.length) {
-        console.error("Índice de ítem inválido para duplicar.");
-        return;
-    }
-    
-    const itemToDuplicate = pedidoActual[index];
-    // Creamos una copia superficial del objeto original
-    const newItem = { ...itemToDuplicate }; 
-    
-    pedidoActual.push(newItem);
-    
-    actualizarIndicadorPedido();
-    // Re-renderiza la vista para que el cambio sea visible
-    setView('pedido_actual');
-    alert(`Se agregó una unidad adicional de "${itemToDuplicate.titulo}".`);
-}
 // ===================================================================
 // 🟢 FUNCIÓN CORREGIDA: Lógica para "Enviar" el pedido (Guardado PERSISTENTE)
 // ===================================================================
@@ -2489,19 +2354,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
