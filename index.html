@@ -1310,7 +1310,7 @@ function renderHeader() {
         `<div class="flex space-x-2">
             <button onclick="setView('login')" 
                 class="bg-accent-blue text-white text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold flex items-center justify-center">
-                <span class="hidden sm:inline">Iniciar Sesión</span>
+                <span class="hidden sm:inline">Iniciar sesión</span>
                 <span class="inline sm:hidden">${loginIcon}</span>
             </button>
             <button onclick="setView('register')" 
@@ -1366,7 +1366,7 @@ function renderHeader() {
                             <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
                                 <input type="text" id="search-input" placeholder="Ej: Cámara RED, drone..." class="w-full sm:w-80 p-4 rounded-lg text-primary-dark">
 
-                                <button onclick="handleSearch()" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar Ahora</button>
+                                <button onclick="handleSearch()" class="bg-accent-blue text-white p-4 rounded-lg font-bold text-lg">Buscar ahora</button>
                             </div>
                         </div>
                     </section>
@@ -1376,12 +1376,12 @@ function renderHeader() {
                             <div class="bg-white p-8 rounded-xl shadow-lg">
                                 <h3 class="text-2xl font-bold mb-3">Soy productor</h3>
                                 <p class="text-gray-600 mb-6">Buscá equipos y servicios por categoría.</p>
-                                <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar por Categoría</button>
+                                <button onclick="setView('categories_selection')" class="w-full bg-accent-blue text-white py-3 rounded-lg font-semibold">Buscar por categoría</button>
                             </div>
                             <div class="bg-white p-8 rounded-xl shadow-lg">
                                 <h3 class="text-2xl font-bold mb-3">Soy proveedor</h3>
                                 <p class="text-gray-600 mb-6">Publicá tu inventario.</p>
-                                <button onclick="handlePublishOfferClick()" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar Oferta</button>
+                                <button onclick="handlePublishOfferClick()" class="w-full bg-secondary-dark text-white py-3 rounded-lg font-semibold">Publicar oferta</button>
                             </div>
                         </div>
                     </section>`;
@@ -1399,7 +1399,7 @@ function renderAddOfferView() {
         return renderLoginView(); 
     }
 
-    const categories = ["Equipos", "Locacion", "Servicio"];
+    const categories = ["Equipos", "Locaciones", "Servicios"];
     const categoryOptions = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
 
     // La función handleAddOffer (línea 312) ya maneja el submit.
@@ -2019,7 +2019,7 @@ async function renderPedidoDetalleView(codigoPedido) {
         // 🟢 NUEVA VISTA: Selector de categorías
         function renderCategoriesSelectionView() {
             const categories = [
-                { name: 'Equipos', emoji: '🎥', desc: 'Cámaras, iluminación, sonido' },
+                { name: 'Equipos', emoji: '🎥', desc: 'Cámaras, iluminación, sonido.' },
                 { name: 'Locacion', emoji: '🏠', desc: 'Estudios, casas, exteriores.' },
                 { name: 'Servicio', emoji: '🎬', desc: 'Postproducción, catering, vestuario.' }
             ];
@@ -2036,7 +2036,7 @@ async function renderPedidoDetalleView(codigoPedido) {
             return `
                 <div class="p-8 rounded-xl bg-secondary-dark/50 border border-accent-blue/20">
                     <button onclick="setView('home')" class="mb-6 bg-accent-blue text-white px-4 py-2 rounded-lg font-semibold">← Volver al Inicio</button>
-                    <h1 class="text-4xl font-bold mb-8 text-center text-accent-cyan font-heading">Explorar Categorías</h1>
+                    <h1 class="text-4xl font-bold mb-8 text-center text-accent-cyan font-heading">Explorar categorías</h1>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         ${categoriesHtml}
                     </div>
@@ -2596,6 +2596,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
