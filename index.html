@@ -1080,7 +1080,7 @@ function setView(viewName, data = null) {
                 return `<div class="p-8 text-red-500 font-sans">Error al cargar la oferta: ${error.message}</div>`;
             }
 
-            const categories = ["Equipos", "Locacions", "Servici"];
+            const categories = ["Equipos", "Locaciones", "Servicios"];
             const categoryOptions = categories.map(cat =>
                 `<option value="${cat}" ${offer.categoria === cat ? 'selected' : ''}>${cat}</option>`
             ).join('');
@@ -2020,8 +2020,8 @@ async function renderPedidoDetalleView(codigoPedido) {
         function renderCategoriesSelectionView() {
             const categories = [
                 { name: 'Equipos', emoji: '🎥', desc: 'Cámaras, iluminación, sonido.' },
-                { name: 'Locacion', emoji: '🏠', desc: 'Estudios, casas, exteriores.' },
-                { name: 'Servicio', emoji: '🎬', desc: 'Postproducción, catering, vestuario.' }
+                { name: 'Locaciones', emoji: '🏠', desc: 'Estudios, casas, exteriores.' },
+                { name: 'Servicios', emoji: '🎬', desc: 'Postproducción, catering, vestuario.' }
             ];
 
             let categoriesHtml = categories.map(cat => `
@@ -2596,6 +2596,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
