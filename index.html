@@ -1901,16 +1901,24 @@ async function renderProviderDetailsView(providerId) {
 
     // --- Renderizado de Opiniones ---
   const renderStars = (rating) => {
-    // 🟢 CAMBIO: Usamos parseInt para ser más estrictos
-    const roundedRating = parseInt(rating, 10) || 0; 
+    // Forzamos el rating a ser un número (esto ya está bien)
+    const roundedRating = parseInt(rating, 10) || 0;
 
-    // 🟢 NUEVO: Agreguemos un 'log' para ver qué recibe
-    console.log(`Rating recibido: ${rating} (tipo: ${typeof rating}), Rating parseado: ${roundedRating}`);
+    let output = '';
 
-    // La lógica de dibujado sigue igual
-    return Array.from({length: 5}, (_, i) => 
-        `<span class="text-xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">🎬</span>`
-    ).join('');
+    // Creamos un bucle de 0 a 4
+    for (let i = 0; i < 5; i++) {
+
+        // Si el índice es MENOR que el rating, dibujamos la claqueta
+        if (i < roundedRating) {
+            output += `<span class="text-xl text-accent-cyan">🎬</span>`;
+        } 
+        // Si no, dibujamos una estrella HUECA de color gris
+        else {
+            output += `<span class="text-xl text-gray-600">☆</span>`;
+        }
+    }
+    return output;
 }
     let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
 
@@ -2607,6 +2615,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
