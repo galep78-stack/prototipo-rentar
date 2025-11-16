@@ -1901,11 +1901,13 @@ async function renderProviderDetailsView(providerId) {
 
     // --- Renderizado de Opiniones ---
   const renderStars = (rating) => {
-    // Esta línea fuerza el rating a ser un NÚMERO (ej: 3)
-    // o 0 si el valor es nulo o inválido.
-    const roundedRating = parseInt(rating, 10) || 0;
-    
-    // Ahora usamos 'roundedRating' para la comparación
+    // 🟢 CAMBIO: Usamos parseInt para ser más estrictos
+    const roundedRating = parseInt(rating, 10) || 0; 
+
+    // 🟢 NUEVO: Agreguemos un 'log' para ver qué recibe
+    console.log(`Rating recibido: ${rating} (tipo: ${typeof rating}), Rating parseado: ${roundedRating}`);
+
+    // La lógica de dibujado sigue igual
     return Array.from({length: 5}, (_, i) => 
         `<span class="text-xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">🎬</span>`
     ).join('');
@@ -2605,6 +2607,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
