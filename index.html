@@ -1900,7 +1900,15 @@ async function renderProviderDetailsView(providerId) {
     }
 
     // --- Renderizado de Opiniones ---
-    const renderStars = (rating) => Array.from({length: 5}, (_, i) => `<span class="text-xl ${i < rating ? 'text-accent-cyan' : 'text-gray-600'}">🎬</span>`).join('');
+  const renderStars = (rating) => {
+    // 🟢 Agregamos esta línea para asegurar que el rating sea un número
+    const roundedRating = Math.round(rating || 0);
+    
+    // Ahora usamos 'roundedRating' en la lógica
+    return Array.from({length: 5}, (_, i) => 
+        `<span class="text-xl ${i < roundedRating ? 'text-accent-cyan' : 'text-gray-600'}">🎬</span>`
+    ).join('');
+}
     let opinionsHtml = '<p class="font-sans text-gray-400">Aún no hay opiniones para este proveedor.</p>';
 
     if (opinionsData.length > 0) {
@@ -2596,6 +2604,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
